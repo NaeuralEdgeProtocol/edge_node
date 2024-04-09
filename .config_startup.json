@@ -1,0 +1,156 @@
+{
+  "EE_ID": "XXXXXXXXXX",
+  "SECURED" : false,
+  "IO_FORMATTER" : "cavi2",
+  "MAIN_LOOP_RESOLUTION" : 5,
+  
+  "COMPRESS_HEARTBEAT" : true,
+  
+  "MIN_AVAIL_MEM_THR"        : 0.25,
+  "CRITICAL_RESTART_LOW_MEM" : 0.20,  
+
+  "CHECK_RAM_ON_SHUTDOWN" : false,
+
+  
+  
+  "SECONDS_HEARTBEAT" : 15,  
+  "HEARTBEAT_TIMERS" : false,
+  "HEARTBEAT_LOG" : false,
+  "PLUGINS_ON_THREADS" : true,
+  "CAPTURE_STATS_DISPLAY" : 60,
+  "SHUTDOWN_NO_STREAMS" : false,
+  "TIMERS_DUMP_INTERVAL" : 654,
+  "EXTENDED_TIMERS_DUMP" : true,
+
+  "PLUGINS_DEBUG_CONFIG_CHANGES" : false,
+  
+  "BLOCKCHAIN_CONFIG" : {
+    "PEM_FILE"      : "e2.pem",
+    "PASSWORD"      : null,
+    "PEM_LOCATION"  : "data"  
+   },
+  
+  "#DEFAULT_EMAIL_CONFIG" : {
+    "COMMENT1"    : "generic email notification",
+    "USER"        : "source@email.com",
+    "PASSWORD"    : "",
+    "SERVER"      : "smtp.gmail.com",
+    "PORT"        : 587,
+    
+    "COMMENT2"    : "below should be configured individually",
+    "DESTINATION" : "destination@email.com" 
+  }, 
+    
+  
+  "CAPTURE_ENVIRONMENT" : {
+    "FORCE_CAP_RESOLUTION" : -1,
+    "DEFAULT_PLUGIN" : true,
+    "DISALLOWED_URL_DUPLICATES" : ["VideoStream"]
+  },
+  
+  
+  "SERVING_ENVIRONMENT" : {
+    "LOG_TIMEOUTS_PERIOD": 3600,
+    "COMM_ENGINE": "queue",
+    "DEFAULT_DEVICE" : "cuda:0",
+    "USE_AMP"        : false,
+    "USE_FP16"       : true,    
+    "MAX_WAIT_TIME_MULTIPLIER" : 50,
+    "SERVER_COLLECTOR_TIMEDELTA" : 3600,
+    "AUTO_WARMUPS" : {},
+    "COMM_METHOD": "default",
+    "SHM_MAX_IMAGE_SHAPE": [1520, 2688, 3],
+    "SHM_MAX_LEN": 50,
+    "SERVING_IN_PROCESS" : false,
+    "SERVING_TIMERS_IDLE_DUMP"        : 1801,  
+    "SERVING_TIMERS_PREDICT_DUMP"     : 601,
+    "CHECK_BLOCKED_INPROCESS_SERVING" : true,
+    
+    "MODEL_ZOO_CONFIG" : {
+      "endpoint": "$EE_MINIO_ENDPOINT",
+      "access_key": "$EE_MINIO_ACCESS_KEY",
+      "secret_key": "$EE_MINIO_SECRET_KEY",
+      "secure": "$EE_MINIO_SECURE",
+      "bucket_name": "model-zoo"
+    }    
+  },
+
+
+  "PLUGINS_ENVIRONMENT"  : {
+    "DEMO_MODE" : false,
+    "DEBUG_OBJECTS" : false,
+    "SEND_MANIFEST_EACH" : 290,
+    "ADD_ORIGINAL_IMAGE" : true,
+    "DEBUG_CONFIG_CHANGES" : false
+  },
+  
+  "ADMIN_PIPELINE" : {
+    "MINIO_MONIT_01": {
+      "MINIO_HOST"          : null,
+      "MINIO_ACCESS_KEY"    : null,
+      "MINIO_SECRET_KEY"    : null,
+      "MINIO_SECURE"        : null
+    },
+    
+    "REST_CUSTOM_EXEC_01" : {
+      "ALLOW_EMPTY_INPUTS"      : true,
+      "RUN_WITHOUT_IMAGE"       : true,
+      "SEND_MANIFEST_EACH"      : 301
+    },
+
+    "SELF_CHECK_01" : {
+      "DISK_LOW_PRC"  : 0.15,
+      "MEM_LOW_PRC"   : 0.15,
+      "PROCESS_DELAY" : 5
+    },  
+    
+    "NET_MON_01" : {
+      "PROCESS_DELAY" : 10,
+      "SUPERVISOR"    : false
+    },
+    
+    "UPDATE_MONITOR_01" : {
+      "PROCESS_DELAY"   : 60,
+      "WORKING_HOURS"   : [["12:00", "12:30"]],    
+      "VERSION_TOKEN"   : "$EE_GITVER",
+      "RESTART_ON_BEHIND": true,
+      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/main/main/ver.py"
+    }
+  },
+
+  "COMMUNICATION_ENVIRONMENT" : {
+    "ENCRYPTED_COMMS" : false,
+
+    "QOS" : 2,
+    "CONN_MAX_RETRY_ITERS" : 5,
+    "LOG_SEND_COMMANDS" : true,
+    
+    "DEBUG_COMM_ERRORS" : false,
+
+    "DEBUG_LOG_PAYLOADS" : false,
+    "DEBUG_LOG_PAYLOADS_PIPELINES" : [],
+    "DEBUG_LOG_PAYLOADS_SIGNATURES" : [],
+    "DEBUG_LOG_PAYLOADS_SAVE_FILTER" : null,
+    "DEBUG_LOG_PAYLOADS_REVALIDATE" : false
+
+  },
+
+  
+  "HEAVY_OPS_CONFIG" : {
+    "ACTIVE_COMM_ASYNC" : [
+      "send_mail",
+      "save_image_dataset"
+    ],
+    
+    "ACTIVE_ON_COMM_THREAD" : [
+    ]
+  },
+
+
+  "CONFIG_RETRIEVE": [
+      {
+        "TYPE" 					   : "remote",
+        "APP_CONFIG_ENDPOINT"      : "https://www.dropbox.com/s/27pzvt0ni0f9ja5/config_app_gts_staging.txt?dl=1"
+      }
+  ]
+}
