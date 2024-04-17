@@ -114,7 +114,7 @@
       "WORKING_HOURS"   : [["12:00", "12:30"]],    
       "VERSION_TOKEN"   : "$EE_GITVER",
       "RESTART_ON_BEHIND": true,
-      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/main/main/ver.py"
+      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/{}/main/ver.py"
     }
   },
 
