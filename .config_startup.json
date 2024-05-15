@@ -1,12 +1,13 @@
 {
   "EE_ID": "XXXXXXXXXX",
-  "SECURED" : false,
-  "IO_FORMATTER" : "cavi2",
+  "SECURED" : true,
+  "IO_FORMATTER" : "",
   "MAIN_LOOP_RESOLUTION" : 5,
   
   "COMPRESS_HEARTBEAT" : true,
   
   "MIN_AVAIL_MEM_THR"        : 0.25,
+  "MIN_AVAIL_DISK_SIZE_GB"   : 10,
   "CRITICAL_RESTART_LOW_MEM" : 0.20,  
 
   "CHECK_RAM_ON_SHUTDOWN" : false,
@@ -106,7 +107,7 @@
     
     "NET_MON_01" : {
       "PROCESS_DELAY" : 10,
-      "SUPERVISOR"    : false
+      "SUPERVISOR"    : "$EE_SUPERVISOR"
     },
     
     "UPDATE_MONITOR_01" : {
@@ -114,12 +115,24 @@
       "WORKING_HOURS"   : [["12:00", "12:30"]],    
       "VERSION_TOKEN"   : "$EE_GITVER",
       "RESTART_ON_BEHIND": true,
-      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/{}/main/ver.py"
+      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/{}/main/ver.py",
+      "USE_YAML" : false,
+
+      "_VERSION_URL": "https://raw.githubusercontent.com/DecentrAI/Project-releases/main/e2/release.yaml",
+      "_USE_YAML" : true,
+      "_RELEASE_TAG" : "develop_tag"
+    },
+
+    "KERNEL_LOG_MONITOR_01": {
+      "PROCESS_DELAY"    : 180,
+      "KERNEL_LOG_LEVEL" : "emerg,alert,crit,err"
     }
   },
 
   "COMMUNICATION_ENVIRONMENT" : {
     "ENCRYPTED_COMMS" : false,
+    "ACCEPT_UNENCRYPTED_COMMANDS": true,
+    "LOCAL_COMMAND_BYPASS": true,
 
     "QOS" : 2,
     "CONN_MAX_RETRY_ITERS" : 5,
@@ -127,7 +140,7 @@
     
     "DEBUG_COMM_ERRORS" : false,
 
-    "DEBUG_LOG_PAYLOADS" : false,
+    "DEBUG_LOG_PAYLOADS" : true,
     "DEBUG_LOG_PAYLOADS_PIPELINES" : [],
     "DEBUG_LOG_PAYLOADS_SIGNATURES" : [],
     "DEBUG_LOG_PAYLOADS_SAVE_FILTER" : null,
@@ -149,8 +162,8 @@
 
   "CONFIG_RETRIEVE": [
       {
-        "TYPE" 					   : "remote",
-        "APP_CONFIG_ENDPOINT"      : "https://www.dropbox.com/s/27pzvt0ni0f9ja5/config_app_gts_staging.txt?dl=1"
+        "TYPE" 					   : "local",
+        "APP_CONFIG_ENDPOINT"      : "./.config_app.json"
       }
   ]
 }
