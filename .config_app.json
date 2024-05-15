@@ -18,18 +18,18 @@
         },
         "PARAMS": {
             "CONFIG_CHANNEL": {
-                "TOPIC": "decentrai/{}/config"
+                "TOPIC": "naeural/{}/config"
             },
             "CTRL_CHANNEL": {
-                "TOPIC": "decentrai/ctrl"
+                "TOPIC": "naeural/ctrl"
             },
             "HOST": "$EE_MQTT_HOST",
             "NOTIF_CHANNEL": {
-                "TOPIC": "decentrai/notif"
+                "TOPIC": "naeural/notif"
             },
             "PASS": "$EE_MQTT",
             "PAYLOADS_CHANNEL": {
-                "TOPIC": "decentrai/payloads"
+                "TOPIC": "naeural/payloads"
             },
             "PORT": "$EE_MQTT_PORT",
             "QOS": 0,
