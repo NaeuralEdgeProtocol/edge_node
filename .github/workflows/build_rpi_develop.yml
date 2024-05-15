@@ -45,7 +45,7 @@ jobs:
         with:
           version: "lab:latest"
           driver: cloud
-          endpoint: "naeural/naeuralbuilder"
+          endpoint: "naeural/naeural-builder"
 
       - name: Build and push ARM64 CPU
         uses: docker/build-push-action@v5
