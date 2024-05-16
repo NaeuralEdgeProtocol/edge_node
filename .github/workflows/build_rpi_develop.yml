@@ -3,9 +3,10 @@
 name: Build Arm64 CPU develop
 
 on:
-  push:
-    branches:
-      - "develop"
+  workflow_run:
+    workflows: ["Build develop"]
+    types:
+      - completed
 
 jobs:
   build-and-push:

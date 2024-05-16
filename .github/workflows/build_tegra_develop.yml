@@ -3,9 +3,10 @@
 name: Build Tegra develop
 
 on:
-  push:
-    branches:
-      - "develop"
+  workflow_run:
+    workflows: ["Build Arm64 CPU develop"]
+    types:
+      - completed
 
 jobs:
   build-and-push:

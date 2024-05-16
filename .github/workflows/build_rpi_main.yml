@@ -3,9 +3,10 @@
 name: Main Build and push Arm64 CPU (no tagging)
 
 on:
-  push:
-    branches:
-      - "main"
+  workflow_run:
+    workflows: ["Tag main commit with version number"]
+    types:
+      - completed
 
 jobs:
   build-and-push:

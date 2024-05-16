@@ -3,9 +3,10 @@
 name: Build and push Arm64 GPU/Tegra (no tagging)
 
 on:
-  push:
-    branches:
-      - "main"
+  workflow_run:
+    workflows: ["Main Build and push Arm64 CPU (no tagging)"]
+    types:
+      - completed
 
 jobs:
   build-and-push:
