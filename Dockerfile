@@ -5,17 +5,17 @@ WORKDIR /exe_eng
 COPY  . /exe_eng
 
 # set a generic env variable 
-ENV AIXP_DOCKER Yes
+ENV AINODE_DOCKER Yes
 
 # set a generic env variable 
-ENV AIXP_DOCKER_SOURCE main
+ENV AINODE_DOCKER_SOURCE main
 
 # set default Execution Engine id
 ENV EE_ID E2dkr
 
 # Temporary fix:
-ENV AIXP_ENV $AI_ENV
-ENV AIXP_ENV_VER $AI_ENV_VER
+ENV AINODE_ENV $AI_ENV
+ENV AINODE_ENV_VER $AI_ENV_VER
 
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
