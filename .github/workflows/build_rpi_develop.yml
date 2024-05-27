@@ -4,7 +4,7 @@ name: Build Arm64 CPU develop
 
 on:
   workflow_run:
-    workflows: ["Build develop"]
+    workflows: [Build develop]
     types:
       - completed
 

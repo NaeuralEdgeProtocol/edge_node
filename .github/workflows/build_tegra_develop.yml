@@ -4,7 +4,7 @@ name: Build Tegra develop
 
 on:
   workflow_run:
-    workflows: ["Build Arm64 CPU develop"]
+    workflows: [Build Arm64 CPU develop]
     types:
       - completed
 
