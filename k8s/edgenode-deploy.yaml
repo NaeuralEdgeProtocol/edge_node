@@ -6,7 +6,7 @@ metadata:
   namespace: naeural
 spec:
   serviceName: edgenode
-  # TODO: automatic node identity for multi-replica k8s implementations
+  # TODO: automatic node identity for multi-replica k8s deployments
   replicas: 1 # single node replica at this moment
   selector:
     matchLabels:
