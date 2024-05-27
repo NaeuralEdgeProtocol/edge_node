@@ -12,6 +12,7 @@ _CONFIG = {
     'pet': PET_TYPES
   },
   'REPORT_PERIOD': 30,  # seconds
+  'TIMELINE_SLOT': 60,  # seconds
   'HISTORY_PERIOD': 60 * 60 * 24,  # seconds
   "FOOD_ZONE": [
     0.8, 0.8, 1, 1
@@ -38,7 +39,33 @@ class PetDetector01Plugin(BasePlugin):
       'play': 0,
       'eat': 0
     }
+    self.timeline = self.deque(maxlen=self.compute_timeline_length())
+    self.current_time_slot_count = {
+      'missing': 0,
+      'sleep': 0,
+      'play': 0,
+      'eat': 0
+    }
+    self.current_time_slot = self.get_current_timeline_slot()
+    self.last_time_slot = self.current_time_slot
     return
+
+  def get_current_timeline_slot(self):
+    dt_now = self.datetime.now()
+    timeline_slot = dt_now.second + 60 * dt_now.minute + 60 * 60 * dt_now.hour
+    return timeline_slot // self.cfg_timeline_slot
+
+  def compute_timeline_length(self):
+    """
+    Method for computing the length of the timeline.
+    The timeline will contain the aggregated data for
+    time slots of length cfg_timeline_slot for the last 24 hours.
+    Returns
+    -------
+    int - the length of the timeline
+    """
+    day_seconds = 60 * 60 * 24
+    return day_seconds // self.cfg_timeline_slot
 
   def clean_old_pet_states(self):
     """
@@ -49,9 +76,64 @@ class PetDetector01Plugin(BasePlugin):
       self.pet_state_count[state['state']] -= 1
     return
 
+  def update_timeline(self, state):
+    """
+    Method for updating the timeline with the current state.
+    In case the current time slot is different from the last one, the timeline will be updated.
+    The timeline will contain the aggregated data for time slots of length cfg_timeline_slot for the last 24 hours.
+    Parameters
+    ----------
+    state : str - the current state
+
+    Returns
+    -------
+
+    """
+    current_timeline_slot = self.get_current_timeline_slot()
+    # If the current time slot is different from the last one, update the timeline
+    if current_timeline_slot != self.current_time_slot:
+      # Add the current time slot count to the timeline
+      self.timeline.append(self.current_time_slot_count)
+      # Add empty slots if needed
+      n_empty_slots = current_timeline_slot - self.current_time_slot
+      for _ in range(n_empty_slots - 1):
+        self.timeline.append({
+          'missing': 0,
+          'sleep': 0,
+          'play': 0,
+          'eat': 0
+        })
+      # endfor empty_slots
+      # Reset the current time slot count
+      self.current_time_slot_count = {
+        'missing': 0,
+        'sleep': 0,
+        'play': 0,
+        'eat': 0
+      }
+      self.current_time_slot = current_timeline_slot
+    # endif current_time_slot
+    # Update the current time slot count
+    self.current_time_slot_count[state] += 1
+    return
+
+  def maybe_send_timeline_payload(self):
+    """
+    Method for sending the timeline payload.
+    The timeline will be sent if the current time slot is different from the last one.
+    Returns
+    -------
+
+    """
+    if self.current_time_slot == self.last_time_slot:
+      return
+    self.last_time_slot = self.current_time_slot
+    self.add_payload_by_fields(timeline=list(self.timeline))
+    return
+
   def add_pet_state(self, state):
     """
-    Method for adding a pet state to the queue.
+    Method for adding a pet state to the queue and maybe update the timeline.
     Parameters
     ----------
     state : str - the pet state to be added
@@ -60,11 +142,15 @@ class PetDetector01Plugin(BasePlugin):
     -------
 
     """
+    # Add the state to the queue
     self.pet_state_queue.append({
       'state': state,
       'time': self.time()
     })
+    # Update the state count
     self.pet_state_count[state] += 1
+    # Update the timeline
+    self.update_timeline(state)
     return
 
   def get_food_zone_area(self):
@@ -280,6 +366,8 @@ class PetDetector01Plugin(BasePlugin):
     state = self.current_pet_state(inferences)
     # Add the frame state to the statistics
     self.add_pet_state(state)
+    # Maybe send timeline payload
+    self.maybe_send_timeline_payload()
 
     # If the report period has not passed, do nothing
     if not self.cfg_demo_mode and self.time() - self.last_payload_time < self.cfg_report_period:
