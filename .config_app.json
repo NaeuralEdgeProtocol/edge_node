@@ -33,7 +33,8 @@
             },
             "PORT": "$EE_MQTT_PORT",
             "QOS": 0,
-            "USER": "$EE_MQTT_USER"
+            "USER": "$EE_MQTT_USER",
+            "SUBTOPIC" : "$EE_MQTT_SUBTOPIC"
         },
         "TYPE": "mqtt"
     },

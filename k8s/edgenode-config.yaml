@@ -15,3 +15,4 @@ data:
   ee_minio_secure: 'true'
   ee_minio_upload_bucket: 'upload'
   ee_minio_model_bucket: 'models'
+  ee_mqtt_subtopic: 'address'

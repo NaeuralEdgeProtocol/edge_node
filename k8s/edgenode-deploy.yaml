@@ -74,6 +74,12 @@ spec:
               name: edgenode-config
               key: ee_mqtt_port
 
+        - name: EE_MQTT_SUBTOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_mqtt_subtopic
+
 
 
         # Secrets based
