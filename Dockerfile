@@ -1,8 +1,8 @@
 FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.2.2.cu121-tr4.39.3
 
-WORKDIR /exe_eng
+WORKDIR /edgenode
 
-COPY  . /exe_eng
+COPY  . /edgenode
 
 # set a generic env variable 
 ENV AINODE_DOCKER Yes

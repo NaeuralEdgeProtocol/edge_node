@@ -1,8 +1,8 @@
 FROM aidamian/base_edge_node_arm64_tegra:latest
 
-WORKDIR /exe_eng
+WORKDIR /edgenode
 
-COPY  . /exe_eng
+COPY  . /edgenode
 
 # Set a default value for the TZ environment variable
 ENV TZ=Europe/Bucharest

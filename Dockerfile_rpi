@@ -1,8 +1,8 @@
 FROM aidamian/base_edge_node_arm64_cpu:latest
 
-WORKDIR /exe_eng
+WORKDIR /edgenode
 
-COPY  . /exe_eng
+COPY  . /edgenode
 
 # set a generic env variable 
 ENV AINODE_DOCKER Yes

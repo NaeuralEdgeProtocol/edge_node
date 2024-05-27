@@ -1,0 +1,131 @@
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: edgenode
+  namespace: naeural
+spec:
+  serviceName: edgenode
+  # TODO: automatic node identity for multi-replica k8s implementations
+  replicas: 1 # single node replica at this moment
+  selector:
+    matchLabels:
+      run: edgenode
+  template:
+    metadata:
+      labels:
+        run: edgenode
+    spec:
+      serviceAccountName: edgenode-kmonitor-sa
+      containers:
+      - name: edgenode
+        imagePullPolicy: Always
+        image: naeural/edge_node
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "1000m"
+          limits:
+            memory: "4096Mi"
+            cpu: "3000m"
+        #enviroment variables
+        env:
+        - name: EE_ID
+          value: "nen-k8s-1"
+
+        - name: EE_SUPERVISOR
+          value: "false"
+
+        # Configmap based
+        # Minio
+        - name: EE_MINIO_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_minio_endpoint
+
+        - name: EE_MINIO_SECURE
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_minio_secure
+
+        - name: EE_MINIO_UPLOAD_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_minio_upload_bucket             
+
+        - name: EE_MINIO_MODEL_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_minio_model_bucket               
+
+        - name: EE_MQTT_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_mqtt_host
+
+        - name: EE_MQTT_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: edgenode-config
+              key: ee_mqtt_port
+
+
+
+        # Secrets based
+        - name: EE_MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_minio_access_key
+
+        - name: EE_MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_minio_secret_key
+
+        # MQTT
+        - name: EE_MQTT_USER
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_mqtt_user
+
+        - name: EE_MQTT
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_mqtt
+          
+        # EXTRA
+        - name: EE_GITVER
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_gitver
+
+        - name: EE_OPENAI
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_openai
+
+        - name: EE_HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: naeural-secrets
+              key: ee_hf_token
+        
+        #volume mounts
+        volumeMounts:
+        - name: edgenode-vol
+          mountPath: /edgenode/_local_cache
+      volumes:
+      - name: edgenode-vol
+        persistentVolumeClaim:
+          claimName: edgenode-supervisor-pvc

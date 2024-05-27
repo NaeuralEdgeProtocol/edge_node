@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: naeural
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edgenode-config
+  namespace: naeural
+data:
+  ee_mqtt_host: ''
+  ee_mqtt_port: '1883'
+  ee_minio_endpoint: 'minio-api'
+  ee_minio_secure: 'true'
+  ee_minio_upload_bucket: 'upload'
+  ee_minio_model_bucket: 'models'
