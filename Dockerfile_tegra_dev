@@ -1,0 +1,33 @@
+FROM aidamian/base_edge_node_arm64_tegra:latest
+
+WORKDIR /edgenode
+
+COPY  . /edgenode
+
+# Set a default value for the TZ environment variable
+ENV TZ=Europe/Bucharest
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# set a generic env variable 
+ENV AINODE_DOCKER Yes
+
+# set a generic env variable 
+ENV AINODE_DOCKER_SOURCE develop
+
+# set default Execution Engine id
+ENV EE_ID E2dkr
+
+ENV AINODE_ENV $AI_ENV
+ENV AINODE_ENV_VER $AI_ENV_VER
+
+# also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
+ENV EE_DEVICE cuda:0
+
+# configure default config_startup file
+ENV EE_CONFIG .config_startup.json
+
+## The following line should NOT be moved to based as it should always be updated
+RUN pip install --no-cache-dir kmonitor PyE2 decentra-vision
+## END do not move
+
+CMD ["python3","device.py"]

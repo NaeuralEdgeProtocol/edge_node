@@ -1,2 +1,1 @@
-# edge_node
-DecentrAI edge node 
+# DecentrAI edge node 

@@ -1,0 +1,49 @@
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Tag main commit with version number
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Checkout submodule core -- pull submodule
+        uses: actions/checkout@v3
+        with:
+          repository: DecentrAI/core
+          path: core
+
+      - name: Checkout submodule core
+        run:
+          git submodule update --init --recursive
+  
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Retrieve version
+        id: retrieve_version
+        run: |
+          echo "VERSION=$(cat core/main/ver.py | grep -o "'.*'")" >> $GITHUB_ENV
+
+      - name: Debug version
+        run: |
+          VERSION=${VERSION//\'/}
+          echo "Version to tag: '$VERSION'"
+        env:
+          VERSION: ${{ env.VERSION }}
+
+      - name: Tag main commit
+        run: |
+          VERSION=${VERSION//\'/}
+          git tag -a $VERSION -m "Version $VERSION"
+          git push origin $VERSION
+        env:
+          VERSION: ${{ env.VERSION }}

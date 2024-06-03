@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: edgenode-kmonitor-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "nodes", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "services", "nodes", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+---
+# define a ServiceAccount that will be used in the Deployment or StatefulSet
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: edgenode-kmonitor-sa
+  namespace: naeural
+---
+# Bind the RBAC role to the ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: edgenode-kmonitor-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: edgenode-kmonitor-sa
+  namespace: hyfy
+roleRef:
+  kind: ClusterRole
+  name: edgenode-kmonitor-role
+  apiGroup: rbac.authorization.k8s.io
