@@ -63,6 +63,17 @@ jobs:
           driver: cloud
           endpoint: "naeural/naeural-builder"
 
+      - name: Cleanup space
+        run: |
+              echo "===========docker buildx du ==================="
+              docker buildx du
+              echo "===========docker buildx prune -f. Add -af if any other space issues. ============"
+              docker buildx prune -f
+              echo "===========docker buildx du ================="
+              docker buildx du
+              echo "========================================"
+    
+
       - name: Build and push Amd64 CPU
         uses: docker/build-push-action@v5
         with:

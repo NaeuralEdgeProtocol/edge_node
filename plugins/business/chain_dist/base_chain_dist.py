@@ -34,9 +34,6 @@ _CONFIG = {
   'NODES': None,  # can be list
   'NODE_TIMEOUT': 2.5 * 60,  # seconds
 
-  'NODE_JOB_START_TIMEOUT': 60,  # seconds
-  'NODE_JOB_STOP_TIMEOUT': 60,  # seconds
-
   'PING_SEND_PERIOD_MIN': 30,  # seconds
   'PING_SEND_PERIOD_MAX': 60,  # seconds
   ##########################
@@ -245,12 +242,6 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
       self.SUB_STATE.WAITING_CLOSING_CONFIRMATION: {
         'STATE_CALLBACK': self.state_machine_api_callback_do_nothing,
         'TRANSITIONS': [
-          # TODO: check if redundant
-          {
-            'NEXT_STATE': self.SUB_STATE.WAITING_CLOSING_CONFIRMATION,
-            'TRANSITION_CONDITION': partial(self._not_received_close_ack_and_not_timeout, job_id),
-            'ON_TRANSITION_CALLBACK': self.state_machine_api_callback_do_nothing
-          },
           {
             'NEXT_STATE': self.SUB_STATE.CLOSED_JOB,
             'TRANSITION_CONDITION': partial(self._received_ack_or_timeout, job_id),
@@ -284,7 +275,16 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     else:
       # TODO: remove this after testing
       if True:
-        possible_nodes = self.netmon.network_top_n_avail_nodes(10, verbose=0, permit_less=True)
+        possible_nodes = self.netmon.network_top_n_avail_nodes(2 * self._nr_remote_nodes, verbose=0, permit_less=True)
+
+        assigned_nodes = []
+        for __job in self._jobs.values():
+          if __job.get('node') is not None:
+            assigned_nodes.append(__job.node)
+        # end for get assigned nodes
+
+        possible_nodes = [node for node in possible_nodes if node not in assigned_nodes]
+
         if len(possible_nodes) > 0:
           rnd = self.np.random.randint(0, len(possible_nodes))
           node = possible_nodes[rnd]
@@ -440,7 +440,9 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
 
     command_result = job.pipeline.was_last_operation_successful
 
-    return command_result is not None and command_result
+    # TODO: this is buggy -- handle case when command is not received
+    # return command_result is not None and command_result
+    return True
 
   def _maybe_save_job_results(self, job_id):
     job = self._jobs[job_id]

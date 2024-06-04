@@ -23,9 +23,6 @@ _CONFIG = {
   'NODES': None,  # can be list
   'NODE_TIMEOUT': 2.5 * 60,  # seconds
 
-  'NODE_JOB_START_TIMEOUT': 60,  # seconds
-  'NODE_JOB_STOP_TIMEOUT': 60,  # seconds
-
   'PING_SEND_PERIOD_MIN': 2,  # seconds
   'PING_SEND_PERIOD_MAX': 10,  # seconds
 
