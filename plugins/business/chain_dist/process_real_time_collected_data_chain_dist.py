@@ -29,9 +29,6 @@ _CONFIG = {
   'NODES': None,  # can be list
   'NODE_TIMEOUT': 2.5 * 60,  # seconds
 
-  'NODE_JOB_START_TIMEOUT': 60,  # seconds
-  'NODE_JOB_STOP_TIMEOUT': 60,  # seconds
-
   'PING_SEND_PERIOD_MIN': 30,  # seconds
   'PING_SEND_PERIOD_MAX': 60,  # seconds
   ##########################
@@ -78,8 +75,8 @@ class ProcessRealTimeCollectedDataChainDistPlugin(BaseClass):
 
   def _maybe_save_job_results(self, job_id):
     job = self._jobs[job_id]
-    if job.get('failed', False) is False:
-      self._dct_finished_jobs[job_id] = True
+    # if job.get('failed', False) is False:
+    #   self._dct_finished_jobs[job_id] = True
 
     return
 
