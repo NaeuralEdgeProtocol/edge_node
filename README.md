@@ -1,1 +1,1 @@
-# DecentrAI edge node 
+# Naeural Edge Protocol edge node 
