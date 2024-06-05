@@ -1,4 +1,4 @@
-from plugins.business.chain_dist.process_real_time_collected_data_chain_dist import ProcessRealTimeCollectedDataChainDistPlugin
+from extensions.business.chain_dist.process_real_time_collected_data_chain_dist import ProcessRealTimeCollectedDataChainDistPlugin
 
 _CONFIG = {
   **ProcessRealTimeCollectedDataChainDistPlugin.CONFIG,

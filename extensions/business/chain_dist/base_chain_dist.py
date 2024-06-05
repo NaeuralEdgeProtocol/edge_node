@@ -64,7 +64,16 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
   def startup(self):
     super().startup()
     
-    self._session = Session()
+    self._session = Session(
+      host=None,
+      port=None,
+      user=None,
+      pwd=None,
+      name=f'{self.str_unique_identification}',
+      config=self.global_shmem['config_communication']['PARAMS'],
+      log=self.log,
+      bc_engine=self.global_shmem[self.ct.BLOCKCHAIN_MANAGER],
+    )
 
     self.__state_machine_name = "Chain Dist"
     self.state_machine_api_init(
@@ -184,7 +193,7 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     super(BaseChainDistPlugin, self).on_close()
 
     for job_id in self._jobs:
-      if self._jobs[job_id].in_progress and self._get_job_state_machine_state(job_id) not in [self.SUB_STATE.CLOSED_JOB, self.SUB_STATE.WAITING_CLOSING_CONFIRMATION]:
+      if self._jobs[job_id].in_progress and 'node' in self._jobs[job_id] and self._get_job_state_machine_state(job_id) not in [self.SUB_STATE.CLOSED_JOB, self.SUB_STATE.WAITING_CLOSING_CONFIRMATION]:
         self.P("DEBUG: closing active job {} on {}".format(self._jobs[job_id].job_name, self._jobs[job_id].node), color='r')
         self._send_close_job_command(job_id)
         self._jobs[job_id].in_progress = False

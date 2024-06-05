@@ -1,6 +1,6 @@
 from abc import abstractclassmethod
 
-from plugins.business.chain_dist.base_chain_dist import BaseChainDistPlugin as BaseClass
+from extensions.business.chain_dist.base_chain_dist import BaseChainDistPlugin as BaseClass
 
 _CONFIG = {
   **BaseClass.CONFIG,
