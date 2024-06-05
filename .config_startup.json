@@ -3,6 +3,8 @@
   "SECURED" : true,
   "IO_FORMATTER" : "",
   "MAIN_LOOP_RESOLUTION" : 5,
+
+  "SYSTEM_TEMPERATURE_CHECK" : false,
   
   "COMPRESS_HEARTBEAT" : true,
   
