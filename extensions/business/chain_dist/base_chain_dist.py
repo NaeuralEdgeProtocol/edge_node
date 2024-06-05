@@ -64,7 +64,16 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
   def startup(self):
     super().startup()
     
-    self._session = Session()
+    self._session = Session(
+      host=None,
+      port=None,
+      user=None,
+      pwd=None,
+      name=f'{self.str_unique_identification}',
+      config=self.global_shmem['config_communication']['PARAMS'],
+      log=self.log,
+      bc_engine=self.global_shmem[self.ct.BLOCKCHAIN_MANAGER],
+    )
 
     self.__state_machine_name = "Chain Dist"
     self.state_machine_api_init(
