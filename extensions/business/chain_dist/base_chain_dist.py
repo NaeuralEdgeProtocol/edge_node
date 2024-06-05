@@ -184,7 +184,7 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     super(BaseChainDistPlugin, self).on_close()
 
     for job_id in self._jobs:
-      if self._jobs[job_id].in_progress and self._get_job_state_machine_state(job_id) not in [self.SUB_STATE.CLOSED_JOB, self.SUB_STATE.WAITING_CLOSING_CONFIRMATION]:
+      if self._jobs[job_id].in_progress and 'node' in self._jobs[job_id] and self._get_job_state_machine_state(job_id) not in [self.SUB_STATE.CLOSED_JOB, self.SUB_STATE.WAITING_CLOSING_CONFIRMATION]:
         self.P("DEBUG: closing active job {} on {}".format(self._jobs[job_id].job_name, self._jobs[job_id].node), color='r')
         self._send_close_job_command(job_id)
         self._jobs[job_id].in_progress = False
