@@ -31,4 +31,4 @@ ENV EE_CONFIG .config_startup.json
 RUN pip install --no-cache-dir kmonitor PyE2 decentra-vision
 ## END do not move
 
-CMD ["python","device.py"]
+CMD ["python3","device.py"]
