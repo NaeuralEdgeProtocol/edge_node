@@ -55,9 +55,7 @@
   "SERVING_ENVIRONMENT" : {
     "LOG_TIMEOUTS_PERIOD": 3600,
     "COMM_ENGINE": "queue",
-    "DEFAULT_DEVICE" : "cuda:0",
     "USE_AMP"        : false,
-    "USE_FP16"       : true,    
     "MAX_WAIT_TIME_MULTIPLIER" : 50,
     "SERVER_COLLECTOR_TIMEDELTA" : 3600,
     "AUTO_WARMUPS" : {},
