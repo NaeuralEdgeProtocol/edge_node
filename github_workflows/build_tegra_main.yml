@@ -75,7 +75,7 @@ jobs:
             docker buildx du
             echo "========================================"
   
-      - name: Build and push Amd64 GPU/Tegra
+      - name: Build and push Arm64 GPU/Tegra
         uses: docker/build-push-action@v5
         with:
           context: .

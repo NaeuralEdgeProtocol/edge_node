@@ -1,15 +1,16 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Build main branchimage and tag commit/image with version number
+name: Build Amd64 CPU develop
 
 on:
-  push:
-    branches:
-      - "main"
-  workflow_dispatch:
+  workflow_run:
+    workflows: [Build develop]
+    types:
+      - completed
 
 jobs:
-  tag-and-build-push:
+  build-and-push:
+    # check target platform
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,43 +33,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-
-      - name: Retrieve version
-        id: retrieve_version
-        run: |
-          echo "VERSION=$(cat core/main/ver.py | grep -o "'.*'")" >> $GITHUB_ENV
-
-      - name: Debug version
-        run: |
-          VERSION=${VERSION//\'/}
-          echo "Version to tag: '$VERSION'"
-        env:
-          VERSION: ${{ env.VERSION }}
-  
-      - name: Create image tag
-        id: create_image_tag
-        run: |
-          VERSION=${VERSION//\'/}
-          echo "IMAGE_TAG=naeural/edge_node:$VERSION" >> $GITHUB_ENV
-        env:
-          VERSION: ${{ env.VERSION }}
-
-      - name: Debug version
-        run: |
-          VERSION=${VERSION//\'/}
-          echo "Version to tag: '$VERSION'"
-          echo "Image tag: '$IMAGE_TAG'"
-        env:
-          VERSION: ${{ env.VERSION }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-
-      - name: Tag main commit
-        run: |
-          VERSION=${VERSION//\'/}
-          git tag -a $VERSION -m "Version $VERSION"
-          git push origin $VERSION
-        env:
-          VERSION: ${{ env.VERSION }}
 
 
       - name: Log in to Docker Hub
@@ -93,12 +57,11 @@ jobs:
               echo "===========docker buildx du ================="
               docker buildx du
               echo "========================================"
-    
 
-      - name: Build and push Amd64
+      - name: Build and push Amd64 CPU
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile_cpu_dev
           push: true
-          tags: ${{ env.IMAGE_TAG }} 
+          tags: "naeural/edge_node:cpu_develop"

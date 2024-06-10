@@ -1,13 +1,13 @@
-FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.0.cu121-tr4.41.2
+FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.0.cpu-tr4.41.2
 
 WORKDIR /edge_node
 
 COPY  . /edge_node
 
-# set a generic env variable 
+# set a generic env variable
 ENV AINODE_DOCKER Yes
 
-# set a generic env variable 
+# set a generic env variable
 ENV AINODE_DOCKER_SOURCE main
 
 # set default Execution Engine id
@@ -22,7 +22,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 # althouh this is not recommended as it should be in .env file
-# ENV EE_DEVICE cuda:0
+# ENV EE_DEVICE cpu
 
 # configure default config_startup file
 ENV EE_CONFIG .config_startup.json

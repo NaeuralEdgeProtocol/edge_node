@@ -284,7 +284,7 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     else:
       # TODO: remove this after testing
       if True:
-        possible_nodes = self.netmon.network_top_n_avail_nodes(2 * self._nr_remote_nodes, verbose=0, permit_less=True)
+        possible_nodes = self.netmon.network_top_n_avail_nodes(2 * self._nr_remote_nodes, min_gpu_capability=0, verbose=0, permit_less=True)
 
         assigned_nodes = []
         for __job in self._jobs.values():

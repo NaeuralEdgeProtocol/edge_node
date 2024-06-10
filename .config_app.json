@@ -34,7 +34,9 @@
             "PORT": "$EE_MQTT_PORT",
             "QOS": 0,
             "USER": "$EE_MQTT_USER",
-            "SUBTOPIC" : "$EE_MQTT_SUBTOPIC"
+            "SUBTOPIC" : "$EE_MQTT_SUBTOPIC",
+            "SECURED" : 1,
+            "CERT_PATH" : "$EE_MQTT_CERT"
         },
         "TYPE": "mqtt"
     },

@@ -74,7 +74,7 @@ jobs:
               echo "========================================"
     
 
-      - name: Build and push Amd64 CPU
+      - name: Build and push Arm64 CPU
         uses: docker/build-push-action@v5
         with:
           context: .
