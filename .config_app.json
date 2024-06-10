@@ -18,23 +18,24 @@
         },
         "PARAMS": {
             "CONFIG_CHANNEL": {
-                "TOPIC": "$EE_MQTT_TOPIC_ROOT/{}/config"
+                "TOPIC": "naeural/{}/config"
             },
             "CTRL_CHANNEL": {
-                "TOPIC": "$EE_MQTT_TOPIC_ROOT/ctrl"
+                "TOPIC": "naeural/ctrl"
             },
             "HOST": "$EE_MQTT_HOST",
             "NOTIF_CHANNEL": {
-                "TOPIC": "$EE_MQTT_TOPIC_ROOT/notif"
+                "TOPIC": "naeural/notif"
             },
             "PASS": "$EE_MQTT",
             "PAYLOADS_CHANNEL": {
-                "TOPIC": "$EE_MQTT_TOPIC_ROOT/payloads"
+                "TOPIC": "naeural/payloads"
             },
             "PORT": "$EE_MQTT_PORT",
             "QOS": 0,
             "USER": "$EE_MQTT_USER",
             "SUBTOPIC" : "$EE_MQTT_SUBTOPIC",
+            "SECURED" : 1,
             "CERT_PATH" : "$EE_MQTT_CERT"
         },
         "TYPE": "mqtt"
