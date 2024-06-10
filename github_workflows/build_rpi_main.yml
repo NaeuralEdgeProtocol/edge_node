@@ -32,7 +32,7 @@ jobs:
       - name: Retrieve version
         id: retrieve_version
         run: |
-          echo "VERSION=$(cat core/main/ver.py | grep -o "'.*'")" >> $GITHUB_ENV
+          echo "VERSION=$(cat ver.py | grep -o "'.*'")" >> $GITHUB_ENV
   
       - name: Create image tag
         id: create_image_tag
