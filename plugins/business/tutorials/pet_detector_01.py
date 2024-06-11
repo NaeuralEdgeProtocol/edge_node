@@ -18,7 +18,7 @@ _CONFIG = {
     0.8, 0.8, 1, 1
   ],
   "FOOD_ZONE_MIN_COVERAGE": 0.7,  # the minimum coverage of the food zone for a pet to be considered "eating"
-  "MAX_DISTANCE": 10,  # pixels, the maximum centroid distance for a pet to be considered stationary
+  "MAX_DISTANCE": 30,  # pixels, the maximum centroid distance for a pet to be considered stationary
   "MIN_FRAMES": 5,  # the minimum number of frames for a pet to be considered stationary
 
   'VALIDATION_RULES': {
@@ -289,7 +289,8 @@ class PetDetector01Plugin(BasePlugin):
     # Secondly, check the maximum distance between the centroids
     max_movement = self.trackapi_max_movement(
       object_type=self.get_tracking_type(inf),
-      object_id=inf[self.ct.TRACK_ID]
+      object_id=inf[self.ct.TRACK_ID],
+      steps=self.cfg_min_frames
     )
     return max_movement < self.cfg_max_distance
 
