@@ -1,5 +1,5 @@
-from core.business.base.ngrok import BaseNgrokPlugin as Base
-from core.business.base.ngrok import _CONFIG as BASE_CONFIG
+from core.business.base.fastapi import BaseFastapiPlugin as Base
+from core.business.base.fastapi import _CONFIG as BASE_CONFIG
 
 __VER__ = '0.1.0.0'
 

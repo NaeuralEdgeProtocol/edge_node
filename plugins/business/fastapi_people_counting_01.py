@@ -1,5 +1,5 @@
-from core.business.base.ngrok import BaseNgrokPlugin as Base
-from core.business.base.ngrok import _CONFIG as BASE_CONFIG
+from core.business.base.fastapi import BaseFastapiPlugin as Base
+from core.business.base.fastapi import _CONFIG as BASE_CONFIG
 
 _CONFIG = {
   **BASE_CONFIG,
@@ -21,21 +21,21 @@ class PCCt:
   K_DONE = 'done'
   K_PC = 'people_count'
 
-class NgrokPeopleCounting01Plugin(Base):
+class FastapiPeopleCounting01Plugin(Base):
   CONFIG = _CONFIG
 
   def __init__(self, **kwargs):
     self._people_count = 0
-    super(NgrokPeopleCounting01Plugin, self).__init__(**kwargs)
+    super(FastapiPeopleCounting01Plugin, self).__init__(**kwargs)
     return
 
   def get_jinja_template_args(self) -> dict:
     return {
-      **super(NgrokPeopleCounting01Plugin, self).get_jinja_template_args()
+      **super(FastapiPeopleCounting01Plugin, self).get_jinja_template_args()
     }
 
   def on_init(self):
-    super(NgrokPeopleCounting01Plugin, self).on_init()
+    super(FastapiPeopleCounting01Plugin, self).on_init()
     self.P("Running post-init setup for people counting")
     # Dict with url -> answer, done
     self.request_data = {}
