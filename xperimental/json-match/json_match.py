@@ -137,7 +137,8 @@ if __name__ == '__main__':
   }
 
   # Template 1: Simple match
-  template1 = {
+  JSON_FILE = [
+  {
     "ACTION": "UPDATE_PIPELINE_INSTANCE",
     "PAYLOAD": {
       "NAME": "",
@@ -149,10 +150,10 @@ if __name__ == '__main__':
         }
       }
     }
-  }
+  },
 
   # Template 2: Matching nested dictionary within list
-  template2 = {
+  {
     "ACTION": "UPDATE_PIPELINE_INSTANCE",
     "PAYLOAD": {
       "NAME": "",
@@ -169,10 +170,10 @@ if __name__ == '__main__':
         }
       }
     }
-  }
+  },
 
   # Template 3: Mismatched value in nested dictionary
-  template3 = {
+  {
     "ACTION": "UPDATE_PIPELINE_INSTANCE",
     "PAYLOAD": {
       "NAME": "",
@@ -189,10 +190,11 @@ if __name__ == '__main__':
         }
       }
     }
-  }
+  },
+  
 
   # Template 4: Matching nested list within list
-  template4 = {
+  {
     "ACTION": "UPDATE_PIPELINE_INSTANCE",
     "PAYLOAD": {
       "NAME": "",
@@ -210,9 +212,8 @@ if __name__ == '__main__':
       }
     }
   }
+  ]
 
   # Test cases
-  print(match_template(json_data, template1))  # Output should be: True
-  print(match_template(json_data, template2))  # Output should be: True
-  print(match_template(json_data, template3))  # Output should be: False
-  print(match_template(json_data, template4))  # Output should be: True
+  for template in JSON_FILE:
+    print(match_template(json_data, template))  # Output should be: True, True, False, True
