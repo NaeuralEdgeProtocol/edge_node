@@ -1,10 +1,10 @@
-from core.business.base.fastapi import BaseFastapiPlugin as Base
-from core.business.base.fastapi import _CONFIG as BASE_CONFIG
+from core.business.base.web_app import FastApiWebAppPlugin
 
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-  **BASE_CONFIG,
+  **FastApiWebAppPlugin.BASE_CONFIG,
+
   'ASSETS' : 'weather_app',
   'JINJA_ARGS': {
     'html_files' : [
@@ -16,7 +16,7 @@ _CONFIG = {
     ]
   },
   'VALIDATION_RULES': {
-    **BASE_CONFIG['VALIDATION_RULES'],
+    **FastApiWebAppPlugin.BASE_CONFIG['VALIDATION_RULES'],
   },
 }
 
@@ -94,7 +94,7 @@ class HTMLCt:
   SPAN = 'span'
   ID = 'id'
 
-class WeatherAppPlugin(Base):
+class WeatherAppPlugin(FastApiWebAppPlugin):
 
   CONFIG = _CONFIG
 
@@ -394,7 +394,7 @@ class WeatherAppPlugin(Base):
       WCt.R_ADDR : self.ee_addr
     }
 
-  @Base.endpoint
+  @FastApiWebAppPlugin.endpoint
   def get_weather(self, city : str, source : str) -> dict:
     """
     Application entry point, returns the weather information for a city from

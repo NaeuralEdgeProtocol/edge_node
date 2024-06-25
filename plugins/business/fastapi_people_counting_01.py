@@ -1,14 +1,14 @@
-from core.business.base.fastapi import BaseFastapiPlugin as Base
-from core.business.base.fastapi import _CONFIG as BASE_CONFIG
+from core.business.base.web_app import FastApiWebAppPlugin
+
 
 _CONFIG = {
-  **BASE_CONFIG,
+  **FastApiWebAppPlugin.BASE_CONFIG,
   'ASSETS' : 'people_counting',
   'OBJECT_TYPE' : [ 'person' ],
   'DETECTOR_PROCESS_DELAY' : 0.2,
   'STATUS_UPDATE_INTERVAL' : 2,
   'VALIDATION_RULES': {
-    **BASE_CONFIG['VALIDATION_RULES'],
+    **FastApiWebAppPlugin.BASE_CONFIG['VALIDATION_RULES'],
   },
 }
 
@@ -21,7 +21,7 @@ class PCCt:
   K_DONE = 'done'
   K_PC = 'people_count'
 
-class FastapiPeopleCounting01Plugin(Base):
+class FastapiPeopleCounting01Plugin(FastApiWebAppPlugin):
   CONFIG = _CONFIG
 
   def __init__(self, **kwargs):
@@ -41,7 +41,7 @@ class FastapiPeopleCounting01Plugin(Base):
     self.request_data = {}
     return
 
-  @Base.endpoint
+  @FastApiWebAppPlugin.endpoint
   def get_people_count(self, url):
     info = self.request_data.get(url)
     if info is not None:
