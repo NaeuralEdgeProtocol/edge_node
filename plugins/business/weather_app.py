@@ -3,7 +3,7 @@ from core.business.base.web_app import FastApiWebAppPlugin
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-  **FastApiWebAppPlugin.BASE_CONFIG,
+  **FastApiWebAppPlugin.CONFIG,
 
   'ASSETS' : 'weather_app',
   'JINJA_ARGS': {
@@ -16,7 +16,7 @@ _CONFIG = {
     ]
   },
   'VALIDATION_RULES': {
-    **FastApiWebAppPlugin.BASE_CONFIG['VALIDATION_RULES'],
+    **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
   },
 }
 
@@ -144,9 +144,6 @@ class WeatherAppPlugin(FastApiWebAppPlugin):
     #endfor all names
     del cities
 
-    self.P(self.plugin_id)
-    self.P(self.get_instance_id())
-    self.P(f"{self._stream_id}, {self._signature}, {self.cfg_instance_id}")
     super(WeatherAppPlugin, self).on_init(**kwargs)
     return
 
