@@ -162,8 +162,8 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     html_content += previous_releases_section
 
     # Write the HTML content to a file
-    self.P(self.get_assets_path())
-    with open(self.os_path.join(self.get_assets_path(), 'assets/releases.html'), 'w') as file:
+    self.P(self.get_web_server_path())
+    with open(self.os_path.join(self.get_web_server_path(), 'assets/releases.html'), 'w') as file:
         file.write(html_content)
 
     print("releases.html has been generated successfully.")
