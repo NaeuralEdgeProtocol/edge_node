@@ -115,12 +115,14 @@
       "WORKING_HOURS"   : [["12:00", "12:30"]],    
       "VERSION_TOKEN"   : "$EE_GITVER",
       "RESTART_ON_BEHIND": true,
-      "VERSION_URL"     : "https://raw.githubusercontent.com/DecentrAI/core/{}/main/ver.py",
+      "VERSION_URL"     : "https://raw.githubusercontent.com/NaeuralEdgeProtocol/edge_node/{}/ver.py",
       "USE_YAML" : false,
+    
+      "FORCE_RESTART_AFTER" : 600000,
+      "REBOOT_ON_RESTART"   : false,
+          
 
-      "_VERSION_URL": "https://raw.githubusercontent.com/DecentrAI/Project-releases/main/e2/release.yaml",
-      "_USE_YAML" : true,
-      "_RELEASE_TAG" : "develop_tag"
+      "RELEASE_TAG" : "release-tag-for-yaml-config"
     },
 
     "KERNEL_LOG_MONITOR_01": {

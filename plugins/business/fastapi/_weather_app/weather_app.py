@@ -1,11 +1,16 @@
-from core.business.base.ngrok import BaseNgrokPlugin as Base
-from core.business.base.ngrok import _CONFIG as BASE_CONFIG
+from core.business.base.web_app import FastApiWebAppPlugin
 
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-  **BASE_CONFIG,
-  'ASSETS' : 'weather_app',
+  **FastApiWebAppPlugin.CONFIG,
+  'USE_NGROK' : False,
+  'NGROK_DOMAIN' : None,
+  'NGROK_EDGE_LABEL' : None,
+
+  'PORT' : 8080,
+
+  'ASSETS' : '_weather_app',
   'JINJA_ARGS': {
     'html_files' : [
       {
@@ -16,7 +21,7 @@ _CONFIG = {
     ]
   },
   'VALIDATION_RULES': {
-    **BASE_CONFIG['VALIDATION_RULES'],
+    **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
   },
 }
 
@@ -94,7 +99,7 @@ class HTMLCt:
   SPAN = 'span'
   ID = 'id'
 
-class WeatherAppPlugin(Base):
+class WeatherAppPlugin(FastApiWebAppPlugin):
 
   CONFIG = _CONFIG
 
@@ -144,9 +149,6 @@ class WeatherAppPlugin(Base):
     #endfor all names
     del cities
 
-    self.P(self.plugin_id)
-    self.P(self.get_instance_id())
-    self.P(f"{self._stream_id}, {self._signature}, {self.cfg_instance_id}")
     super(WeatherAppPlugin, self).on_init(**kwargs)
     return
 
@@ -394,7 +396,7 @@ class WeatherAppPlugin(Base):
       WCt.R_ADDR : self.ee_addr
     }
 
-  @Base.endpoint
+  @FastApiWebAppPlugin.endpoint
   def get_weather(self, city : str, source : str) -> dict:
     """
     Application entry point, returns the weather information for a city from

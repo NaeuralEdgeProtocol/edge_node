@@ -1,14 +1,14 @@
-from core.business.base.ngrok import BaseNgrokPlugin as Base
-from core.business.base.ngrok import _CONFIG as BASE_CONFIG
+from core.business.base.web_app import FastApiWebAppPlugin
+
 
 _CONFIG = {
-  **BASE_CONFIG,
+  **FastApiWebAppPlugin.BASE_CONFIG,
   'ASSETS' : 'people_counting',
   'OBJECT_TYPE' : [ 'person' ],
   'DETECTOR_PROCESS_DELAY' : 0.2,
   'STATUS_UPDATE_INTERVAL' : 2,
   'VALIDATION_RULES': {
-    **BASE_CONFIG['VALIDATION_RULES'],
+    **FastApiWebAppPlugin.BASE_CONFIG['VALIDATION_RULES'],
   },
 }
 
@@ -21,27 +21,27 @@ class PCCt:
   K_DONE = 'done'
   K_PC = 'people_count'
 
-class NgrokPeopleCounting01Plugin(Base):
+class FastapiPeopleCounting01Plugin(FastApiWebAppPlugin):
   CONFIG = _CONFIG
 
   def __init__(self, **kwargs):
     self._people_count = 0
-    super(NgrokPeopleCounting01Plugin, self).__init__(**kwargs)
+    super(FastapiPeopleCounting01Plugin, self).__init__(**kwargs)
     return
 
   def get_jinja_template_args(self) -> dict:
     return {
-      **super(NgrokPeopleCounting01Plugin, self).get_jinja_template_args()
+      **super(FastapiPeopleCounting01Plugin, self).get_jinja_template_args()
     }
 
   def on_init(self):
-    super(NgrokPeopleCounting01Plugin, self).on_init()
+    super(FastapiPeopleCounting01Plugin, self).on_init()
     self.P("Running post-init setup for people counting")
     # Dict with url -> answer, done
     self.request_data = {}
     return
 
-  @Base.endpoint
+  @FastApiWebAppPlugin.endpoint
   def get_people_count(self, url):
     info = self.request_data.get(url)
     if info is not None:

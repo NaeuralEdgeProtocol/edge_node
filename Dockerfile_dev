@@ -1,4 +1,4 @@
-FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.0.cu121-tr4.41.2
+FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cu121-tr4.41.2
 
 WORKDIR /edge_node
 
