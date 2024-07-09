@@ -3,6 +3,11 @@ __VER__ = '0.1.0.0'
 
 _CONFIG = {
   **FastApiWebAppPlugin.CONFIG,
+  'USE_NGROK' : False,
+  'NGROK_DOMAIN' : None,
+  'NGROK_EDGE_LABEL' : None,
+
+  'PORT' : 8080,
   'ASSETS' : 'epoch_manager',
   'VALIDATION_RULES': {
     **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
