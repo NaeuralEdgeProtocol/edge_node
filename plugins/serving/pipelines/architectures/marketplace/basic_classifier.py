@@ -7,7 +7,11 @@ _CONFIG = {
   'GRID_SEARCH': {
     'GRID': {
       'input_size': [(320, 256)],
-      'hidden1': [100, 200, 128],
+      'hidden1': [
+        100,
+        # 200,
+        128
+      ],
       'hidden2': [50, 64],
       'output_size': [2],
       'activation': ['relu'],
@@ -42,7 +46,7 @@ class BasicClassifierModelFactory(th.nn.Module):
     input_dim = 3, *input_size
     th_inp = InputPlaceholder(input_dim=input_dim)
     self.blocks.append(th_inp)
-    flatten_layer = th.nn.Flatten(0)
+    flatten_layer = th.nn.Flatten()
     self.blocks.append(flatten_layer)
     in_size = math.prod(list(input_dim))
     for out_size in [hidden1, hidden2]:

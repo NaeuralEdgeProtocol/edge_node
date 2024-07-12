@@ -17,7 +17,9 @@ class CustomTrainingPipeline(BaseExeEngTrainingPipeline, abc.ABC):
     # endif model_arch not provided
     classes = self.config.get('CLASSES')
     if classes is None or not isinstance(classes, list):
-      raise ValueError('CLASSES not provided or incorrect format! Please provide list of classes')
+      raise ValueError(
+        f'CLASSES not provided or incorrect format! Please provide list of classes instead of {classes}'
+      )
     # endif classes not provided
     grid_search = self.config.get('GRID_SEARCH', {})
     factory_config = get_factory_config(model_arch)['GRID_SEARCH']
@@ -26,6 +28,8 @@ class CustomTrainingPipeline(BaseExeEngTrainingPipeline, abc.ABC):
     self.config['GRID_SEARCH']['GRID']['classes'] = [classes]
     self.config['GRID_SEARCH']['GRID']['model_type'] = [model_arch]
     self.config['GRID_SEARCH']['DATA_PARAMS'].append('classes')
+    self.config['GRID_SEARCH']['CALLBACKS_PARAMS'] = self.config['GRID_SEARCH'].get('CALLBACKS_PARAMS', [])
+    self.config['GRID_SEARCH']['CALLBACKS_PARAMS'].append('classes')
     # if no model params are specified there is no need to add model_type to the list
     # since it will be automatically populated later.
     if len(self.config['GRID_SEARCH'].get('MODEL_PARAMS', [])) > 0:

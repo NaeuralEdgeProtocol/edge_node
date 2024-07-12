@@ -5,9 +5,13 @@ from core.local_libraries.nn.th.training.callbacks.softmax_classification import
 
 
 class CustomTrainingCallbacks(SoftmaxClassificationTrainingCallbacks):
-  def __init__(self, **kwargs):
+  def __init__(self, classes, **kwargs):
+    self.custom_classes = classes
     super(CustomTrainingCallbacks, self).__init__(**kwargs)
     return
+
+  def get_class_names(self, **kwargs):
+    return self.custom_classes
 
   def _lst_augmentations(self, **kwargs) -> List:
     return []
