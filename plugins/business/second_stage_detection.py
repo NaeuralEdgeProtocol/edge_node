@@ -12,6 +12,8 @@ _CONFIG = {
     'CUSTOM_DOWNLOADABLE_MODEL_URL' : None,
     'MODEL_INSTANCE_ID'             : None,
   },
+  "DESCRIPTION": "",
+  "OBJECTIVE_NAME": "",
   'OBJECT_TYPE': ['person'],
   'SECOND_STAGE_DETECTOR_CLASSES' : None,
 }
@@ -98,6 +100,8 @@ class SecondStageDetectionPlugin(CVPluginExecutor):
       payload = self._create_payload(
         img=np_witness,
         lst_objects=instance_inferences,
+        description=self.cfg_description,
+        objective_name=self.cfg_objective_name,
       )
     #endif
     return payload
