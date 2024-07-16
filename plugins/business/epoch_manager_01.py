@@ -7,7 +7,7 @@ _CONFIG = {
   'NGROK_DOMAIN' : None,
   'NGROK_EDGE_LABEL' : None,
 
-  'PORT' : 8080,
+  'PORT' : None,
   'ASSETS' : 'epoch_manager',
   'VALIDATION_RULES': {
     **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],

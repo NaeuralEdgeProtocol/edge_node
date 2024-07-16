@@ -8,7 +8,7 @@ _CONFIG = {
   'NGROK_DOMAIN' : None,
   'NGROK_EDGE_LABEL' : None,
 
-  'PORT' : 8080,
+  'PORT' : None,
 
   'ASSETS' : '_weather_app',
   'JINJA_ARGS': {
