@@ -65,10 +65,6 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     super().startup()
     
     self._session = Session(
-      host=None,
-      port=None,
-      user=None,
-      pwd=None,
       name=f'{self.str_unique_identification}',
       config=self.global_shmem['config_communication']['PARAMS'],
       log=self.log,
