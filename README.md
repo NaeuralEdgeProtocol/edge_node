@@ -273,3 +273,23 @@ Last but not least, we want to close the session when the distributed job finish
 # we want to release the resources allocated on the selected node when the job is finished
 session.run(wait=lambda: not finished, close_pipelines=True)
 ```
+
+# Citation
+
+```bibtex
+@misc{NaeuralAI_edge_node,
+  author = {Naeural.AI},
+  title = {Naeural Edge Protocol: Edge Node},
+  year = {2024},
+  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/edge_node}},
+}
+```
+
+```bibtex
+@misc{PyE2,
+  author = {Stefan Saraev, Andrei Damian},
+  title = {PyE2: Python SDK for Naeural Edge Protocol},
+  year = {2024},
+  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/PyE2}},
+}
+```
