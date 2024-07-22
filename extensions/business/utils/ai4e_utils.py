@@ -54,7 +54,8 @@ def get_job_config(
 
 
 class Job:
-  def __init__(self, job_id: str, node_id: str, pipeline: str, signature: str, instance: str):
+  def __init__(self, session: Session, job_id: str, node_id: str, pipeline: str, signature: str, instance: str):
+    self.session = session
     self.job_id = job_id
     self.instance_id = instance
     self.node_id = node_id
@@ -69,12 +70,21 @@ class Job:
     self.rewards = {}
     self.dataset = {}
     self.creation_date = None
+    self.job_status = None
 
     self.data = {}
+    self.crop_status = {
+      'total_stats': {},
+      'increment_history': [],
+      'speed': 0,
+      'lastDuration': 0
+    }
 
     return
 
-  def update_data(self, data):
+  def maybe_update_data(self, data):
+    if not data.get('IS_STATUS', True):
+      return
     self.data = data
     self.objective_name = data.get('OBJECTIVE_NAME', self.objective_name)
     self.description = data.get('DESCRIPTION', self.description)
@@ -83,6 +93,15 @@ class Job:
     self.rewards = data.get('REWARDS', self.rewards)
     self.dataset = data.get('DATASET', self.dataset)
     self.creation_date = data.get('CREATION_DATE', self.creation_date)
+    self.classes = data.get('CLASSES', self.classes)
+    self.job_status = data.get('JOB_STATUS', self.job_status)
+
+    self.crop_status['total_stats'] = data.get('COUNTS', self.crop_status['total_stats'])
+    last_increment = data.get('CROP_INCREMENT')
+    if last_increment is not None:
+      self.crop_status['increment_history'].append(last_increment)
+    self.crop_status['speed'] = data.get('CROP_SPEED', self.crop_status['speed'])
+    self.crop_status['lastDuration'] = data.get('DURATION')
 
     return
 
@@ -107,35 +126,52 @@ class Job:
       'config': self.get_details()
     }
 
-  # def __get_pipeline_and_instance(self, sess: Session):
-  #   active_pipelines = sess.get_active_pipelines(node_id=self.node_id)
-  #   if active_pipelines is None:
-  #     return None, None, f"Node_ID {self.node_id} not found"
-  #   curr_pipeline = sess.attach_to_pipeline(node_id=self.node_id, name=self.pipeline)
-  #   if curr_pipeline is None:
-  #     return None, None, f"Pipeline {self.pipeline} not found"
-  #   for instance_obj in curr_pipeline.lst_plugin_instances:
-  #     print(f'{instance_obj.signature} - {instance_obj.instance_id}')
-  #   curr_instance = curr_pipeline.attach_to_plugin_instance(
-  #     signature=self.signature,
-  #     instance_id=self.instance_id
-  #   )
-  #   return curr_pipeline, curr_instance, ""
-  #
-  # def stop_acquisition(self, sess: Session):
-  #   pipeline, instance, error = self.__get_pipeline_and_instance(sess)
-  #   if error != "" and error is not None:
-  #     print(f'Error: {error} for {self.job_id} {self.pipeline} {self.instance_id}')
-  #     return False, error
-  #   instance.update_instance_config({"FORCE_TERMINATE_COLLECT": True})
-  #   pipeline.deploy()
-  #   return True, "Successfully stopped acquisition for job"
-  #
-  # def stop_label(self, sess: Session):
-  #   pipeline, instance, error = self.__get_pipeline_and_instance(sess)
-  #   if error != "" and error is not None:
-  #     print(f'Error: {error} for {self.job_id} {self.pipeline} {self.instance_id}')
-  #     return
+  def get_status(self):
+    return {
+      'crop': {
+        'speed': self.crop_status['speed'],
+        'history': self.crop_status['increment_history'],
+        'duration': self.crop_status['lastDuration'],
+      },
+      'counts': self.crop_status['total_stats'],
+      'job': self.to_msg(),
+      'status': self.job_status
+    }
+
+  def __get_pipeline_and_instance(self):
+    active_pipelines = self.session.get_active_pipelines(node_id=self.node_id)
+    if active_pipelines is None:
+      return None, None, f"Node_ID {self.node_id} not found"
+    curr_pipeline = self.session.attach_to_pipeline(node_id=self.node_id, name=self.pipeline)
+    if curr_pipeline is None:
+      return None, None, f"Pipeline {self.pipeline} not found"
+    curr_instance = curr_pipeline.attach_to_plugin_instance(
+      signature=self.signature,
+      instance_id=self.instance_id
+    )
+    return curr_pipeline, curr_instance, ""
+
+  def send_instance_command(self, **kwargs):
+    pipeline, instance, error = self.__get_pipeline_and_instance()
+    if error != "":
+      return False, error
+    command_kwargs = {
+      k.upper(): v
+      for k, v in kwargs.items()
+    }
+    instance.send_instance_command(command_kwargs)
+    return True, "Command sent successfully"
+
+  def stop_acquisition(self):
+    pipeline, instance, error = self.__get_pipeline_and_instance()
+    if error != "" and error is not None:
+      self.session.P(f'Error: {error} for {self.job_id} {self.pipeline} {self.instance_id}')
+      return False, error
+    instance.update_instance_config({"FORCE_TERMINATE_COLLECT": True})
+    pipeline.deploy()
+    return True, "Successfully stopped acquisition for job"
+
+
 # endclass Job
 
 
