@@ -16,6 +16,14 @@
                 "SEND_TO": "NOTIF_CHANNEL"
             }
         },
+        "LOCAL_PARAMS": {
+            "HOST": "localhost",
+            "PASS": "",
+            "PORT": 1883,
+            "USER": "",
+            "QOS": 0,
+            "SECURED": 0
+        },
         "PARAMS": {
             "CONFIG_CHANNEL": {
                 "TOPIC": "naeural/{}/config"
