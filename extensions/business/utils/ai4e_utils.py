@@ -1,4 +1,5 @@
 from PyE2 import Session
+from datetime import datetime
 
 
 def job_data_to_id(node_id, pipeline, signature, instance):
@@ -70,21 +71,82 @@ class Job:
     self.rewards = {}
     self.dataset = {}
     self.creation_date = None
+    self.creation_date_str = None
     self.job_status = None
+    self.final_ds_status = None
 
     self.data = {}
     self.crop_status = {
       'total_stats': {},
       'increment_history': [],
       'speed': 0,
-      'lastDuration': 0
+      'last_duration': 0
     }
-
+    self.label_status = {
+      'total_files_voted': 0,
+      'total_files_decided': 0,
+      'voted_history': [],
+      'decided_history': [],
+      'decided_stats': {}
+    }
     return
 
-  def maybe_update_data(self, data):
+  def get_persistence_data(self):
+    return {
+      'job_id': self.job_id,
+      'node_id': self.node_id,
+      'pipeline': self.pipeline,
+      'signature': self.signature,
+      'instance_id': self.instance_id,
+
+      'objective_name': self.objective_name,
+      'description': self.description,
+      'data_sources': self.data_sources,
+      'target': self.target,
+      'classes': self.classes,
+      'rewards': self.rewards,
+      'dataset': self.dataset,
+      'creation_date': self.creation_date,
+      'creation_date_str': self.creation_date_str,
+      'job_status': self.job_status,
+      'final_ds_status': self.final_ds_status,
+
+      'crop_status': self.crop_status,
+      'label_status': self.label_status
+    }
+
+  def load_persistence_data(self, data):
+    self.job_id = data.get('job_id', self.job_id)
+    self.node_id = data.get('node_id', self.node_id)
+    self.pipeline = data.get('pipeline', self.pipeline)
+    self.signature = data.get('signature', self.signature)
+    self.instance_id = data.get('instance_id', self.instance_id)
+
+    self.objective_name = data.get('objective_name', self.objective_name)
+    self.description = data.get('description', self.description)
+    self.data_sources = data.get('data_sources', self.data_sources)
+    self.target = data.get('target', self.target)
+    self.classes = data.get('classes', self.classes)
+    self.rewards = data.get('rewards', self.rewards)
+    self.dataset = data.get('dataset', self.dataset)
+    self.creation_date = data.get('creation_date', self.creation_date)
+    self.creation_date_str = data.get('creation_date_str', self.creation_date_str)
+    self.job_status = data.get('job_status', self.job_status)
+    self.final_ds_status = data.get('final_ds_status', self.final_ds_status)
+
+    self.crop_status = data.get('crop_status', self.crop_status)
+    self.label_status = data.get('label_status', self.label_status)
+    return
+
+  def maybe_update_data(self, data: dict, pipeline: str, signature: str):
+    if data.get('IS_FINAL_DATASET_STATUS', False):
+      self.final_ds_status = data.get('UPLOADED', self.final_ds_status)
+      return
     if not data.get('IS_STATUS', True):
       return
+    self.pipeline = pipeline
+    self.signature = signature
+
     self.data = data
     self.objective_name = data.get('OBJECTIVE_NAME', self.objective_name)
     self.description = data.get('DESCRIPTION', self.description)
@@ -92,7 +154,10 @@ class Job:
     self.target = data.get('TARGET', self.target)
     self.rewards = data.get('REWARDS', self.rewards)
     self.dataset = data.get('DATASET', self.dataset)
-    self.creation_date = data.get('CREATION_DATE', self.creation_date)
+    cd_str = data.get('CREATION_DATE', self.creation_date_str)
+    self.creation_date_str = cd_str
+    cd_datetime = datetime.strptime(cd_str[:-6], '%Y%m%d%H%M%S') if cd_str is not None else None
+    self.creation_date = int(cd_datetime.timestamp()) if cd_datetime is not None else None
     self.classes = data.get('CLASSES', self.classes)
     self.job_status = data.get('JOB_STATUS', self.job_status)
 
@@ -101,7 +166,15 @@ class Job:
     if last_increment is not None:
       self.crop_status['increment_history'].append(last_increment)
     self.crop_status['speed'] = data.get('CROP_SPEED', self.crop_status['speed'])
-    self.crop_status['lastDuration'] = data.get('DURATION')
+    self.crop_status['last_duration'] = data.get('DURATION')
+
+    if 'TOTAL_FILES_VOTED' in data.keys():
+      self.label_status['total_files_voted'] = data.get('TOTAL_FILES_VOTED', self.label_status['total_files_voted'])
+      self.label_status['total_files_decided'] = data.get('TOTAL_FILES_DECIDED', self.label_status['total_files_decided'])
+      self.label_status['decided_stats'] = data.get('DECIDED_STATS', self.label_status['decided_stats'])
+      self.label_status['voted_history'].append(self.label_status['total_files_voted'])
+      self.label_status['decided_history'].append(self.label_status['total_files_decided'])
+    # endif status for labels
 
     return
 
@@ -117,25 +190,42 @@ class Job:
       'classes': classes_dict_to_msg(self.classes),
       'rewards': self.rewards,
       'dataset': self.dataset,
-      'creationDate': self.creation_date
+      'creationDate': self.creation_date,
+      'creationDateStr': self.creation_date_str
     }
+
+  def get_job_status(self):
+    if self.final_ds_status is not None:
+      return "Ready for training"
+    return self.job_status
 
   def to_msg(self):
     return {
       'id': self.job_id,
-      'config': self.get_details()
+      'config': self.get_details(),
+      'status': self.get_job_status(),
+      'creationDate': self.creation_date,
     }
 
   def get_status(self):
     return {
+      'status': self.get_job_status(),
+      'counts': self.crop_status['total_stats'],
+      'job': self.to_msg(),
       'crop': {
         'speed': self.crop_status['speed'],
         'history': self.crop_status['increment_history'],
-        'duration': self.crop_status['lastDuration'],
+        'duration': self.crop_status['last_duration'],
       },
-      'counts': self.crop_status['total_stats'],
-      'job': self.to_msg(),
-      'status': self.job_status
+    }
+
+  def get_labeling_status(self):
+    return {
+      'history': [
+        self.label_status['voted_history'],
+        self.label_status['decided_history']
+      ],
+      'stats': self.label_status['decided_stats']
     }
 
   def __get_pipeline_and_instance(self):
@@ -171,12 +261,31 @@ class Job:
     pipeline.deploy()
     return True, "Successfully stopped acquisition for job"
 
+  def publish_job(self):
+    return self.send_instance_command(start_voting=True)
+
+  def send_vote(self, body):
+    datapoint = {
+      'FILENAME': body.get('filename'),
+      'LABEL': body.get('label')
+    }
+    return self.send_instance_command(datapoint=datapoint, worker_id='default')
+
+  def stop_labeling(self):
+    return self.send_instance_command(finish_labeling=True)
+
+  def publish_labels(self):
+    return self.send_instance_command(publish=True)
 
 # endclass Job
 
 
 class AI4E_CONSTANTS:
-  RELEVANT_PLUGIN_SIGNATURES = ["ai4e_crop_data",]
+  RELEVANT_PLUGIN_SIGNATURES = [
+    "ai4e_crop_data", "ai4e_label_data",
+    "second_stage_training_process", "general_training_process",
+    "minio_upload_dataset"
+  ]
   AVAILABLE_DATA_SOURCES = ['VideoStream', 'VideoFile']
   AVAILABLE_ARCHITECTURES = {
     'BASIC_CLASSIFIER': "Small architecture. The training will be faster, but the accuracy may be lower.",
