@@ -48,9 +48,11 @@ class NaeuralAssistantPlugin(BasePlugin):
   def on_payload(self, sess: Session, node_id: str, pipeline: str, signature: str, instance: str, payload: Payload):
     if signature.lower() not in RELEVANT_PLUGIN_SIGNATURES:
       return
+    self.P(f"Received payload from {signature} instance: {instance}:\n{payload.data}")
     data = payload.data
-    request_id = data.get('request_id', None)
-    self.requests_responses[request_id] = data
+    request_id = data.get('REQUEST_ID', None)
+    text_responses = data.get('TEXT_RESPONSES', [])
+    self.requests_responses[request_id] = text_responses
     return
 
   def get_llm_agent_instance(self, node_id):
@@ -67,6 +69,9 @@ class NaeuralAssistantPlugin(BasePlugin):
     """
     lst_active = self.session.get_active_pipelines(node_id)
     for pipeline_id, pipeline in lst_active.items():
+      self.P(f"Pipeline id: {pipeline_id}")
+      if pipeline_id != 'llm-web':
+        continue
       plugin_instances = pipeline.lst_plugin_instances
       for instance in plugin_instances:
         if instance.signature.lower() in RELEVANT_PLUGIN_SIGNATURES:

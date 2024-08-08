@@ -29,12 +29,6 @@ class CodeAssist01Plugin(BasePlugin):
     super(CodeAssist01Plugin, self).__init__( **kwargs)
     return
 
-
-  def startup(self):
-    super().startup()
-    return
-  
-
   def _process(self):
     # we always receive input from the upstream due to the fact that _process
     # is called only when we have input based on ALLOW_EMPTY_INPUTS=False
@@ -46,10 +40,12 @@ class CodeAssist01Plugin(BasePlugin):
     inputs = self.dataapi_inputs()
     data = self.dataapi_struct_data()
     inputs_metadata = self.dataapi_input_metadata()
-    inferences = self.dataapi_struct_data_inferences()    
+    inferences = self.dataapi_struct_data_inferences()
+    text_responses = [inf.get('text') for inf in inferences]
     payload = self._create_payload(
       data=data,
       inferences=inferences,
       request_id=data.get('request_id', None),
+      text_responses=text_responses
     )
     return payload
