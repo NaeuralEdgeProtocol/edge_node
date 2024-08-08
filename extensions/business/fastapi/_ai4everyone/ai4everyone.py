@@ -12,6 +12,7 @@ _CONFIG = {
   'NGROK_EDGE_LABEL': None,
 
   'SAVE_PERIOD': 60,
+  'REQUEST_TIMEOUT': 10,
 
   'PORT': 5000,
   'ASSETS': '_ai4everyone',
@@ -91,8 +92,11 @@ class AI4EveryonePlugin(BasePlugin):
       status, msg, request_id = self.send_request(job, **request_kwargs)
       if not status:
         return False, {"error": f"Failed to send request: {msg}"}
-      while request_id not in self.requests_responses:
+      request_ts = self.time()
+      while self.time() - request_ts <= self.cfg_request_timeout and request_id not in self.requests_responses:
         self.sleep(0.1)
+      if request_id not in self.requests_responses:
+        return False, {"error": "Request timed out"}
       response = self.requests_responses.pop(request_id)
       return True, response.data
 
@@ -131,7 +135,7 @@ class AI4EveryonePlugin(BasePlugin):
         new_data = {**new_data, **cache_kwargs}
         self.cache_request_data(job.job_id, data_id=sample_filename, data=new_data)
       # endif img is not None
-      res = {"name": sample_filename}
+      res = {"name": sample_filename, "content": img}
       if handle_votes:
         res['classes'] = job.classes
       # endif handle votes
