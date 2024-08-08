@@ -23,7 +23,7 @@ _CONFIG = {
 class CodeAssist01Plugin(BasePlugin):
   
   CONFIG = _CONFIG
-  
+
   def __init__(self, **kwargs):
     ver = kwargs.get('version', __VER__)
     super(CodeAssist01Plugin, self).__init__( **kwargs)
@@ -50,5 +50,6 @@ class CodeAssist01Plugin(BasePlugin):
     payload = self._create_payload(
       data=data,
       inferences=inferences,
+      request_id=data.get('request_id', None),
     )
     return payload
