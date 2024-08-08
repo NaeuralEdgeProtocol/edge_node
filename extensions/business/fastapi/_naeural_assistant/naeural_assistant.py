@@ -69,9 +69,6 @@ class NaeuralAssistantPlugin(BasePlugin):
     """
     lst_active = self.session.get_active_pipelines(node_id)
     for pipeline_id, pipeline in lst_active.items():
-      self.P(f"Pipeline id: {pipeline_id}")
-      if pipeline_id != 'llm-web':
-        continue
       plugin_instances = pipeline.lst_plugin_instances
       for instance in plugin_instances:
         if instance.signature.lower() in RELEVANT_PLUGIN_SIGNATURES:
