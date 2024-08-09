@@ -45,38 +45,55 @@ class NaeuralAssistantPlugin(BasePlugin):
     super(NaeuralAssistantPlugin, self).on_init()
     return
 
+  def payload_data_to_response_data(self, data):
+    processed_data = {k.lower(): v for k, v in data.items()}
+    return {
+      'request_id': processed_data.get('request_id', None),
+      'text_responses': processed_data.get('text_responses', []),
+      'inferences': processed_data.get('inferences', []),
+      'node_id': processed_data.get('ee_id', None),
+      'node_address': processed_data.get('ee_sender', None),
+      'web_agent_address': self.node_addr,
+      'web_agent_id': self.node_id,
+      'llm_plugin_signature': processed_data.get('signature'),
+      'ai_engine': processed_data.get('_p_graph_type'),
+      'model_name': processed_data.get('model_name'),
+    }
+
   def on_payload(self, sess: Session, node_id: str, pipeline: str, signature: str, instance: str, payload: Payload):
     if signature.lower() not in RELEVANT_PLUGIN_SIGNATURES:
       return
-    self.P(f"Received payload from {signature} instance: {instance}:\n{payload.data}")
     data = payload.data
     request_id = data.get('REQUEST_ID', None)
-    text_responses = data.get('TEXT_RESPONSES', [])
-    self.requests_responses[request_id] = text_responses
+    self.requests_responses[request_id] = self.payload_data_to_response_data(data)
     return
 
-  def get_llm_agent_instance(self, node_id):
+  def get_llm_agent_pipelines(self, node_id):
     """
-    Here, given a node, a pipeline containing an LLM agent is returned.
-    In case there is no such pipeline, None is returned.
+    Here, given a node, a list of all the pipelines containing an LLM agent is returned.
     Parameters
     ----------
     node_id : str - the node id
 
     Returns
     -------
-    pipeline : Pipeline - the pipeline containing the LLM agent
+    pipelines : list[Pipeline] - a list of pipelines containing an LLM agent
     """
+    res = []
     lst_active = self.session.get_active_pipelines(node_id)
     for pipeline_id, pipeline in lst_active.items():
       plugin_instances = pipeline.lst_plugin_instances
+      found = False
       for instance in plugin_instances:
         if instance.signature.lower() in RELEVANT_PLUGIN_SIGNATURES:
-          return pipeline
+          found = True
         # endif relevant plugin
       # endfor instance
+      if found:
+        res.append(pipeline)
+      # endif found
     # endfor pipeline
-    return None
+    return res
 
   def get_allowed_agents(self):
     """
@@ -84,9 +101,9 @@ class NaeuralAssistantPlugin(BasePlugin):
     """
     lst_allowed = self.session.get_allowed_nodes()
     self.P(f"Allowed nodes: {lst_allowed}")
-    lst_online_agents = [self.get_llm_agent_instance(x) for x in lst_allowed]
-    lst_online_agents = [x for x in lst_online_agents if x is not None]
-    self.P(f"Online agents: {lst_online_agents}")
+    lst_online_agents = [self.get_llm_agent_pipelines(x) for x in lst_allowed]
+    lst_online_agents = sum(lst_online_agents, [])
+    self.P(f"Online agents: {[(x.node_addr, x.name) for x in lst_online_agents]}")
     return lst_online_agents
 
   def send_request(self, request_id, pipeline, body):
@@ -136,7 +153,11 @@ class NaeuralAssistantPlugin(BasePlugin):
 
   @BasePlugin.endpoint(method='post')
   def request(self, body):
-    return self.process_request(body)
+    success, response_dict = self.process_request(body)
+    return {
+      'success': success,
+      **response_dict
+    }
 
   def process(self):
     super(NaeuralAssistantPlugin, self).process()
