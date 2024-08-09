@@ -1,4 +1,4 @@
-  - [ ]: Fast api
+  - [ ] Fast api
     - [ ] code-review & refactor base_web_app_plugin.py
     - [ ] code-review & refactor fast_api_web_app.py
     - [ ] clarify requester-worker-payload-identity relationship (in plugin you receive on a queue the requests then you put the responses on another queue - what if you have multiple requests in paralel)
