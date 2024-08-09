@@ -31,9 +31,12 @@ class CustomDataLoaderFactory(BaseDataLoaderFactory):
     super(CustomDataLoaderFactory, self).__init__(**kwargs)
     return
 
+  def label_to_idx(self, label):
+    return self._classes.index(label)
+
   def _lst_on_load_preprocess(self) -> List[Tuple[Any, dict]]:
     return [
-      (PreprocessResizeWithPad, dict(h=self._input_size[0], w=self._input_size[1], normalize=False)),
+      (PreprocessResizeWithPad, dict(h=self._input_size[0], w=self._input_size[1], normalize=True)),
     ]
 
   def _lst_right_before_forward_preprocess(self) -> List[Tuple[Any, dict]]:
@@ -62,7 +65,14 @@ class CustomDataLoaderFactory(BaseDataLoaderFactory):
 
   def _load_x_and_y(self, observations, labels, idx) -> Tuple[Union[List, np.ndarray], Union[List, np.ndarray]]:
     x = read_image(observations[idx])
-    y_idx = int(labels[idx])
+    label = labels[idx]
+    if isinstance(label, str):
+      if label.isnumeric():
+        y_idx = int(label)
+      else:
+        y_idx = self.label_to_idx(label)
+    else:
+      y_idx = int(label)
     y = np.zeros(len(self._classes), dtype=np.float32)
     y[y_idx] = 1.0
     return x, y

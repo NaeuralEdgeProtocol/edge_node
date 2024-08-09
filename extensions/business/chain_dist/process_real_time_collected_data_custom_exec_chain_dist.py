@@ -97,6 +97,7 @@ class ProcessRealTimeCollectedDataCustomExecChainDistPlugin(ProcessRealTimeColle
         "INSTANCE_ID": self.cfg_node_default_instance_id,
         "CODE": self.cfg_custom_code_remote_node,
         "RESULT_KEY": "DATA",
+        "PROCESS_DELAY": 0.01,
         **self.cfg_node_plugin_config
       }]
     }
