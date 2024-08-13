@@ -31,6 +31,7 @@ class AI4EveryonePlugin(BasePlugin):
     self.requests_responses = {}
     self.last_persistence_save = self.time()
     self.request_cache = {}
+    # !!!This approach, although works, will not be allowed in the future because it's not safe
     self.session = Session(
       name=f'{self.str_unique_identification}',
       config=self.global_shmem['config_communication']['PARAMS'],

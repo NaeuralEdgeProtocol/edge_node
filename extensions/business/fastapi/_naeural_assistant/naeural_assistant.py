@@ -32,6 +32,7 @@ class NaeuralAssistantPlugin(BasePlugin):
   def __init__(self, **kwargs):
     super(NaeuralAssistantPlugin, self).__init__(**kwargs)
     self.requests_responses = {}
+    # !!!This approach, although works, will not be allowed in the future because it's not safe
     self.session = Session(
       name=f'{self.str_unique_identification}',
       config=self.global_shmem['config_communication']['PARAMS'],
@@ -158,8 +159,4 @@ class NaeuralAssistantPlugin(BasePlugin):
       'success': success,
       **response_dict
     }
-
-  def process(self):
-    super(NaeuralAssistantPlugin, self).process()
-    return
 
