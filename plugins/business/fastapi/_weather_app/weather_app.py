@@ -11,7 +11,7 @@ _CONFIG = {
 
   'PORT' : None,
 
-  'ASSETS' : '_weather_app',
+  'ASSETS' : 'plugins/business/fastapi/_weather_app',
   'JINJA_ARGS': {
     'html_files' : [
       {

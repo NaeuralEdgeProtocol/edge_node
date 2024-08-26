@@ -9,7 +9,7 @@ _CONFIG = {
   'NGROK_EDGE_LABEL' : None,
 
   'PORT' : None,
-  'ASSETS' : 'epoch_manager',
+  'ASSETS' : 'plugins/business/fastapi/epoch_manager',
   'VALIDATION_RULES': {
     **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
   },
