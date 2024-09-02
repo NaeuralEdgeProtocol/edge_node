@@ -27,7 +27,6 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
   def on_init(self, **kwargs):
     super(NaeuralReleaseAppPlugin, self).on_init(**kwargs)
     self._last_day_regenerated = (self.datetime.now() - self.timedelta(days=1)).day
-    self.P(f"Initialized the last day regenerated as {self._last_day_regenerated}. Current day is {self.datetime.now().day}")
     return
 
   def _regenerate_index_html(self):
@@ -164,8 +163,8 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
 
     # Write the HTML content to a file
     self.P(self.get_web_server_path())
-    with open(self.os_path.join(self.get_web_server_path(), 'assets/releases.html'), 'w') as file:
-        file.write(html_content)
+    with open(self.os_path.join(self.get_web_server_path(), 'assets/releases.html'), 'w') as fd:
+        fd.write(html_content)
 
     self.P("releases.html has been generated successfully.")
 
@@ -177,7 +176,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     ago.
     """
     current_day = self.datetime.now().day
-    if current_day - self._last_day_regenerated >= 1:
+    if current_day != self._last_day_regenerated:
       self._regenerate_index_html()
       self._last_day_regenerated = current_day
     
