@@ -15,6 +15,8 @@ _CONFIG = {
       }
     ]
   },
+  'NR_PREVIOUS_RELEASES': 9,
+  "RELEASES_REPO_URL": "https://api.github.com/repos/NaeuralEdgeProtocol/edge_node_launcher",
   'VALIDATION_RULES': {
     **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
   },
@@ -29,15 +31,45 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     self._last_day_regenerated = (self.datetime.now() - self.timedelta(days=1)).day
     return
 
+  # Fetch the latest 10 releases
+  def get_latest_releases(self):
+      releases_url = f"{self.cfg_releases_repo_url}/releases"
+      response = self.requests.get(releases_url, params={"per_page": self.cfg_nr_previous_releases + 1})
+      releases = response.json()
+      return releases
+
+  # Fetch the last 10 tags
+  def get_latest_tags(self):
+      tags_url = f"{self.cfg_releases_repo_url}/tags"
+      response = self.requests.get(tags_url, params={"per_page": self.cfg_nr_previous_releases + 1})
+      tags = response.json()
+      return tags
+
+  def get_commit_info(self, commit_sha):
+      commit_url = f"{self.cfg_releases_repo_url}/commits/{commit_sha}"
+      response = self.requests.get(commit_url)
+      commit_info = response.json()
+      return commit_info
+
+  def compile_release_info(self, releases, tags):
+      for release in releases:
+          release_tag = release['tag_name'].strip("'")
+          tag = next((tag for tag in tags if tag['name'].strip("'") == release_tag), None)
+
+          if tag:
+              commit_info = self.get_commit_info(tag['commit']['sha'])
+              release['commit_info'] = commit_info
+          else:
+              release['commit_info'] = None
+
+      return releases
+
   def _regenerate_index_html(self):
     """
     Regenerate the index.html file.
     """
 
-    # Fetch releases from the GitHub API
-    url = "https://api.github.com/repos/NaeuralEdgeProtocol/edge_node_launcher/releases"
-    response = self.requests.get(url)
-    releases = response.json()
+    releases = self.compile_release_info(self.get_latest_releases(), self.get_latest_tags())
 
     # Sort releases by published date (descending order)
     releases.sort(key=lambda x: x['published_at'], reverse=True)
@@ -88,6 +120,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     latest_release_section = f"""
         <div class="latest-release" id="latest-release">
             <h2>Latest Release: {latest_release['tag_name']}</h2>
+            <pre style="">{latest_release['commit_info']['commit']['message']}</pre>
             <p>Date Published: {self.datetime.strptime(latest_release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}</p>
             <ul>
     """
@@ -129,7 +162,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     for release in releases[1:]:
         release_row = f"""
                     <tr>
-                        <td>{release['tag_name']}</td>
+                        <td>{release['tag_name']}<br>{release['commit_info']['commit']['message']}</td>
                         <td>{self.datetime.strptime(release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}</td>
                         <td>
     """
