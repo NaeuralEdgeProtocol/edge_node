@@ -1,5 +1,6 @@
-from core.business.base.web_app import FastApiWebAppPlugin as BasePlugin
-from PyE2 import Session, Payload
+from PyE2 import Payload, Session
+
+from core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
 
 __VER__ = '0.1.0.0'
 

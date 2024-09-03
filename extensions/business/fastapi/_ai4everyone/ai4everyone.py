@@ -1,6 +1,7 @@
-from core.business.base.web_app import FastApiWebAppPlugin as BasePlugin
-from PyE2 import Session, Payload
-from extensions.business.utils.ai4e_utils import job_data_to_id, Job, get_job_config, AI4E_CONSTANTS
+from PyE2 import Payload, Session
+
+from core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
+from extensions.business.utils.ai4e_utils import AI4E_CONSTANTS, Job, get_job_config, job_data_to_id
 
 __VER__ = '0.1.0.0'
 

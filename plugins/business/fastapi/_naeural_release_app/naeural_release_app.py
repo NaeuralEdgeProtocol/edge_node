@@ -1,4 +1,4 @@
-from core.business.base.web_app import FastApiWebAppPlugin
+from core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin
 
 __VER__ = '0.1.0.0'
 
