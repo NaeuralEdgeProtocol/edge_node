@@ -139,6 +139,8 @@
     "QOS" : 2,
     "CONN_MAX_RETRY_ITERS" : 5,
     "LOG_SEND_COMMANDS" : true,
+
+    "SAVE_RECEIVED_COMMANDS" : true,
     
     "DEBUG_COMM_ERRORS" : false,
 
