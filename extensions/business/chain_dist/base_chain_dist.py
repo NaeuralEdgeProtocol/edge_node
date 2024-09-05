@@ -322,7 +322,7 @@ class BaseChainDistPlugin(BaseClass, _ChainDistSplitMixin, _ChainDistMergeMixin)
     instance_config = config_plugin[self.ct.BIZ_PLUGIN_DATA.INSTANCES][0]
 
     job.pipeline = self._session.create_pipeline(
-      node_id=node_id,
+      node=node,
       name=pipeline_name,
       data_source=self.cfg_node_pipeline_config['stream_type'],
       config=self.cfg_node_pipeline_config,
