@@ -5,7 +5,7 @@ __VER__ = '0.1.0.0'
 _CONFIG = {
   **FastApiWebAppPlugin.CONFIG,
 
-  'ASSETS' : 'plugins/business/fastapi/_naeural_release_app',
+  'ASSETS' : 'plugins/business/fastapi/launcher_download',
   'JINJA_ARGS': {
     'html_files' : [
       {
