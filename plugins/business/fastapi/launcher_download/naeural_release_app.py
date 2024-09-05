@@ -107,10 +107,13 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
             }
         </style>
     </head>
+    """ 
+    html_content += f"""
     <body>
         <div class="jumbo">
             <h1>Edge Node Launcher Releases</h1>
             <p>Download the latest version of Edge Node Launcher to stay up-to-date with new features and improvements.</p>
+            <p>This page is proudly served by Edge Node <code>{self.ee_id}:{self.ee_addr}</code>.</p>
             <button onclick="document.getElementById('latest-release').scrollIntoView();">Download Edge Node Launcher</button>
         </div>
     """
@@ -119,8 +122,11 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     latest_release = releases[0]
     latest_release_section = f"""
         <div class="latest-release" id="latest-release">
-            <h2>Latest Release: {latest_release['tag_name']}</h2>
-            <pre style="">{latest_release['commit_info']['commit']['message']}</pre>
+            <h2>Latest Release: {latest_release['tag_name'].replace("'","")}</h2>
+            <h3>Details:</h3>
+            <div style="margin-left: 2em;">            
+              <pre style="">{latest_release['commit_info']['commit']['message']}</pre>
+            </div>
             <p>Date Published: {self.datetime.strptime(latest_release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}</p>
             <ul>
     """
@@ -149,7 +155,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
             <table>
                 <thead>
                     <tr>
-                        <th>Release Tag</th>
+                        <th>Release Info</th>
                         <th>Date</th>
                         <th>Linux</th>
                         <th>Windows</th>
@@ -162,7 +168,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     for release in releases[1:]:
         release_row = f"""
                     <tr>
-                        <td>{release['tag_name']}<br>{release['commit_info']['commit']['message']}</td>
+                        <td>{release['tag_name'].replace("'","")}<br>{release['commit_info']['commit']['message']}</td>
                         <td>{self.datetime.strptime(release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}</td>
                         <td>
     """
