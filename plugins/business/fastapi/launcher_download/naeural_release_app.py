@@ -33,36 +33,40 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
 
   # Fetch the latest 10 releases
   def get_latest_releases(self):
-      releases_url = f"{self.cfg_releases_repo_url}/releases"
-      response = self.requests.get(releases_url, params={"per_page": self.cfg_nr_previous_releases + 1})
-      releases = response.json()
-      return releases
+    releases_url = f"{self.cfg_releases_repo_url}/releases"
+    response = self.requests.get(releases_url, params={"per_page": self.cfg_nr_previous_releases + 1})
+    releases = response.json()
+    return releases
+
 
   # Fetch the last 10 tags
   def get_latest_tags(self):
-      tags_url = f"{self.cfg_releases_repo_url}/tags"
-      response = self.requests.get(tags_url, params={"per_page": self.cfg_nr_previous_releases + 1})
-      tags = response.json()
-      return tags
+    tags_url = f"{self.cfg_releases_repo_url}/tags"
+    response = self.requests.get(tags_url, params={"per_page": self.cfg_nr_previous_releases + 1})
+    tags = response.json()
+    return tags
+
 
   def get_commit_info(self, commit_sha):
-      commit_url = f"{self.cfg_releases_repo_url}/commits/{commit_sha}"
-      response = self.requests.get(commit_url)
-      commit_info = response.json()
-      return commit_info
+    commit_url = f"{self.cfg_releases_repo_url}/commits/{commit_sha}"
+    response = self.requests.get(commit_url)
+    commit_info = response.json()
+    return commit_info
+
 
   def compile_release_info(self, releases, tags):
-      for release in releases:
-          release_tag = release['tag_name'].strip("'")
-          tag = next((tag for tag in tags if tag['name'].strip("'") == release_tag), None)
+    for release in releases:
+      release_tag = release['tag_name'].strip("'")
+      tag = next((tag for tag in tags if tag['name'].strip("'") == release_tag), None)
 
-          if tag:
-              commit_info = self.get_commit_info(tag['commit']['sha'])
-              release['commit_info'] = commit_info
-          else:
-              release['commit_info'] = None
+      if tag:
+        commit_info = self.get_commit_info(tag['commit']['sha'])
+        release['commit_info'] = commit_info
+      else:
+        release['commit_info'] = None
+      # end if
+    return releases
 
-      return releases
 
   def _regenerate_index_html(self):
     """
@@ -133,12 +137,12 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
 
     assets = latest_release['assets']
     for asset in assets:
-        if self.re.search(r'LINUX_Ubuntu-20\.04\.zip', asset['name']):
-            latest_release_section += f'<li>Linux Ubuntu 20.04: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
-        if self.re.search(r'LINUX_Ubuntu-22\.04\.zip', asset['name']):
-            latest_release_section += f'<li>Linux Ubuntu 22.04: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
-        if self.re.search(r'WIN32\.zip', asset['name']):
-            latest_release_section += f'<li>Windows: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
+      if self.re.search(r'LINUX_Ubuntu-20\.04\.zip', asset['name']):
+        latest_release_section += f'<li>Linux Ubuntu 20.04: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
+      if self.re.search(r'LINUX_Ubuntu-22\.04\.zip', asset['name']):
+        latest_release_section += f'<li>Linux Ubuntu 22.04: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
+      if self.re.search(r'WIN32\.zip', asset['name']):
+        latest_release_section += f'<li>Windows: {asset["size"] / (1024 * 1024):.2f} MB - <a href="{asset["browser_download_url"]}">Download</a></li>'
 
     latest_release_section += f"""
                 <li>Source Code: <a href="{latest_release['tarball_url']}">.tar</a>, <a href="{latest_release['zipball_url']}">.zip</a></li>
@@ -166,29 +170,39 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     """
 
     for release in releases[1:]:
-        release_row = f"""
-                    <tr>
-                        <td>{release['tag_name'].replace("'","")}<br>{release['commit_info']['commit']['message']}</td>
-                        <td>{self.datetime.strptime(release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}</td>
-                        <td>
-    """
-        linux_20_04 = next((asset for asset in release['assets'] if self.re.search(r'LINUX_Ubuntu-20\.04\.zip', asset['name'])), None)
-        linux_22_04 = next((asset for asset in release['assets'] if self.re.search(r'LINUX_Ubuntu-22\.04\.zip', asset['name'])), None)
-        windows = next((asset for asset in release['assets'] if self.re.search(r'WIN32\.zip', asset['name'])), None)
+      release_row = f"""
+                  <tr>
+                      <td>
+                        {release['tag_name'].replace("'","")}
+                        <div style="margin-left: 1em;">            
+                          <pre style="">{release['commit_info']['commit']['message']}</pre>
+                        </div>
+                      </td>
+                      
+                      <td>
+                        {self.datetime.strptime(release['published_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%B %d, %Y')}
+                      </td>
+                      
+                      <td>
+      """
+      linux_20_04 = next((asset for asset in release['assets'] if self.re.search(r'LINUX_Ubuntu-20\.04\.zip', asset['name'])), None)
+      linux_22_04 = next((asset for asset in release['assets'] if self.re.search(r'LINUX_Ubuntu-22\.04\.zip', asset['name'])), None)
+      windows = next((asset for asset in release['assets'] if self.re.search(r'WIN32\.zip', asset['name'])), None)
 
-        if linux_20_04:
-            release_row += f'Ubuntu 20.04: {linux_20_04["size"] / (1024 * 1024):.2f} MB - <a href="{linux_20_04["browser_download_url"]}">Download</a><br>'
-        if linux_22_04:
-            release_row += f'Ubuntu 22.04: {linux_22_04["size"] / (1024 * 1024):.2f} MB - <a href="{linux_22_04["browser_download_url"]}">Download</a>'
+      if linux_20_04:
+        release_row += f'Ubuntu 20.04: {linux_20_04["size"] / (1024 * 1024):.2f} MB - <a href="{linux_20_04["browser_download_url"]}">Download</a><br>'
+      if linux_22_04:
+        release_row += f'Ubuntu 22.04: {linux_22_04["size"] / (1024 * 1024):.2f} MB - <a href="{linux_22_04["browser_download_url"]}">Download</a>'
 
-        release_row += '</td><td>'
+      release_row += '</td><td>'
 
-        if windows:
-            release_row += f'{windows["size"] / (1024 * 1024):.2f} MB - <a href="{windows["browser_download_url"]}">Download</a>'
+      if windows:
+        release_row += f'{windows["size"] / (1024 * 1024):.2f} MB - <a href="{windows["browser_download_url"]}">Download</a>'
 
-        release_row += f'</td><td><a href="{release["tarball_url"]}">.tar</a>, <a href="{release["zipball_url"]}">.zip</a></td></tr>'
+      release_row += f'</td><td><a href="{release["tarball_url"]}">.tar</a>, <a href="{release["zipball_url"]}">.zip</a></td></tr>'
 
-        previous_releases_section += release_row
+      previous_releases_section += release_row
+    # end for all releases
 
     previous_releases_section += """
                 </tbody>
@@ -203,11 +217,11 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     # Write the HTML content to a file
     self.P(self.get_web_server_path())
     with open(self.os_path.join(self.get_web_server_path(), 'assets/releases.html'), 'w') as fd:
-        fd.write(html_content)
+      fd.write(html_content)
 
     self.P("releases.html has been generated successfully.")
-
     return
+
 
   def _maybe_regenerate_index_html(self):
     """
@@ -218,8 +232,9 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     if current_day != self._last_day_regenerated:
       self._regenerate_index_html()
       self._last_day_regenerated = current_day
-    
+    # end if
     return
+
 
   def process(self):
     self._maybe_regenerate_index_html()
