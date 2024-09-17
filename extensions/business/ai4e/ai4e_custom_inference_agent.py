@@ -83,6 +83,7 @@ class Ai4eCustomInferenceAgentPlugin(BasePlugin):
         "OBJECTIVE_NAME": self.cfg_objective_name,
       },
       'MODEL_NAME': self.cfg_objective_name,
+      'MODEL_DESCRIPTION': self.cfg_description,
     }
     self.lock_resource('CUSTOM_MODELS_DATA')
     if 'CUSTOM_MODELS_DATA' not in self.plugins_shmem:
@@ -108,6 +109,7 @@ class Ai4eCustomInferenceAgentPlugin(BasePlugin):
       'MODEL_ID': self.model_key,
       'MODEL_NAME': self.cfg_objective_name,
       'MODEL_DESCRIPTION': self.cfg_description,
+      'TIMESTAMP': self.time(),
     }
     self.register_response(request_id, response)
     return

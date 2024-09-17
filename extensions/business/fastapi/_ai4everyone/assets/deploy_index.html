@@ -49,6 +49,10 @@
 <!--        <option value="model3">Model 3</option>-->
     </select><br><br>
 
+    <!-- Model description box -->
+    <label for="modelDescription">Model Description:</label><br>
+    <textarea id="modelDescription" rows="4" cols="50" readonly></textarea><br><br>
+
     <!-- Upload area for dragging and dropping files -->
     <div class="upload-area" id="uploadArea">
         <p>Drag & Drop JPEG image here or click to upload</p>
@@ -135,11 +139,14 @@
     // Function to populate modelSelect from the API
     document.addEventListener('DOMContentLoaded', () => {
         const modelSelect = document.getElementById('modelSelect');
+        const modelDescription = document.getElementById('modelDescription');
+        let modelsData = {};
 
         // Fetch the models from the API
         fetch(base_url + '/get_models')
             .then(response => response.json()) // Parse JSON response
             .then(data => {
+                modelsData = data;
                 // Clear any existing options
                 modelSelect.innerHTML = '';
 
@@ -157,11 +164,26 @@
                     option.textContent = model_name; // Use the key as the text for the dropdown
                     modelSelect.appendChild(option);
                 });
+                // Populate the description for the initially selected model (if any)
+                updateModelDescription();
             })
             .catch(error => {
                 console.error('Error fetching models:', error);
                 // Optionally, you can handle the error here, like showing a message to the user
             });
+
+        // Add an event listener for when the model is selected
+        modelSelect.addEventListener('change', updateModelDescription);
+
+        function updateModelDescription() {
+            const selectedModel = modelSelect.value;
+            console.log('Selected model data:', modelsData[selectedModel]);
+            if ('CONFIG' in modelsData[selectedModel] && 'DESCRIPTION' in modelsData[selectedModel]['CONFIG']) {
+                modelDescription.value = modelsData[selectedModel]['CONFIG']['DESCRIPTION'];
+            } else {
+                modelDescription.value = 'No description available for this model.';
+            }
+        }
     });
 
     // Set the model selector if "model_id" URL parameter is present
@@ -200,6 +222,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify(requestData), // TODO: data here is { model_id: string, image: string, base64 jpeg image }
                 success: function (response) {
+                    response.TIMESTAMP = new Date(response.TIMESTAMP * 1000).toLocaleString();
                     // Display the response JSON below the form
                     $('#responseOutput').text(JSON.stringify(response, null, 4));
                 },
