@@ -33,7 +33,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
   def on_init(self, **kwargs):
     super(NaeuralReleaseAppPlugin, self).on_init(**kwargs)
     self._last_day_regenerated = (self.datetime.now() - self.timedelta(days=1)).day
-    self.__last_generation_time = self.time()
+    self.__last_generation_time = 0
     return
 
   # Fetch the latest 10 releases
