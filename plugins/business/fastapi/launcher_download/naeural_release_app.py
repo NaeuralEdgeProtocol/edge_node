@@ -16,8 +16,12 @@ _CONFIG = {
     ]
   },
   'NR_PREVIOUS_RELEASES': 9,
+  
+  'REGENERATION_INTERVAL': 10*60, 
+  
   "RELEASES_REPO_URL": "https://api.github.com/repos/NaeuralEdgeProtocol/edge_node_launcher",
   'VALIDATION_RULES': {
+
     **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
   },
 }
@@ -29,6 +33,7 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
   def on_init(self, **kwargs):
     super(NaeuralReleaseAppPlugin, self).on_init(**kwargs)
     self._last_day_regenerated = (self.datetime.now() - self.timedelta(days=1)).day
+    self.__last_generation_time = 0
     return
 
   # Fetch the latest 10 releases
@@ -229,9 +234,12 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
     ago.
     """
     current_day = self.datetime.now().day
-    if current_day != self._last_day_regenerated:
+    # if current_day != self._last_day_regenerated:
+    if (self.time() - self.__last_generation_time) > self.cfg_regeneration_interval:
+      self.P("Regenerating releases.html ...")
       self._regenerate_index_html()
       self._last_day_regenerated = current_day
+      self.__last_generation_time = self.time()
     # end if
     return
 
