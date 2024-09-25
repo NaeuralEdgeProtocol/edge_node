@@ -29,7 +29,7 @@ _CONFIG = {
   },
 }
 
-
+# TODO: add more code templates to the plugin (have a list of templates from which the user can choose)
 class NaeuralCodeSandboxPlugin(BasePlugin):
   CONFIG = _CONFIG
 
