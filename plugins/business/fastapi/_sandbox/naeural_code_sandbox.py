@@ -9,8 +9,9 @@ _CONFIG = {
   'NGROK_DOMAIN': None,
   'NGROK_EDGE_LABEL': None,
 
-  'REQUEST_TIMEOUT': 30,
+  'CODE_TIMEOUT': 10,
   'SAVE_PERIOD': 60,
+  "PROCESS_DELAY": 0.2,
 
   'PORT': 5002,
   'ASSETS': 'plugins/business/fastapi/_sandbox',
@@ -60,35 +61,39 @@ class NaeuralCodeSandboxPlugin(BasePlugin):
       self.request_history = self.request_history + prev_history
     return
 
+  @BasePlugin.endpoint(method='get')
+  def code_history(self):
+    return self.request_history
+
   @BasePlugin.endpoint(method='post')
-  def execute_code(self, body):
+  def execute_remote_code(self, code: str, debug: bool = False):
     """
     Endpoint to execute custom code.
     Parameters
     ----------
-    body : dict
-        The request body.
-        Should contain "CODE" key with the code to execute.
+    code : str
+        The code to execute.
+    debug : bool
+        If True, the debug mode will be enabled.
 
     Returns
     -------
     """
-    code = body.get('CODE')
-    debug = body.get('DEBUG', False)
-    if code is None:
-      return '"CODE" key not provided in the request body.'
-    if not isinstance(code, str):
-      return '"CODE" key should be a string.'
     if len(code) == 0:
-      return '"CODE" key should not be an empty string.'
-    result, errors, warnings = None, None, []
-    b64_code = self.code_to_base64(code)
+      return {'error': '"code" key should not be an empty string.'}
+    self.request_history.append({'code': code, "debug": debug})
+    result, errors, warnings, printed = None, None, [], []
+    self.P(f'Executing code:\n{code}')
+    b64_code, errors = self.code_to_base64(code, return_errors=True)
+    if errors is not None:
+      return {'error': errors}
     res = self.exec_code(
       str_b64code=b64_code,
       debug=debug,
       self_var='plugin',
       modify=True,
-      return_printed=True
+      return_printed=True,
+      timeout=self.cfg_code_timeout
     )
     if isinstance(res, tuple):
       result, errors, warnings, printed = res
@@ -96,7 +101,8 @@ class NaeuralCodeSandboxPlugin(BasePlugin):
       'result': result,
       'errors': errors,
       'warnings': warnings,
-      'prints': printed
+      'prints': printed,
+      'timestamp': self.time()
     }
 
   def process(self):
