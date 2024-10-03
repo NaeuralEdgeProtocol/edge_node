@@ -14,7 +14,7 @@ _CONFIG = {
   "PROCESS_DELAY": 0.2,
 
   'PORT': 5002,
-  'ASSETS': 'plugins/business/fastapi/_sandbox',
+  'ASSETS': 'plugins/business/fastapi/sandbox',
   'JINJA_ARGS': {
     'html_files': [
       {
@@ -29,7 +29,7 @@ _CONFIG = {
   },
 }
 
-# TODO: add more code templates to the plugin (have a list of templates from which the user can choose)
+
 class NaeuralCodeSandboxPlugin(BasePlugin):
   CONFIG = _CONFIG
 
@@ -66,44 +66,19 @@ class NaeuralCodeSandboxPlugin(BasePlugin):
     return self.request_history
 
   @BasePlugin.endpoint(method='post')
-  def execute_remote_code(self, code: str, debug: bool = False):
-    """
-    Endpoint to execute custom code.
-    Parameters
-    ----------
-    code : str
-        The code to execute.
-    debug : bool
-        If True, the debug mode will be enabled.
-
-    Returns
-    -------
-    """
-    if len(code) == 0:
-      return {'error': '"code" key should not be an empty string.'}
-    self.request_history.append({'code': code, "debug": debug})
-    result, errors, warnings, printed = None, None, [], []
-    self.P(f'Executing code:\n{code}')
-    b64_code, errors = self.code_to_base64(code, return_errors=True)
-    if errors is not None:
-      return {'error': errors}
-    res = self.exec_code(
-      str_b64code=b64_code,
+  def remote_execute(self, code: str, debug: bool = False):
+    if isinstance(code, str) and len(code) > 0:
+      self.request_history.append({
+        'code': code,
+        'debug': debug,
+        'ts': self.time()
+      })
+    # endif code added to the history
+    return self.execute_remote_code(
+      code=code,
       debug=debug,
-      self_var='plugin',
-      modify=True,
-      return_printed=True,
       timeout=self.cfg_code_timeout
     )
-    if isinstance(res, tuple):
-      result, errors, warnings, printed = res
-    return {
-      'result': result,
-      'errors': errors,
-      'warnings': warnings,
-      'prints': printed,
-      'timestamp': self.time()
-    }
 
   def process(self):
     super(NaeuralCodeSandboxPlugin, self).process()
