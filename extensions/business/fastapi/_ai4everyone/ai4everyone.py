@@ -14,6 +14,7 @@ _CONFIG = {
 
   'SAVE_PERIOD': 60,
   'REQUEST_TIMEOUT': 10,
+  "PROCESS_DELAY": 0,
 
   'PORT': 5000,
   'ASSETS': 'extensions/business/fastapi/_ai4everyone',
