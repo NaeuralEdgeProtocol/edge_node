@@ -1,4 +1,4 @@
-from core.serving.base import ModelServingProcess as BaseServingProcess
+from naeural_core.serving.base import ModelServingProcess as BaseServingProcess
 
 __VER__ = '0.1.0.0'
 

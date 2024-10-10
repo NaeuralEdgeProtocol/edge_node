@@ -1,6 +1,6 @@
 import os
 
-from core.local_libraries.vision.ffmpeg_utils import FFMPEGUtils
+from naeural_core.local_libraries.vision.ffmpeg_utils import FFMPEGUtils
 
 
 class _ChainDistSplitMixin(object):

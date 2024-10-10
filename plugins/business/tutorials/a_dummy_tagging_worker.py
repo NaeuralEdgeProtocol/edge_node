@@ -27,7 +27,7 @@ This plugin is the worker part in the Tagger application
 """
 
 
-from core.business.base import BasePluginExecutor as BasePlugin
+from naeural_core.business.base import BasePluginExecutor as BasePlugin
 
 
 __VER__ = "0.1.0.0"

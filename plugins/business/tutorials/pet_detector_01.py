@@ -1,4 +1,4 @@
-from core.business.base import CVPluginExecutor as BasePlugin
+from naeural_core.business.base import CVPluginExecutor as BasePlugin
 
 
 PET_TYPES = ['cat', 'dog', 'bird', 'horse', 'mouse']

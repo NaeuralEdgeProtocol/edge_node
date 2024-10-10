@@ -1,4 +1,4 @@
-from core.business.default.llm.llm_agent import LlmAgentPlugin as BasePlugin
+from naeural_core.business.default.llm.llm_agent import LlmAgentPlugin as BasePlugin
 
 _CONFIG = {
   # mandatory area

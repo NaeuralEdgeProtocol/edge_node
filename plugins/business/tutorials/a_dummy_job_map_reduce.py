@@ -23,9 +23,9 @@ Stream configuration:
 }
 """
 
-from core.business.base import BasePluginExecutor as BaseClass
+from naeural_core.business.base import BasePluginExecutor as BaseClass
 from time import time
-from core import constants as ct
+from naeural_core import constants as ct
 import numpy as np
 
 _CONFIG = {

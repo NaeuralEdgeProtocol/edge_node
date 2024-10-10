@@ -3,7 +3,7 @@ import threading
 from functools import partial
 from PyE2 import Session, Pipeline, Instance
 
-from core.business.base import BasePluginExecutor as BaseClass
+from naeural_core.business.base import BasePluginExecutor as BaseClass
 from extensions.business.mixins.chain_dist_merge_mixin import _ChainDistMergeMixin
 from extensions.business.mixins.chain_dist_split_mixin import _ChainDistSplitMixin
 

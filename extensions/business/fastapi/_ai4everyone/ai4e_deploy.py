@@ -1,4 +1,4 @@
-from core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
+from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
 
 
 _CONFIG = {

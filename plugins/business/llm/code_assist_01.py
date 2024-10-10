@@ -1,5 +1,5 @@
-from core.business.base import BasePluginExecutor as BasePlugin
-from core.business.mixins_libs.nlp_agent_mixin import _NlpAgentMixin, NLP_AGENT_MIXIN_CONFIG
+from naeural_core.business.base import BasePluginExecutor as BasePlugin
+from naeural_core.business.mixins_libs.nlp_agent_mixin import _NlpAgentMixin, NLP_AGENT_MIXIN_CONFIG
 
 __VER__ = '0.1.0.0'
 

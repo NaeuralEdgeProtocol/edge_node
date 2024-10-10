@@ -2,8 +2,8 @@ import os
 import cv2
 import numpy as np
 
-from core import DecentrAIObject
-from core import Logger
+from naeural_core import DecentrAIObject
+from naeural_core import Logger
 
 class Dataset(DecentrAIObject):
   def __init__(self, **kwargs):

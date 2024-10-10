@@ -23,7 +23,7 @@
 }  
   
 """
-from core.business.base import BasePluginExecutor
+from naeural_core.business.base import BasePluginExecutor
 
 __VER__ = '0.1.0.0'
 

@@ -1,4 +1,4 @@
-from core.business.test_framework.base import BaseScoringPlugin
+from naeural_core.business.test_framework.base import BaseScoringPlugin
 from datetime import datetime
 
 class IntervalsCountingScoringPlugin(BaseScoringPlugin):
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     {"START" : "0:02:00", "END" : "0:02:14", "COUNT" : 10},
   ]
 
-  from core import Logger
+  from naeural_core import Logger
   log = Logger(lib_name='TST', base_folder='.', app_folder='_local_cache', TF_KERAS=False)
 
   p = IntervalsCountingScoringPlugin(log=log, y_true_uri=yt)

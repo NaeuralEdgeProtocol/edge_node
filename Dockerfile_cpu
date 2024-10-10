@@ -28,7 +28,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ENV EE_CONFIG .config_startup.json
 
 ## The following line should NOT be moved to based as it should always be updated
-RUN pip install --no-cache-dir kmonitor PyE2 decentra-vision
+RUN pip install --no-cache-dir kmonitor naeural-core PyE2 decentra-vision
 ## END do not move
 
 CMD ["python3","device.py"]

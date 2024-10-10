@@ -5,7 +5,7 @@ Demo for a plugin that only sends the data from the pipeline DCT and the serving
 """
 
 
-from core.business.base import BasePluginExecutor as BaseClass
+from naeural_core.business.base import BasePluginExecutor as BaseClass
 
 _CONFIG = {
   **BaseClass.CONFIG,

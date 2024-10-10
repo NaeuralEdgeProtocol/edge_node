@@ -11,9 +11,9 @@ from time import sleep
 from collections import OrderedDict
 
 # local dependencies
-from core import DecentrAIObject
+from naeural_core import DecentrAIObject
 from decentra_vision.draw_utils import DrawUtils
-from core.serving.serving_manager import ServingManager
+from naeural_core.serving.serving_manager import ServingManager
 from plugins.serving.model_testing.utils import Dataset
 from plugins.serving.model_testing.utils import ServingUtils
 
@@ -436,7 +436,7 @@ class Base(DecentrAIObject):
 
 
 if __name__ == '__main__':
-  from core import Logger
+  from naeural_core import Logger
   from plugins.serving.testing.th_yolov5l6s.data import files as TEST_FILES
 
   log = Logger('MPTF', base_folder='.', app_folder='_local_cache', TF_KERAS=False)

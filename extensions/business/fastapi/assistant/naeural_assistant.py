@@ -1,4 +1,4 @@
-from core.business.default.web_app.naeural_fast_api_web_app import NaeuralFastApiWebApp as BasePlugin
+from naeural_core.business.default.web_app.naeural_fast_api_web_app import NaeuralFastApiWebApp as BasePlugin
 
 __VER__ = '0.1.0.0'
 

@@ -1,10 +1,10 @@
 import pandas as pd
 
-from core.business.base import CVPluginExecutor
-from core.business.base.cv_plugin_executor import _CONFIG as BASE_CONFIG
+from naeural_core.business.base import CVPluginExecutor
+from naeural_core.business.base.cv_plugin_executor import _CONFIG as BASE_CONFIG
 
 # Basic anomaly detector model
-from core.utils.multi_period_anomaly_model import BasicAnomalyModel
+from naeural_core.utils.multi_period_anomaly_model import BasicAnomalyModel
 
 __VER__ = '0.1.0.0'
 

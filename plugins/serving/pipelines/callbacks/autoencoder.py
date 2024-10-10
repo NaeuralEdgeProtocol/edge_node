@@ -1,1 +1,1 @@
-from core.local_libraries.nn.th.training.callbacks.autoencoder import AutoencoderTrainingCallbacks
+from naeural_core.local_libraries.nn.th.training.callbacks.autoencoder import AutoencoderTrainingCallbacks

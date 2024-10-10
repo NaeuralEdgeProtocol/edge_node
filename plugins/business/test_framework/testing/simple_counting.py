@@ -1,4 +1,4 @@
-from core.business.test_framework.base import BaseTestingPlugin
+from naeural_core.business.test_framework.base import BaseTestingPlugin
 
 
 class SimpleCountingTestingPlugin(BaseTestingPlugin):

@@ -9,7 +9,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from core.main.entrypoint import main
+from naeural_core.main.entrypoint import main
   
   
 if __name__ == '__main__':  

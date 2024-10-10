@@ -8,9 +8,9 @@ from typing import Tuple, Union, List, Any
 import numpy as np
 import os
 
-from core.local_libraries.nn.th.training.data.base import BaseDataLoaderFactory
-from core.local_libraries.nn.th.image_dataset_stage_preprocesser import PreprocessResizeWithPad, PreprocessMinMaxNorm
-from core.local_libraries.nn.th.training_utils import read_image
+from naeural_core.local_libraries.nn.th.training.data.base import BaseDataLoaderFactory
+from naeural_core.local_libraries.nn.th.image_dataset_stage_preprocesser import PreprocessResizeWithPad, PreprocessMinMaxNorm
+from naeural_core.local_libraries.nn.th.training_utils import read_image
 
 
 class CustomDataLoaderFactory(BaseDataLoaderFactory):
