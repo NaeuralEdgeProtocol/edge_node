@@ -52,7 +52,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
       return None
     if not isinstance(node_addr, str):
       return None
-    epochs_vals = self.netmon.epoch_manager.get_node_epochs(node_addr)
+    epochs_vals = self.netmon.epoch_manager.get_node_epochs(node_addr, autocomplete=True)
 
     response = self.__get_response({
       'node': node_addr,
