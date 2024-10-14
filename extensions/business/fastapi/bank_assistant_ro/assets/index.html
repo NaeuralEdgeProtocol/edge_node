@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 400px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .chat-box {
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .user-message {
+            text-align: right;
+            color: blue;
+        }
+        .bot-message {
+            text-align: left;
+            color: green;
+        }
+        input[type="text"] {
+            width: calc(100% - 70px);
+            padding: 10px;
+        }
+        button {
+            padding: 10px;
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-box" id="chat-box"></div>
+    <input type="text" id="message-input" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const baseUrl = 'https://bank-assist.naeural.ai/';
+    let chat_history = [];
+
+    function addMessage(content, sender) {
+        const message = document.createElement('div');
+        message.classList.add('message');
+        message.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+        message.textContent = content;
+        chatBox.appendChild(message);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('message-input');
+        const message = input.value;
+        if (message.trim() !== "") {
+            addMessage(message, 'user');
+            input.value = '';
+
+            const response = await fetch(baseUrl + '/llm_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request: message,
+                    history: chat_history,
+                }),
+            });
+            const data = await response.json();
+            // Check if response field in data.result exists
+            if (!data.result) {
+                addMessage('Sorry, there was an error processing your reply.', 'bot');
+                return;
+            } else if (!data.result.response) {
+                const err_msg = data.result.error;
+                addMessage('Sorry, there was an error processing your reply: ' + err_msg, 'bot');
+                return;
+            }
+            const response_text = data.result.response;
+            chat_history.push({
+                request: message,
+                response: response_text,
+            })
+            addMessage(response_text, 'bot');
+        }
+    }
+</script>
+
+</body>
+</html>

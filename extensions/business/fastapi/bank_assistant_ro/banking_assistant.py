@@ -6,6 +6,7 @@ _CONFIG = {
   **BasePlugin.CONFIG,
 
   'PORT': 5005,
+  'ASSETS': 'extensions/business/fastapi/bank_assistant_ro',
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
@@ -25,6 +26,9 @@ class BankingAssistantPlugin(BasePlugin):
 
   def on_init(self):
     super(BankingAssistantPlugin, self).on_init()
+    pkl_path = self.get_sys_info_path()
+    pkl_full_path = self.os_path.abspath(pkl_path)
+    self.P(f'Loading system info from {pkl_path} | {pkl_full_path}')
     with open(self.get_sys_info_path(), 'rb') as f:
       juridic_info_pkl_base64 = pickle.load(f)
     self.ro_banking_system_info = bytes.fromhex(juridic_info_pkl_base64).decode('utf-8')
