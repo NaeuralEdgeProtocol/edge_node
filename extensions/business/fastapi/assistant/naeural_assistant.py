@@ -42,8 +42,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     return
 
   def relevant_plugin_signatures_llm(self):
-    return ['ro_llama_agent']
-    # return ['llm_agent', 'code_assist_01', 'ro_llama_agent']
+    return ['llm_agent', 'code_assist_01', 'ro_llama_agent']
 
   def relevant_plugin_signatures_embedding(self):
     return ['doc_embedding_agent']
@@ -122,6 +121,19 @@ class NaeuralAssistantPlugin(BasePlugin):
     self.P(f"Online agents: {[(x.node_addr, x.name) for x in lst_online_agents]}")
     return lst_online_agents
 
+  def get_system_info(self, system_info: str):
+    """
+    Get the system information.
+    Parameters
+    ----------
+    system_info : str - the system information
+
+    Returns
+    -------
+    res : str - the system information
+    """
+    return system_info
+
   def compute_request_body_llm(self, request_id, body):
     """
     Compute the request body to be sent to the agent's pipeline.
@@ -141,7 +153,7 @@ class NaeuralAssistantPlugin(BasePlugin):
       "STRUCT_DATA": [{
         "request": req,
         "history": history,
-        "system_info": system_info,
+        "system_info": self.get_system_info(system_info),
         'request_id': request_id
       }]
     }
