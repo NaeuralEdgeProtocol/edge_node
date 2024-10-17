@@ -27,7 +27,8 @@ class BankingAssistantPlugin(BasePlugin):
   def on_init(self):
     super(BankingAssistantPlugin, self).on_init()
     if True:
-      return "Esti un asistent bancar exceptional si vrei sa ajuti oamenii."
+      self.ro_banking_system_info = "Esti un asistent bancar exceptional si vrei sa ajuti oamenii."
+      return
     pkl_path = self.get_sys_info_path()
     pkl_full_path = self.os_path.abspath(pkl_path)
     self.P(f'Loading system info from {pkl_path} | {pkl_full_path}')
