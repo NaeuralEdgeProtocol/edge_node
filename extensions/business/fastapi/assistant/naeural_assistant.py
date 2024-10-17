@@ -37,8 +37,17 @@ class NaeuralAssistantPlugin(BasePlugin):
     self.conversation_data = {}
     return
 
-  def on_init(self):
-    super(NaeuralAssistantPlugin, self).on_init()
+  def webapp_get_persistence_data_object(self):
+    return {
+      'conversation_data': self.conversation_data
+    }
+
+  def webapp_load_persistence_data_object(self, data):
+    saved_conversation_data = data.get('conversation_data', {})
+    self.conversation_data = {
+      **saved_conversation_data,
+      **self.conversation_data
+    }
     return
 
   def relevant_plugin_signatures_llm(self):
@@ -121,7 +130,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     self.P(f"Online agents: {[(x.node_addr, x.name) for x in lst_online_agents]}")
     return lst_online_agents
 
-  def get_system_info(self, system_info: str):
+  def get_system_info(self, system_info: str = None, **kwargs):
     """
     Get the system information.
     Parameters
@@ -230,6 +239,22 @@ class NaeuralAssistantPlugin(BasePlugin):
     """
     res = self.maybe_get_network_response(request_id=request_id)
     if res is not None:
+      conversation_id = self.requests_meta.get(request_id, {}).get('conversation_id', None)
+      if conversation_id is not None:
+        self.P(f"Conversation id: {conversation_id} attempting to answer.")
+        if conversation_id in self.conversation_data:
+          req_error = res.get('error', None)
+          if req_error is None:
+            body = self.requests_meta[request_id]['body']
+            request = body.get('request', "")
+            response = res.get('response', "")
+            self.conversation_data[conversation_id]['history'].append({
+              'request': request,
+              'response': response
+            })
+          # endif request success
+        # endif conversation exists
+      # conversation_id available
       return res
     # endif response available
     return self.create_postponed_request(
@@ -239,7 +264,7 @@ class NaeuralAssistantPlugin(BasePlugin):
       }
     )
 
-  def process_request(self, body, request_type: str = 'llm'):
+  def process_request(self, body, request_type: str = 'llm', conversation_id: str = None):
     request_id = self.uuid()
     lst_online_agents = self.get_allowed_agents(agent_type=request_type)
     if len(lst_online_agents) == 0:
@@ -255,12 +280,32 @@ class NaeuralAssistantPlugin(BasePlugin):
       pipeline=pipeline,
       request_type=request_type,
       body=body,
-      timeout=self.cfg_request_timeout
+      timeout=self.cfg_request_timeout,
+      conversation_id=conversation_id
     )
     return self.solve_postponed_request(request_id)
 
+  @BasePlugin.endpoint(method="get")
+  def system_info(self, system_info: str = None):
+    if system_info is None:
+      return "No custom system info is set. You can add it in the request body."
+    return self.get_system_info(system_info)
+
   @BasePlugin.endpoint(method='post')
   def llm_request(self, history: list = [], system_info: str = "", request: str = ""):
+    """
+    The request will be sent to the LLM agent.
+    This works as a stateless API
+    Parameters
+    ----------
+    history
+    system_info
+    request
+
+    Returns
+    -------
+
+    """
     return self.process_request(
       body={
         'history': history,
@@ -268,6 +313,27 @@ class NaeuralAssistantPlugin(BasePlugin):
         'request': request
       },
       request_type='llm'
+    )
+
+  @BasePlugin.endpoint(method='post')
+  def conversation_request(self, conversation_id: str, request: str = ""):
+    if conversation_id not in self.conversation_data:
+      return {
+        'success': False,
+        'error': f'Conversation with id {conversation_id} not found.'
+      }
+    # endif conversation not found
+    conversation_data = self.conversation_data[conversation_id]
+    history = conversation_data.get('history', [])
+    system_info = conversation_data.get('system_info', "")
+    return self.process_request(
+      body={
+        'history': history,
+        'system_info': system_info,
+        'request': request
+      },
+      request_type='llm',
+      conversation_id=conversation_id
     )
 
   @BasePlugin.endpoint(method='post')
@@ -279,23 +345,27 @@ class NaeuralAssistantPlugin(BasePlugin):
       request_type='embedding'
     )
 
-  def start_conversation(self, body):
+  @BasePlugin.endpoint(method='post')
+  def start_conversation(self, system_info: str = None):
     """
-    2 types of conversations:
-    - temporary (will expire if no request is made in a certain amount of time)
-    - permanent (will not expire)
-    After starting a conversation, a Doc Embedding Agent will be deployed or one that is already existent
-    will create a new context (TODO: implement this)
     The conversation will be given a unique id that will be used to identify it for any request.
+    In addition, the conversation data will be stored in the conversation_data dictionary.
+    TODO: implement Doc Embedding for the conversations.
+     A DocEmbedding agent should be used to store knowledge base for multiple conversations.
     Parameters
     ----------
-    body
-
     Returns
     -------
 
     """
-    is_temporary = body.get('temporary', True)
     conversation_id = self.uuid()
-    self.conversation_data[conversation_id]
+    self.conversation_data[conversation_id] = {
+      'history': [],
+      'system_info': system_info
+    }
+    return {'conversation_id': conversation_id}
+
+
+
+
 

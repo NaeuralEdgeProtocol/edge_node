@@ -39,9 +39,6 @@ class BankingAssistantPlugin(BasePlugin):
   def relevant_plugin_signatures_llm(self):
     return ['ro_llama_agent']
 
-  def get_system_info(self, system_info: str):
+  def get_system_info(self, system_info: str = None, **kwargs):
     return self.ro_banking_system_info
 
-  @BasePlugin.endpoint(method="get")
-  def system_info(self):
-    return self.get_system_info(self.ro_banking_system_info)
