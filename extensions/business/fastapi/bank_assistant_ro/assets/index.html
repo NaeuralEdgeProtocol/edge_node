@@ -6,8 +6,8 @@
     <title>Simple Chatbot</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            font-family: 'Roboto', sans-serif;
+            background-color: #d4dae2;
             margin: 0;
             padding: 0;
             display: flex;
@@ -16,39 +16,94 @@
             height: 100vh;
         }
         .chat-container {
-            width: 400px;
+            width: 100%;
+            max-width: 500px;
             background: white;
             padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
         }
         .chat-box {
-            height: 300px;
-            overflow-y: scroll;
-            margin-bottom: 10px;
+            flex-grow: 1;
+            height: 400px;
+            overflow-y: auto;
             border: 1px solid #ddd;
             padding: 10px;
             border-radius: 5px;
-            background-color: #fafafa;
+            background-color: #f8f9fa;
+            margin-bottom: 15px;
         }
         .message {
             margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block; /* Ensure message takes up only the required width */
+            word-wrap: break-word; /* Wrap text if it exceeds the cell's width */
+            max-width: 80%; /* Set maximum width to prevent messages from being too wide */
+            clear: both;
         }
         .user-message {
-            text-align: right;
-            color: blue;
+            float: right;
+            text-align: left;
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
         }
         .bot-message {
+            float: left;
             text-align: left;
-            color: green;
+            background-color: #f1f1f1;
+            color: #333;
+        }
+        textarea {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            margin-right: 10px;
+            font-size: 16px;
+            resize: vertical; /* Allow resizing vertically only */
+            width: calc(100% - 70px);
+            height: auto;
+            overflow-y: hidden; /* Hide scrollbar until necessary */
+        }
+         .input-area {
+            display: flex;
+            align-items: center;
         }
         input[type="text"] {
-            width: calc(100% - 70px);
+            flex-grow: 1;
             padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        input[type="text"]:disabled {
+            background-color: #f1f1f1;
         }
         button {
-            padding: 10px;
-            width: 60px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -56,31 +111,59 @@
 
 <div class="chat-container">
     <div class="chat-box" id="chat-box"></div>
-    <input type="text" id="message-input" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+    <div id="loading" class="loading" style="display: none;">Loading...</div>
+    <div class="input-area">
+        <textarea id="message-input" placeholder="Type your message..." rows="2"></textarea>
+        <button id="send-btn" onclick="sendMessage()" disabled>Send</button>
+    </div>
 </div>
 
 <script>
     const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const loading = document.getElementById('loading');
     const baseUrl = 'https://keysoft-1.naeural.ai';
     let chat_history = [];
+
+    // Enable input once page loads
+    window.onload = () => {
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+    };
 
     function addMessage(content, sender) {
         const message = document.createElement('div');
         message.classList.add('message');
         message.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-        message.textContent = content;
+        message.innerHTML = content.replace(/\n/g, '<br>'); // Replace new lines with <br> tags
         chatBox.appendChild(message);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const message = input.value;
-        if (message.trim() !== "") {
-            addMessage(message, 'user');
-            input.value = '';
+    // Handle Enter key to send message
+    messageInput.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && !event.shiftKey && !sendBtn.disabled) {
+        event.preventDefault(); // Prevent the default behavior (new line)
+        sendMessage();
+    }
+});
 
+    // Send message to server
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message === "") return;
+
+        // Disable input and show loading
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        loading.style.display = 'block';
+
+        addMessage(message, 'user');
+        messageInput.value = '';
+
+        try {
             const response = await fetch(baseUrl + '/llm_request', {
                 method: 'POST',
                 headers: {
@@ -91,22 +174,28 @@
                     history: chat_history,
                 }),
             });
+
             const data = await response.json();
-            // Check if response field in data.result exists
-            if (!data.result) {
-                addMessage('Sorry, there was an error processing your reply.', 'bot');
-                return;
-            } else if (!data.result.response) {
-                const err_msg = data.result.error;
-                addMessage('Sorry, there was an error processing your reply: ' + err_msg, 'bot');
-                return;
+
+            if (!data.result || !data.result.response) {
+                const errMsg = data.result?.error || "Sorry, there was an error processing your reply.";
+                addMessage(errMsg, 'bot');
+            } else {
+                const responseText = data.result.response;
+                chat_history.push({
+                    request: message,
+                    response: responseText,
+                });
+                addMessage(responseText, 'bot');
             }
-            const response_text = data.result.response;
-            chat_history.push({
-                request: message,
-                response: response_text,
-            })
-            addMessage(response_text, 'bot');
+        } catch (error) {
+            addMessage("An error occurred while sending your message.", 'bot');
+        } finally {
+            // Re-enable input and hide loading
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            loading.style.display = 'none';
+            messageInput.focus();
         }
     }
 </script>
