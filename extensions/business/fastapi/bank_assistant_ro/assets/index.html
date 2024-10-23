@@ -99,6 +99,14 @@
             background-color: #6c757d;
             cursor: not-allowed;
         }
+        select {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
         .loading {
             font-size: 14px;
             color: #6c757d;
@@ -110,10 +118,14 @@
 <body>
 
 <div class="chat-container">
+    <select id="context-select">
+        <option value="juridic">Juridic</option>
+        <option value="fizic">Fizic</option>
+    </select>
     <div class="chat-box" id="chat-box"></div>
     <div id="loading" class="loading" style="display: none;">Loading...</div>
     <div class="input-area">
-        <textarea id="message-input" placeholder="Type your message..." rows="2"></textarea>
+        <textarea id="message-input" placeholder="Introduceti mesajul..." rows="2"></textarea>
         <button id="send-btn" onclick="sendMessage()" disabled>Send</button>
     </div>
 </div>
@@ -123,8 +135,12 @@
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const loading = document.getElementById('loading');
+    const contextSelect = document.getElementById('context-select');
     const baseUrl = 'https://keysoft-1.naeural.ai';
-    let chat_history = [];
+    let chat_histories = {
+        juridic: [],
+        fizic: [],
+    };
 
     // Enable input once page loads
     window.onload = () => {
@@ -144,16 +160,19 @@
 
     // Handle Enter key to send message
     messageInput.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter' && !event.shiftKey && !sendBtn.disabled) {
-        event.preventDefault(); // Prevent the default behavior (new line)
-        sendMessage();
-    }
-});
+        if (event.key === 'Enter' && !event.shiftKey && !sendBtn.disabled) {
+            event.preventDefault(); // Prevent the default behavior (new line)
+            sendMessage();
+        }
+    });
 
     // Send message to server
     async function sendMessage() {
         const message = messageInput.value.trim();
+        const selectedContext = contextSelect.value; // Get the selected context
+
         if (message === "") return;
+        let chat_history = chat_histories[selectedContext];
 
         // Disable input and show loading
         messageInput.disabled = true;
@@ -171,6 +190,7 @@
                 },
                 body: JSON.stringify({
                     request: message,
+                    system_info: selectedContext,
                     history: chat_history,
                 }),
             });
@@ -198,6 +218,26 @@
             messageInput.focus();
         }
     }
+
+    // Handle context change
+    contextSelect.addEventListener('change', function() {
+        // Clear chat box
+        chatBox.innerHTML = '';
+
+        // Load previous conversation if available
+        const selectedContext = contextSelect.value;
+        chat_histories[selectedContext].forEach(msg => {
+            if (msg.request) {
+                addMessage(msg.request, 'user');
+            }
+            if (msg.response) {
+                addMessage(msg.response, 'bot');
+            }
+        });
+
+        // Focus the message input
+        messageInput.focus();
+    });
 </script>
 
 </body>

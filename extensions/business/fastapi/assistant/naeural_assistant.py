@@ -1,6 +1,6 @@
 from naeural_core.business.default.web_app.naeural_fast_api_web_app import NaeuralFastApiWebApp as BasePlugin
+import pickle
 
-__VER__ = '0.1.0.0'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -11,6 +11,7 @@ _CONFIG = {
 
   'REQUEST_TIMEOUT': 60,
   'PROCESS_DELAY': 0,
+  "TEMPLATE_SYS_INFO": {},
 
   'PORT': 5004,
   "JINJA_ARGS": {
@@ -25,6 +26,12 @@ _CONFIG = {
   'ASSETS': 'extensions/business/fastapi/assistant',
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
+    'TEMPLATE_SYS_INFO': {
+      'TYPE': 'dict',
+      'DESCRIPTION': 'The system info templates. The keys are the aliases.'
+                     'If a path is provided the system info will be loaded from the file.'
+                     'The given file should be a .pkl with the base64 encoded system info.',
+    }
   },
 }
 
@@ -33,8 +40,30 @@ class NaeuralAssistantPlugin(BasePlugin):
   CONFIG = _CONFIG
 
   def __init__(self, **kwargs):
-    super(NaeuralAssistantPlugin, self).__init__(**kwargs)
     self.conversation_data = {}
+    self.template_sys_info = {}
+    super(NaeuralAssistantPlugin, self).__init__(**kwargs)
+    return
+
+  def load_template_sys_info(self, sys_path):
+    pkl_full_path = self.os_path.abspath(sys_path)
+    self.P(f'Loading system info from {sys_path} | {pkl_full_path}')
+    with open(sys_path, 'rb') as f:
+      sys_info_pkl_base64 = pickle.load(f)
+    return bytes.fromhex(sys_info_pkl_base64).decode('utf-8')
+
+  def on_init(self):
+    super(NaeuralAssistantPlugin, self).on_init()
+    # TODO: same procedure if cfg_template_sys_info is changed
+    paths_dict = self.cfg_template_sys_info or {}
+    # Loading the templates for system info
+    for key, sys_info in paths_dict.items():
+      if self.os_path.exists(sys_info):
+        sys_info = self.load_template_sys_info(sys_path=sys_info)
+      # endif path provided
+      self.template_sys_info[str(key).lower()] = sys_info
+    # endfor templates for system info
+    self.P(f"Loaded system info templates: {self.json_dumps(self.shorten_str(self.template_sys_info), indent=2)}")
     return
 
   def webapp_get_persistence_data_object(self):
@@ -130,18 +159,18 @@ class NaeuralAssistantPlugin(BasePlugin):
     self.P(f"Online agents: {[(x.node_addr, x.name) for x in lst_online_agents]}")
     return lst_online_agents
 
-  def get_system_info(self, system_info: str = None, **kwargs):
+  def process_sys_info(self, system_info: str = None, **kwargs):
     """
-    Get the system information.
+    Process the system information before sending it to the agent.
     Parameters
     ----------
-    system_info : str - the system information
+    system_info : str - the system information from the request
 
     Returns
     -------
     res : str - the system information
     """
-    return system_info
+    return self.template_sys_info.get(system_info, system_info) or ""
 
   def compute_request_body_llm(self, request_id, body):
     """
@@ -162,7 +191,7 @@ class NaeuralAssistantPlugin(BasePlugin):
       "STRUCT_DATA": [{
         "request": req,
         "history": history,
-        "system_info": self.get_system_info(system_info),
+        "system_info": self.process_sys_info(system_info),
         'request_id': request_id
       }]
     }
@@ -286,10 +315,8 @@ class NaeuralAssistantPlugin(BasePlugin):
     return self.solve_postponed_request(request_id)
 
   @BasePlugin.endpoint(method="get")
-  def system_info(self, system_info: str = None):
-    if system_info is None:
-      return "No custom system info is set. You can add it in the request body."
-    return self.get_system_info(system_info)
+  def system_info(self):
+    return self.template_sys_info
 
   @BasePlugin.endpoint(method='post')
   def llm_request(self, history: list = [], system_info: str = "", request: str = ""):
