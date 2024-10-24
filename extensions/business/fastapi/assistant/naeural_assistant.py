@@ -12,7 +12,6 @@ _CONFIG = {
   'REQUEST_TIMEOUT': 60,
   'PROCESS_DELAY': 0,
   "TEMPLATE_SYS_INFO": {},
-
   'PORT': 5004,
   "JINJA_ARGS": {
     'html_files': [
@@ -170,7 +169,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     -------
     res : str - the system information
     """
-    return self.template_sys_info.get(system_info, system_info) or ""
+    return self.template_sys_info.get(str(system_info).lower(), system_info) or ""
 
   def compute_request_body_llm(self, request_id, body):
     """
