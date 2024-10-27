@@ -98,15 +98,19 @@ class NaeuralAssistantPlugin(BasePlugin):
     processed_data = {k.lower(): v for k, v in payload_data.items()}
     text_responses = processed_data.get('text_responses', [])
     response = text_responses[0] if len(text_responses) > 0 else ""
+    inferences = processed_data.get('inferences', [])
+    tps_lst = [x['tps'] for x in inferences]
+    tps = self.np.mean(tps_lst) if len(tps_lst) > 0 else 0.0
     return {
-      'request_id': processed_data.get('request_id', None),
-      'text_responses': processed_data.get('text_responses', []),
-      'response': response,
-      'inferences': processed_data.get('inferences', []),
-      'node_id': processed_data.get('ee_id', None),
-      'node_address': processed_data.get('ee_sender', None),
-      'web_agent_address': self.node_addr,
-      'web_agent_id': self.node_id,
+      # 'request_id': processed_data.get('request_id', None),
+      # 'text_responses': processed_data.get('text_responses', []),
+      'text_response': response,
+      'tps': tps,
+      # 'inferences': processed_data.get('inferences', []),
+      'serving_node_id': processed_data.get('ee_id', None),
+      'serving_node_address': processed_data.get('ee_sender', None),
+      'web_node_address': self.node_addr,
+      'web_node_id': self.node_id,
       'llm_plugin_signature': processed_data.get('signature'),
       'ai_engine': processed_data.get('_p_graph_type'),
       'model_name': processed_data.get('model_name'),
@@ -270,12 +274,13 @@ class NaeuralAssistantPlugin(BasePlugin):
       conversation_id = self.requests_meta.get(request_id, {}).get('conversation_id', None)
       if conversation_id is not None:
         self.P(f"Conversation id: {conversation_id} attempting to answer.")
+        res['conversation_id'] = conversation_id
         if conversation_id in self.conversation_data:
           req_error = res.get('error', None)
           if req_error is None:
             body = self.requests_meta[request_id]['body']
             request = body.get('request', "")
-            response = res.get('response', "")
+            response = res.get('text_response', "")
             self.conversation_data[conversation_id]['history'].append({
               'request': request,
               'response': response
@@ -318,15 +323,15 @@ class NaeuralAssistantPlugin(BasePlugin):
     return self.template_sys_info
 
   @BasePlugin.endpoint(method='post')
-  def llm_request(self, history: list = [], system_info: str = "", request: str = ""):
+  def llm_request(self, history: list = [], identity: str = "", request: str = ""):
     """
     The request will be sent to the LLM agent.
-    This works as a stateless API
+    This works as a stateless API where the conversation history is not stored.
     Parameters
     ----------
-    history
-    system_info
-    request
+    history : list - the conversation history.
+    identity : str - the identity of the assistant that will handle this request.
+    request : str - the request.
 
     Returns
     -------
@@ -335,7 +340,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     return self.process_request(
       body={
         'history': history,
-        'system_info': system_info,
+        'system_info': identity,
         'request': request
       },
       request_type='llm'
@@ -343,6 +348,18 @@ class NaeuralAssistantPlugin(BasePlugin):
 
   @BasePlugin.endpoint(method='post')
   def conversation_request(self, conversation_id: str, request: str = ""):
+    """
+    The request will be sent to the LLM agent.
+    This works as a stateful API where the conversation history is stored.
+    Parameters
+    ----------
+    conversation_id : str - the conversation id
+    request : str - the request
+
+    Returns
+    -------
+
+    """
     if conversation_id not in self.conversation_data:
       return {
         'success': False,
@@ -372,7 +389,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     )
 
   @BasePlugin.endpoint(method='post')
-  def start_conversation(self, system_info: str = None):
+  def conversation_start(self, identity: str = None):
     """
     The conversation will be given a unique id that will be used to identify it for any request.
     In addition, the conversation data will be stored in the conversation_data dictionary.
@@ -380,6 +397,8 @@ class NaeuralAssistantPlugin(BasePlugin):
      A DocEmbedding agent should be used to store knowledge base for multiple conversations.
     Parameters
     ----------
+    identity : str - the identity of the assistant that will handle this conversation.
+      This can be used to load a specific identity template for the conversation or a custom identity.
     Returns
     -------
 
@@ -387,7 +406,7 @@ class NaeuralAssistantPlugin(BasePlugin):
     conversation_id = self.uuid()
     self.conversation_data[conversation_id] = {
       'history': [],
-      'system_info': system_info
+      'system_info': identity
     }
     return {'conversation_id': conversation_id}
 

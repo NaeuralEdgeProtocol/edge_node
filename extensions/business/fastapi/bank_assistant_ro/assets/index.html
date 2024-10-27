@@ -190,18 +190,18 @@
                 },
                 body: JSON.stringify({
                     request: message,
-                    system_info: selectedContext,
+                    identity: selectedContext,
                     history: chat_history,
                 }),
             });
 
             const data = await response.json();
 
-            if (!data.result || !data.result.response) {
+            if (!data.result || !data.result.text_response) {
                 const errMsg = data.result?.error || "Sorry, there was an error processing your reply.";
                 addMessage(errMsg, 'bot');
             } else {
-                const responseText = data.result.response;
+                const responseText = data.result.text_response;
                 chat_history.push({
                     request: message,
                     response: responseText,
