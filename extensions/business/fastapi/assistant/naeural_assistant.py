@@ -318,10 +318,6 @@ class NaeuralAssistantPlugin(BasePlugin):
     )
     return self.solve_postponed_request(request_id)
 
-  @BasePlugin.endpoint(method="get")
-  def system_info(self):
-    return self.template_sys_info
-
   @BasePlugin.endpoint(method='post')
   def llm_request(self, history: list = [], identity: str = "", request: str = ""):
     """
@@ -379,14 +375,14 @@ class NaeuralAssistantPlugin(BasePlugin):
       conversation_id=conversation_id
     )
 
-  @BasePlugin.endpoint(method='post')
-  def embedding_request(self, text: str = ""):
-    return self.process_request(
-      body={
-        'text': text
-      },
-      request_type='embedding'
-    )
+  # @BasePlugin.endpoint(method='post')
+  # def embedding_request(self, text: str = ""):
+  #   return self.process_request(
+  #     body={
+  #       'text': text
+  #     },
+  #     request_type='embedding'
+  #   )
 
   @BasePlugin.endpoint(method='post')
   def conversation_start(self, identity: str = None):

@@ -113,21 +113,38 @@
             text-align: center;
             margin-top: 10px;
         }
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        .tps-display {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-<div class="chat-container">
-    <select id="context-select">
-        <option value="juridic">Juridic</option>
-        <option value="fizic">Fizic</option>
-    </select>
-    <div class="chat-box" id="chat-box"></div>
-    <div id="loading" class="loading" style="display: none;">Loading...</div>
-    <div class="input-area">
-        <textarea id="message-input" placeholder="Introduceti mesajul..." rows="2"></textarea>
-        <button id="send-btn" onclick="sendMessage()" disabled>Send</button>
+<div class="wrapper">
+    <div class="chat-container">
+        <select id="context-select">
+            <option value="juridic">Juridic</option>
+            <option value="fizic">Fizic</option>
+        </select>
+        <div class="chat-box" id="chat-box"></div>
+        <div id="loading" class="loading" style="display: none;">Loading...</div>
+        <div class="input-area">
+            <textarea id="message-input" placeholder="Introduceti mesajul..." rows="2"></textarea>
+            <button id="send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
     </div>
+
+    <div id="tps-display" class="tps-display">TPS: Not available</div>
 </div>
 
 <script>
@@ -136,11 +153,14 @@
     const sendBtn = document.getElementById('send-btn');
     const loading = document.getElementById('loading');
     const contextSelect = document.getElementById('context-select');
+    const tpsDisplay = document.getElementById('tps-display');
     const baseUrl = 'https://keysoft-1.naeural.ai';
     let chat_histories = {
         juridic: [],
         fizic: [],
     };
+
+    tpsDisplay.style.display = 'none'; // Hide TPS display by default
 
     // Enable input once page loads
     window.onload = () => {
@@ -165,6 +185,15 @@
             sendMessage();
         }
     });
+
+    function roundToDecimal(value, decimals) {
+        const factor = 10 ** decimals;
+        try {
+            return Math.round(parseFloat(value) * factor) / factor;
+        } catch (error) {
+            return NaN;
+        }
+    }
 
     // Send message to server
     async function sendMessage() {
@@ -207,6 +236,13 @@
                     response: responseText,
                 });
                 addMessage(responseText, 'bot');
+                // Update TPS display if available
+                if (data.result.tps) {
+                    tpsDisplay.textContent = `TPS: ${roundToDecimal(data.result.tps, 3)}`;
+                    tpsDisplay.style.display = 'block';
+                } else {
+                    tpsDisplay.style.display = 'none';
+                }
             }
         } catch (error) {
             addMessage("An error occurred while sending your message.", 'bot');
