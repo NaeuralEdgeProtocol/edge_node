@@ -41,7 +41,7 @@ Steps to replicate/create a new basic REST-based data capture plugin:
 
 """
 
-from core.data.base import DataCaptureThread
+from naeural_core.data.base import DataCaptureThread
 
 _CONFIG = {
   

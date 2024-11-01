@@ -1,5 +1,5 @@
-from core import constants as ct
-from core.data.base import DataCaptureThread
+from naeural_core import constants as ct
+from naeural_core.data.base import DataCaptureThread
 
 _CONFIG = {
   **DataCaptureThread.CONFIG,

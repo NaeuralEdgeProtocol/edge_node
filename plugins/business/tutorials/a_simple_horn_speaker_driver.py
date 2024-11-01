@@ -32,7 +32,7 @@ upon receiving and instance command.
 Note that in order for your method to be called, it must be prefixed with "device_action_" and the
 value of the "action" parameter must be in uppercase and follow the snakecase convention.
 """
-from core.business.base.drivers import ExternalProgramDevice
+from naeural_core.business.base.drivers import ExternalProgramDevice
 
 __VER__ = '1.0.0'
 

@@ -1,4 +1,4 @@
-from core.data.base import BaseStructuredDataCapture
+from naeural_core.data.base import BaseStructuredDataCapture
 
 _CONFIG = {
   **BaseStructuredDataCapture.CONFIG,

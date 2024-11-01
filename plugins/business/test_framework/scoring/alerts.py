@@ -1,6 +1,6 @@
 from datetime import datetime
-from core.utils.datetime_utils import add_microseconds_to_str_timedelta
-from core.business.test_framework.base import BaseScoringPlugin
+from naeural_core.utils.datetime_utils import add_microseconds_to_str_timedelta
+from naeural_core.business.test_framework.base import BaseScoringPlugin
 
 class AlertsScoringPlugin(BaseScoringPlugin):
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     ]
 
 
-  from core import Logger
+  from naeural_core import Logger
   log = Logger(lib_name='TST', base_folder='.', app_folder='_local_cache', TF_KERAS=False)
 
   p = AlertsScoringPlugin(log=log, y_true_src=yt)

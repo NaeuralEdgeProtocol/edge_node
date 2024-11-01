@@ -1,8 +1,8 @@
 import torch as th
 
-from core.local_libraries.nn.th.utils import auto_normalize
-from core.local_libraries.nn.th.layers import InputPlaceholder
-from core.local_libraries.nn.th.conv_templates import CNNColumn, ReadoutFC, ReadoutConv
+from naeural_core.local_libraries.nn.th.utils import auto_normalize
+from naeural_core.local_libraries.nn.th.layers import InputPlaceholder
+from naeural_core.local_libraries.nn.th.conv_templates import CNNColumn, ReadoutFC, ReadoutConv
 
 
 _CONFIG = {

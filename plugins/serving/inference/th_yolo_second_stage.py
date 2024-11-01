@@ -1,4 +1,4 @@
-from core.serving.default_inference.th_yf8s import ThYf8s as BaseServingProcess
+from naeural_core.serving.default_inference.th_yf8s import ThYf8s as BaseServingProcess
 
 _CONFIG = {
   

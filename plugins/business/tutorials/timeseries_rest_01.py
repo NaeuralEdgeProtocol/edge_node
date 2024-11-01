@@ -33,7 +33,7 @@
 """
 
 
-from core.business.base import SimpleRestExecutor as BasePlugin
+from naeural_core.business.base import SimpleRestExecutor as BasePlugin
 
 __VER__ = '0.2.2'
 

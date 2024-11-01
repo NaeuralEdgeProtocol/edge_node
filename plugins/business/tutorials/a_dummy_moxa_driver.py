@@ -1,5 +1,5 @@
-from core.business.base import BasePluginExecutor
-from core.business.mixins_base import MoxaE1214Device
+from naeural_core.business.base import BasePluginExecutor
+from naeural_core.business.mixins_base import MoxaE1214Device
 
 __VER__ = '0.1.0.0'
 

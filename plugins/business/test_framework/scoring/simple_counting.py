@@ -1,4 +1,4 @@
-from core.business.test_framework.base import BaseScoringPlugin
+from naeural_core.business.test_framework.base import BaseScoringPlugin
 
 class SimpleCountingScoringPlugin(BaseScoringPlugin):
 

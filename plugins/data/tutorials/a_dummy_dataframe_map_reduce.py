@@ -1,5 +1,5 @@
-from core.data.base import AbstractMapReduceDataCapture
-from core.data.mixins_libs.dataframe_loader_mixin import _DataframeLoaderMixin
+from naeural_core.data.base import AbstractMapReduceDataCapture
+from naeural_core.data.mixins_libs.dataframe_loader_mixin import _DataframeLoaderMixin
 
 _CONFIG = {
   **AbstractMapReduceDataCapture.CONFIG,

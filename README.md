@@ -284,6 +284,28 @@ For any inquiries related to the funding and its impact on this project, please 
 
 # Citation
 
+
+```bibtex
+@misc{project_funding_acknowledgment1,
+  author       = {Damian, Bleotiu, Saraev, Constantinescu},
+  title        = {SOLIS – Sistem Omogen multi-Locație cu funcționalități Inteligente și Sustenabile”
+SMIS 143488},
+  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/}},
+  note         = {This project includes open-source components developed with support from the Romanian Competitiveness Operational Programme under grants SMIS 143488. The content is solely the responsibility of the authors and does not necessarily reflect the views of the funding agencies.},
+  year         = {2021-2022}
+}
+```
+
+```bibtex
+@misc{project_funding_acknowledgment2,
+  author       = {Damian, Bleotiu, Saraev, Constantinescu, Milik, Lupaescu},
+  title        = {ReDeN – Rețea Descentralizată Neurală SMIS 156084},
+  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/}},
+  note         = {This project includes open-source components developed with support from the Romanian Competitiveness Operational Programme under grants SMIS 143488. The content is solely the responsibility of the authors and does not necessarily reflect the views of the funding agencies.},
+  year         = {2023-2024}
+}
+```
+
 ```bibtex
 @misc{NaeuralAI_edge_node,
   author = {Naeural.AI},
@@ -302,14 +324,3 @@ For any inquiries related to the funding and its impact on this project, please 
 }
 ```
 
-```bibtex
-@misc{milik2024naeuralaios,
-      title={Naeural AI OS -- Decentralized ubiquitous computing MLOps execution engine}, 
-      author={Beatrice Milik and Stefan Saraev and Cristian Bleotiu and Radu Lupaescu and Bogdan Hobeanu and Andrei Ionut Damian},
-      year={2024},
-      eprint={2306.08708},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2306.08708}, 
-}
-```

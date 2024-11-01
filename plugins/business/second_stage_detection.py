@@ -1,5 +1,5 @@
-from core.business.base import CVPluginExecutor
-from core.business.base.cv_plugin_executor import _CONFIG as BASE_CONFIG
+from naeural_core.business.base import CVPluginExecutor
+from naeural_core.business.base.cv_plugin_executor import _CONFIG as BASE_CONFIG
 
 _CONFIG = {
   **BASE_CONFIG,

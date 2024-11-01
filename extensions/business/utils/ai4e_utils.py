@@ -1,5 +1,6 @@
-from PyE2 import Session
+from PyE2 import Session, Pipeline, Instance
 from datetime import datetime
+import numpy as np
 
 
 def job_data_to_id(node_id, pipeline, signature, instance):
@@ -58,6 +59,8 @@ class Job:
   def __init__(self, session: Session, job_id: str, node_id: str, pipeline: str, signature: str, instance: str):
     self.session = session
     self.job_id = job_id
+    # TODO: instead of single values for instance_id and the rest, use a dict to
+    # have a set of properties for each subtask(each signature)
     self.instance_id = instance
     self.node_id = node_id
     self.pipeline = pipeline
@@ -89,6 +92,19 @@ class Job:
       'decided_history': [],
       'decided_stats': {}
     }
+    self.train_status = {
+      'status': None,
+      'remaining': 0,
+      'elapsed': 0,
+      'best': None,
+      'current_grid_iteration': 0,
+      'total_grid_iterations': 0,
+    }
+    self.train_meta = {}
+    self.train_final = {}
+    self.train_status_full_payload = None
+    self.started_deploying = False
+    self.deployed = False
     return
 
   def get_persistence_data(self):
@@ -112,7 +128,13 @@ class Job:
       'final_ds_status': self.final_ds_status,
 
       'crop_status': self.crop_status,
-      'label_status': self.label_status
+      'label_status': self.label_status,
+      'train_status': self.train_status,
+      'train_meta': self.train_meta,
+      'train_final': self.train_final,
+
+      'started_deploying': self.started_deploying,
+      'deployed': self.deployed
     }
 
   def load_persistence_data(self, data):
@@ -136,13 +158,19 @@ class Job:
 
     self.crop_status = data.get('crop_status', self.crop_status)
     self.label_status = data.get('label_status', self.label_status)
+    self.train_status = data.get('train_status', self.train_status)
+    self.train_meta = data.get('train_meta', self.train_meta)
+    self.train_final = data.get('train_final', self.train_final)
+
+    self.started_deploying = data.get('started_deploying', self.started_deploying)
+    self.deployed = data.get('deployed', self.deployed)
     return
 
   def maybe_update_data(self, data: dict, pipeline: str, signature: str):
     if data.get('IS_FINAL_DATASET_STATUS', False):
       self.final_ds_status = data.get('UPLOADED', self.final_ds_status)
       return
-    if not data.get('IS_STATUS', True):
+    if not data.get('IS_STATUS', False):
       return
     self.pipeline = pipeline
     self.signature = signature
@@ -176,6 +204,37 @@ class Job:
       self.label_status['decided_history'].append(self.label_status['total_files_decided'])
     # endif status for labels
 
+    if signature.lower() in AI4E_CONSTANTS.TRAINING_PLUGIN_SIGNATURES:
+      self.train_status_full_payload = data
+    if 'TRAIN_STATUS' in data.keys():
+      self.train_status['status'] = data.get('JOB_STATUS', self.train_status['status'])
+      full_train_data = data.get('TRAIN_STATUS', {})
+      train_data = full_train_data.get('STATUS', {})
+      self.train_status['remaining'] = train_data.get('REMAINING', self.train_status['remaining'])
+      self.train_status['elapsed'] = train_data.get('ELAPSED', self.train_status['elapsed'])
+
+      train_meta_data = full_train_data.get('METADATA')
+      if train_meta_data is not None:
+        target_class = train_meta_data.get('FIRST_STAGE_TARGET_CLASS')
+        self.train_meta = {
+          'OBJECT_TYPE': target_class if isinstance(target_class, list) else [target_class],
+          'SECOND_STAGE_DETECTOR_CLASSES': list(train_meta_data['CLASSES'].keys()),
+          'MODEL_INSTANCE_ID': train_meta_data['MODEL_NAME']
+        }
+      # if train metadata present
+      best_score = self.train_status['best']
+      if train_data.get('BEST') is not None:
+        best_score = train_data['BEST'].get('best_score')
+      self.train_status['best'] = best_score
+      self.train_status['current_grid_iteration'] = train_data.get('GRID_ITER', self.train_status['current_grid_iteration'])
+      self.train_status['total_grid_iterations'] = train_data.get('NR_ALL_GRID_ITER', self.train_status['total_grid_iterations'])
+      if 'TRAIN_FINAL' in data.keys():
+        self.train_final = data.get('TRAIN_FINAL', self.train_final)
+        self.deploy_job({})
+      # endif training finished
+
+    # endif status for training
+
     return
 
   def get_data(self):
@@ -195,6 +254,12 @@ class Job:
     }
 
   def get_job_status(self):
+    # if self.deployed:
+    #   return "Deployed"
+    # if self.started_deploying:
+    #   return "Deploying"
+    if self.train_status.get('status') is not None:
+      return self.train_status['status']
     if self.final_ds_status is not None:
       return "Ready for training"
     return self.job_status
@@ -228,21 +293,44 @@ class Job:
       'stats': self.label_status['decided_stats']
     }
 
-  def __get_pipeline_and_instance(self):
-    active_pipelines = self.session.get_active_pipelines(node_id=self.node_id)
+  def get_train_status(self):
+    total = self.train_status['elapsed'] + self.train_status['remaining']
+    progress = 0
+    if total > 0:
+      progress = self.train_status['elapsed'] / total
+    return {
+      'remaining': self.train_status['remaining'],
+      'elapsed': self.train_status['elapsed'],
+      'score': self.train_status['best'],
+      'progress': progress,
+      'currentGridIteration': self.train_status['current_grid_iteration'],
+      'totalGridIterations': self.train_status['total_grid_iterations'],
+      # 'full_last_payload': self.train_status_full_payload
+    }
+
+  def __get_pipeline_and_instance(self, node=None, pipeline=None, signature=None, instance_id=None):
+    node = node or self.node_id
+    active_pipelines = self.session.get_active_pipelines(node=node)
     if active_pipelines is None:
-      return None, None, f"Node_ID {self.node_id} not found"
-    curr_pipeline = self.session.attach_to_pipeline(node_id=self.node_id, name=self.pipeline)
+      return None, None, f"Node_ID {node} not found"
+    pipeline = pipeline or self.pipeline
+    curr_pipeline = self.session.attach_to_pipeline(node=node, name=pipeline)
     if curr_pipeline is None:
-      return None, None, f"Pipeline {self.pipeline} not found"
+      return None, None, f"Pipeline {pipeline} not found on {node}"
+    signature = signature or self.signature
+    instance_id = instance_id or self.instance_id
     curr_instance = curr_pipeline.attach_to_plugin_instance(
-      signature=self.signature,
-      instance_id=self.instance_id
+      signature=signature,
+      instance_id=instance_id
     )
+    if curr_instance is None:
+      return curr_pipeline, None, f"Instance {instance_id} of {signature} not found on {pipeline}"
     return curr_pipeline, curr_instance, ""
 
-  def send_instance_command(self, **kwargs):
-    pipeline, instance, error = self.__get_pipeline_and_instance()
+  def send_instance_command(self, node=None, pipeline=None, signature=None, instance_id=None, **kwargs):
+    pipeline, instance, error = self.__get_pipeline_and_instance(
+      node=node, pipeline=pipeline, signature=signature, instance_id=instance_id
+    )
     if error != "":
       return False, error
     command_kwargs = {
@@ -252,16 +340,43 @@ class Job:
     instance.send_instance_command(command_kwargs)
     return True, "Command sent successfully"
 
-  def stop_acquisition(self):
-    pipeline, instance, error = self.__get_pipeline_and_instance()
-    if error != "" and error is not None:
-      self.session.P(f'Error: {error} for {self.job_id} {self.pipeline} {self.instance_id}')
+  def send_instance_update(self, config: dict, node=None, pipeline=None, signature=None, instance_id=None):
+    pipeline, instance, error = self.__get_pipeline_and_instance(
+      node=node, pipeline=pipeline, signature=signature, instance_id=instance_id
+    )
+    if error != "":
       return False, error
-    instance.update_instance_config({"FORCE_TERMINATE_COLLECT": True})
+    instance.update_instance_config(config)
     pipeline.deploy()
+    return True, "Config updated successfully"
+
+  def stop_acquisition(self):
+    success, err_msg = self.send_instance_update({"FORCE_TERMINATE_COLLECT": True})
+    if not success:
+      err_msg = f"Error for {self.job_id} - {self.pipeline} - {self.instance_id}:\n{err_msg}"
+      return False, err_msg
     return True, "Successfully stopped acquisition for job"
 
-  def publish_job(self):
+  def publish_job(self, body: dict):
+    update_config = {
+      'CLASSES': classes_msg_to_dict(body.get('classes')),
+      'REWARDS': body.get('rewards'),
+    }
+    e2e_update_config = {
+      'CLASSES': update_config['CLASSES'],
+    }
+    success, err_msg = self.send_instance_update(update_config)
+    if not success:
+      err_msg = f"Error for {self.job_id} - {self.pipeline} - {self.instance_id}:\n{err_msg}"
+      return False, err_msg
+    success, err_msg = self.send_instance_update(
+      e2e_update_config,
+      pipeline=f'cte2e_{self.job_id}',
+      signature='AI4E_END_TO_END_TRAINING'
+    )
+    if not success:
+      err_msg = f"Error for {self.job_id} - {self.pipeline} - {self.instance_id}:\n{err_msg}"
+      return False, err_msg
     return self.send_instance_command(start_voting=True)
 
   def send_vote(self, body):
@@ -277,10 +392,115 @@ class Job:
   def publish_labels(self):
     return self.send_instance_command(publish=True)
 
+  def start_train(self, body: dict):
+    self.session.P(f'Starting training for {self.job_id} on {self.node_id}...')
+    success, err_msg = self.send_instance_update(
+      config={
+        'START_TRAINING': True,
+        'TRAINING': {
+          # TODO: this should eventually change to architecture or something more generic than classifier
+          'MODEL_ARCHITECTURE': body.get('classifier', 'BASIC_CLASSIFIER'),
+        },
+        "TRAINING_REWARDS": {
+          'budget': body.get('budget', 0),
+        }
+      },
+      node=self.node_id,
+      pipeline=f'cte2e_{self.job_id}',
+      signature='AI4E_END_TO_END_TRAINING',
+      instance_id=self.job_id,
+    )
+    if not success:
+      err_msg = f"Error at train start for {self.job_id} on {self.node_id}:\n{err_msg}"
+      return False, err_msg
+    return True, "Training started"
+
+  def deploy_configs(self, lst_allowed):
+    """
+    2 pipelines will be deployed:
+      1. One custom detection pipeline to run the freshly obtained custom model
+      2. One fastapi pipeline on which the user will be able to interact with the
+      previously mentioned pipeline.
+    Parameters
+    ----------
+    lst_allowed: list
+      Nodes where the above-mentioned pipelines can be deployed.
+
+    Returns
+    -------
+
+    """
+    chosen_node = np.random.choice(lst_allowed)
+    chosen_node = 'bleo_edge_node'
+    # START DETECTION PIPELINE
+    instance_config = {
+      "AI_ENGINE": "custom_second_stage_detector",
+      "OBJECT_TYPE": self.train_meta['OBJECT_TYPE'],
+      'SECOND_STAGE_DETECTOR_CLASSES': self.train_meta['SECOND_STAGE_DETECTOR_CLASSES'],
+      'STARTUP_AI_ENGINE_PARAMS': {
+        'CUSTOM_DOWNLOADABLE_MODEL_URL': self.train_final['INFERENCE_CONFIG_URI']['URL'],
+        'MODEL_INSTANCE_ID': self.train_meta['MODEL_INSTANCE_ID']
+      },
+      'DESCRIPTION': self.description,
+      'OBJECTIVE_NAME': self.objective_name
+    }
+    pipeline = self.session.create_or_attach_to_pipeline(
+      node=chosen_node,
+      name=f'deploy_{self.job_id}',
+      data_source='ON_DEMAND_INPUT',
+      # plugins=[det_plugin_config]
+    )
+    instance = pipeline.create_or_attach_to_plugin_instance(
+      signature='ai4e_custom_inference_agent',
+      instance_id=self.job_id,
+      config=instance_config
+    )
+    pipeline.deploy()
+    # END DETECTION PIPELINE
+    # START FASTAPI PIPELINE
+    fastapi_instance_config = {
+    }
+    pipeline = self.session.create_or_attach_to_pipeline(
+      node=chosen_node,
+      name=f'AI4EveryoneDeploys',
+      data_source='VOID',
+    )
+    instance = pipeline.create_or_attach_to_plugin_instance(
+      signature="AI4E_DEPLOY",
+      instance_id='AI4EveryoneDeploys',
+      config=fastapi_instance_config
+    )
+    pipeline.deploy()
+    instance.send_instance_command(
+      command='REGISTER',
+      command_params={
+        'CONFIG': instance_config
+      }
+    )
+    # END FASTAPI PIPELINE
+    return
+
+  def deploy_job(self, body):
+    if self.deployed:
+      return True, "Job already deployed"
+    self.started_deploying = True
+    lst_allowed = self.session.get_allowed_nodes()
+    self.session.P(f"Allowed nodes: {lst_allowed}")
+    if len(lst_allowed) == 0:
+      self.started_deploying = False
+      return False, "No node available at the moment."
+    self.deploy_configs(lst_allowed)
+
+    self.started_deploying = False
+    self.deployed = True
+    return True, "Job deployed"
 # endclass Job
 
 
 class AI4E_CONSTANTS:
+  TRAINING_PLUGIN_SIGNATURES = [
+    "second_stage_training_process", "general_training_process",
+  ]
   RELEVANT_PLUGIN_SIGNATURES = [
     "ai4e_crop_data", "ai4e_label_data",
     "second_stage_training_process", "general_training_process",

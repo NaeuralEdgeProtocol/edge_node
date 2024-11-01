@@ -1,4 +1,4 @@
-from core.business.base.web_app import FastApiWebAppPlugin
+from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin
 
 __VER__ = '0.1.0.0'
 
@@ -11,7 +11,7 @@ _CONFIG = {
 
   'PORT' : None,
 
-  'ASSETS' : '_weather_app',
+  'ASSETS' : 'plugins/business/fastapi/weather_demo',
   'JINJA_ARGS': {
     'html_files' : [
       {

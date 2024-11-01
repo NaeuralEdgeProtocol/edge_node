@@ -25,7 +25,7 @@
 """
 
 
-from core.business.base import BasePluginExecutor as BasePlugin
+from naeural_core.business.base import BasePluginExecutor as BasePlugin
 
 import os
 import sys

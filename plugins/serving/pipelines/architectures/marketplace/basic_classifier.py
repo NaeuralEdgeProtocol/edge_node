@@ -1,5 +1,5 @@
-from core.local_libraries.nn.th.layers import InputPlaceholder
-from core.local_libraries.nn.th.utils import get_activation
+from naeural_core.local_libraries.nn.th.layers import InputPlaceholder
+from naeural_core.local_libraries.nn.th.utils import get_activation
 import torch as th
 import math
 

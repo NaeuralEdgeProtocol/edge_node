@@ -1,5 +1,5 @@
 # TODO Bleo: WIP
-from core.local_libraries.nn.th.training.models.autoencoder import AutoencoderModelFactory, _CONFIG as AUTOENCODER_CONFIG
+from naeural_core.local_libraries.nn.th.training.models.autoencoder import AutoencoderModelFactory, _CONFIG as AUTOENCODER_CONFIG
 
 SMALL_IMAGE_GRID = {
   'in_channels' : [3],

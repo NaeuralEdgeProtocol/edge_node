@@ -1,6 +1,7 @@
-from core.business.base.web_app import FastApiWebAppPlugin as BasePlugin
-from PyE2 import Session, Payload
-from extensions.business.utils.ai4e_utils import job_data_to_id, Job, get_job_config, AI4E_CONSTANTS
+from PyE2 import Payload, Session
+
+from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
+from extensions.business.utils.ai4e_utils import AI4E_CONSTANTS, Job, get_job_config, job_data_to_id
 
 __VER__ = '0.1.0.0'
 
@@ -13,9 +14,19 @@ _CONFIG = {
 
   'SAVE_PERIOD': 60,
   'REQUEST_TIMEOUT': 10,
+  "PROCESS_DELAY": 0,
 
   'PORT': 5000,
-  'ASSETS': '_ai4everyone',
+  'ASSETS': 'extensions/business/fastapi/_ai4everyone',
+  'JINJA_ARGS': {
+    'html_files': [
+      {
+        'name': 'index.html',
+        'route': '/',
+        'method': 'get'
+      }
+    ]
+  },
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
@@ -31,6 +42,8 @@ class AI4EveryonePlugin(BasePlugin):
     self.requests_responses = {}
     self.last_persistence_save = self.time()
     self.request_cache = {}
+    self.force_persistence = False
+    # !!!This approach, although works, will not be allowed in the future because it's not safe
     self.session = Session(
       name=f'{self.str_unique_identification}',
       config=self.global_shmem['config_communication']['PARAMS'],
@@ -51,7 +64,8 @@ class AI4EveryonePlugin(BasePlugin):
       if signature.lower() not in AI4E_CONSTANTS.RELEVANT_PLUGIN_SIGNATURES:
         return
       is_status = payload.data.get('IS_STATUS', False)
-      if is_status:
+      is_final_dataset_status = payload.data.get('IS_FINAL_DATASET_STATUS', False)
+      if is_status or is_final_dataset_status:
         self.maybe_update_job_data(node_id, pipeline, signature, instance, payload)
       else:
         self.register_request_response(node_id, pipeline, signature, instance, payload)
@@ -122,6 +136,7 @@ class AI4EveryonePlugin(BasePlugin):
       if sample_filename is None:
         return False, {"error": "Sample not found"}
       img = response_data.get('IMG')
+      votes = None
       cache_kwargs = {
         'img': img
       }
@@ -138,6 +153,9 @@ class AI4EveryonePlugin(BasePlugin):
       res = {"name": sample_filename, "content": img}
       if handle_votes:
         res['classes'] = job.classes
+        if votes is not None:
+          res['votes'] = votes
+        # endif votes is not None
       # endif handle votes
       return True, res
 
@@ -171,11 +189,11 @@ class AI4EveryonePlugin(BasePlugin):
 
     def start_job(self, body: dict):
       job_id = self.uuid()
-      node_addr = body.get('nodeAddress', self.node_id)
+      node_addr = body.get('nodeAddress', self.node_addr)
       job_config = get_job_config(job_id, body, self.now_str())
       pipeline_name = f'cte2e_{job_id}'
       self.session.create_pipeline(
-        node_id=node_addr,
+        node=node_addr,
         name=pipeline_name,
         data_source="VOID",
         plugins=[job_config]
@@ -213,7 +231,7 @@ class AI4EveryonePlugin(BasePlugin):
     @BasePlugin.endpoint(method="post")
     def publish_job(self, job_id, body: dict):
       if job_id in self.jobs_data:
-        success, result = self.jobs_data[job_id].publish_job()
+        success, result = self.jobs_data[job_id].publish_job(body)
         return result if success else None
       return None
 
@@ -235,8 +253,34 @@ class AI4EveryonePlugin(BasePlugin):
     def publish_labels(self, job_id, body: dict):
       if job_id in self.jobs_data:
         success, result = self.jobs_data[job_id].publish_labels()
+        if success:
+          self.force_persistence = True
         return result if success else None
       return None
+
+    @BasePlugin.endpoint(method="post")
+    def train(self, job_id, body: dict):
+      if job_id in self.jobs_data:
+        success, result = self.jobs_data[job_id].start_train(body)
+        if success:
+          self.force_persistence = True
+        return result if success else None
+      return None
+
+    @BasePlugin.endpoint(method="post")
+    def deploy_job(self, job_id, body: dict):
+      if job_id in self.jobs_data:
+        """
+        After starting the deploy the status will change to "Deploying"
+        After deploying the status will be "Deployed"
+        
+        """
+        success, result = self.jobs_data[job_id].deploy_job(body)
+        if success:
+          self.force_persistence = True
+        return result if success else None
+      return None
+
     """
     @BasePlugin.endpoint(method="post")
     def delete_job(self, job_id):
@@ -253,6 +297,12 @@ class AI4EveryonePlugin(BasePlugin):
     def labeling_status(self, job_id):
       if job_id in self.jobs_data:
         return self.jobs_data[job_id].get_labeling_status()
+      return None
+
+    @BasePlugin.endpoint(method="get")
+    def training_status(self, job_id):
+      if job_id in self.jobs_data:
+        return self.jobs_data[job_id].get_train_status()
       return None
 
     @BasePlugin.endpoint(method="get")
@@ -319,13 +369,14 @@ class AI4EveryonePlugin(BasePlugin):
   """PERIODIC SECTION"""
   if True:
     def maybe_persistence_save(self):
-      if self.time() - self.last_persistence_save > self.cfg_save_period:
+      if self.force_persistence or self.time() - self.last_persistence_save > self.cfg_save_period:
         self.last_persistence_save = self.time()
         saved_data = {}
         for job_id, job in self.jobs_data.items():
           saved_data[job_id] = job.get_persistence_data()
         # endfor jobs
         self.persistence_serialization_save(saved_data)
+        self.force_persistence = False
       # endif save time
       return
 

@@ -1,7 +1,7 @@
 
 from typing import List
 import numpy as np
-from core.local_libraries.nn.th.training.callbacks.softmax_classification import SoftmaxClassificationTrainingCallbacks
+from naeural_core.local_libraries.nn.th.training.callbacks.softmax_classification import SoftmaxClassificationTrainingCallbacks
 
 
 class CustomTrainingCallbacks(SoftmaxClassificationTrainingCallbacks):

@@ -50,7 +50,7 @@ is called is "action_read_relay_pins".
 
 If a method is not found, the driver will print an error message and return None.
 """
-from core.business.base.drivers.custom.moxa_custom_device import MoxaCustomDevice
+from naeural_core.business.base.drivers.custom.moxa_custom_device import MoxaCustomDevice
 
 
 class ASimpleMoxaDeviceDriverPlugin(MoxaCustomDevice):

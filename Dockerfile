@@ -31,4 +31,6 @@ ENV EE_CONFIG .config_startup.json
 RUN pip install --no-cache-dir kmonitor PyE2 decentra-vision
 ## END do not move
 
+RUN pip install --no-cache-dir --no-deps naeural-core
+
 CMD ["python3","device.py"]

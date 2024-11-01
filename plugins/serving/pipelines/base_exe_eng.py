@@ -1,5 +1,5 @@
 import abc
-from core.local_libraries.nn.th.training.pipelines.base import BaseTrainingPipeline
+from naeural_core.local_libraries.nn.th.training.pipelines.base import BaseTrainingPipeline
 
 
 class BaseExeEngTrainingPipeline(BaseTrainingPipeline, abc.ABC):

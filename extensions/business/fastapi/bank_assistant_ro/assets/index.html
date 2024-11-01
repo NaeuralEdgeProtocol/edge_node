@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatbot</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #d4dae2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-box {
+            flex-grow: 1;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-bottom: 15px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block; /* Ensure message takes up only the required width */
+            word-wrap: break-word; /* Wrap text if it exceeds the cell's width */
+            max-width: 80%; /* Set maximum width to prevent messages from being too wide */
+            clear: both;
+        }
+        .user-message {
+            float: right;
+            text-align: left;
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .bot-message {
+            float: left;
+            text-align: left;
+            background-color: #f1f1f1;
+            color: #333;
+        }
+        textarea {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            margin-right: 10px;
+            font-size: 16px;
+            resize: vertical; /* Allow resizing vertically only */
+            width: calc(100% - 70px);
+            height: auto;
+            overflow-y: hidden; /* Hide scrollbar until necessary */
+        }
+         .input-area {
+            display: flex;
+            align-items: center;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        input[type="text"]:disabled {
+            background-color: #f1f1f1;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        select {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+        .loading {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        .tps-display {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="chat-container">
+        <select id="context-select">
+            <option value="juridic">Juridic</option>
+            <option value="fizic">Fizic</option>
+        </select>
+        <div class="chat-box" id="chat-box"></div>
+        <div id="loading" class="loading" style="display: none;">Loading...</div>
+        <div class="input-area">
+            <textarea id="message-input" placeholder="Introduceti mesajul..." rows="2"></textarea>
+            <button id="send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+
+    <div id="tps-display" class="tps-display">TPS: Not available</div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const loading = document.getElementById('loading');
+    const contextSelect = document.getElementById('context-select');
+    const tpsDisplay = document.getElementById('tps-display');
+    const baseUrl = 'https://keysoft-1.naeural.ai';
+    let chat_histories = {
+        juridic: [],
+        fizic: [],
+    };
+
+    tpsDisplay.style.display = 'none'; // Hide TPS display by default
+
+    // Enable input once page loads
+    window.onload = () => {
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+    };
+
+    function addMessage(content, sender) {
+        const message = document.createElement('div');
+        message.classList.add('message');
+        message.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+        message.innerHTML = content.replace(/\n/g, '<br>'); // Replace new lines with <br> tags
+        chatBox.appendChild(message);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Handle Enter key to send message
+    messageInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && !event.shiftKey && !sendBtn.disabled) {
+            event.preventDefault(); // Prevent the default behavior (new line)
+            sendMessage();
+        }
+    });
+
+    function roundToDecimal(value, decimals) {
+        const factor = 10 ** decimals;
+        try {
+            return Math.round(parseFloat(value) * factor) / factor;
+        } catch (error) {
+            return NaN;
+        }
+    }
+
+    // Send message to server
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        const selectedContext = contextSelect.value; // Get the selected context
+
+        if (message === "") return;
+        let chat_history = chat_histories[selectedContext];
+
+        // Disable input and show loading
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        loading.style.display = 'block';
+
+        addMessage(message, 'user');
+        messageInput.value = '';
+
+        try {
+            const response = await fetch(baseUrl + '/llm_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request: message,
+                    identity: selectedContext,
+                    history: chat_history,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!data.result || !data.result.text_response) {
+                const errMsg = data.result?.error || "Sorry, there was an error processing your reply.";
+                addMessage(errMsg, 'bot');
+            } else {
+                const responseText = data.result.text_response;
+                chat_history.push({
+                    request: message,
+                    response: responseText,
+                });
+                addMessage(responseText, 'bot');
+                // Update TPS display if available
+                if (data.result.tps) {
+                    tpsDisplay.textContent = `TPS: ${roundToDecimal(data.result.tps, 3)}`;
+                    tpsDisplay.style.display = 'block';
+                } else {
+                    tpsDisplay.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            addMessage("An error occurred while sending your message.", 'bot');
+        } finally {
+            // Re-enable input and hide loading
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            loading.style.display = 'none';
+            messageInput.focus();
+        }
+    }
+
+    // Handle context change
+    contextSelect.addEventListener('change', function() {
+        // Clear chat box
+        chatBox.innerHTML = '';
+
+        // Load previous conversation if available
+        const selectedContext = contextSelect.value;
+        chat_histories[selectedContext].forEach(msg => {
+            if (msg.request) {
+                addMessage(msg.request, 'user');
+            }
+            if (msg.response) {
+                addMessage(msg.response, 'bot');
+            }
+        });
+
+        // Focus the message input
+        messageInput.focus();
+    });
+</script>
+
+</body>
+</html>
