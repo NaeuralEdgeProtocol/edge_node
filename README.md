@@ -3,9 +3,9 @@
 ## Hello world tutorial
 
 Below is a simple "Hello world!" style application that aims to show how simple and straightforward it is to distribute existing Python code to multiple edge node workers.
-This code uses the PyE2 SDK.
+This code uses the naeural_client SDK.
 
-To execute this code, you can check [PyE2/tutorials/video_presentation/1. hello_world.ipynb](https://github.com/NaeuralEdgeProtocol/PyE2/blob/main/tutorials/video_presentation/1.%20hello_world.ipynb). You can also check our [video tutorial](TODO_Youtube_link).
+To execute this code, you can check [naeural_client/tutorials/video_presentation/1. hello_world.ipynb](https://github.com/NaeuralEdgeProtocol/naeural_client/blob/main/tutorials/video_presentation/1.%20hello_world.ipynb). You can also check our [video tutorial](TODO_Youtube_link).
 
 ### 1. Create `.env` file
 
@@ -107,7 +107,7 @@ For this, we will create a new method, `remote_brute_force_prime_number_generato
 
 
 ```python
-from PyE2 import CustomPluginTemplate
+from naeural_client import CustomPluginTemplate
 
 # through the `plugin` object we get access to the edge node API
 # the CustomPluginTemplate class acts as a documentation for all the available methods and attributes
@@ -144,7 +144,7 @@ We will use the `on_heartbeat` callback to print the nodes.
 
 
 ```python
-from PyE2 import Session
+from naeural_client import Session
 from time import sleep
 
 def on_heartbeat(session: Session, node_id: str, heartbeat: dict):
@@ -194,7 +194,7 @@ Thus, we need to implement a callback method that will handle this.
 
 
 ```python
-from PyE2 import Pipeline
+from naeural_client import Pipeline
 
 # a flag used to close the session when the task is finished
 finished = False
@@ -218,7 +218,7 @@ Now we are ready to deploy our job to the network.
 
 
 ```python
-from PyE2 import DistributedCustomCodePresets as Presets
+from naeural_client import DistributedCustomCodePresets as Presets
 
 _, _ = session.create_chain_dist_custom_job(
     # this is the main node, our entrypoint
@@ -316,11 +316,11 @@ SMIS 143488},
 ```
 
 ```bibtex
-@misc{PyE2,
+@misc{naeural_client,
   author = {Stefan Saraev, Andrei Damian},
-  title = {PyE2: Python SDK for Naeural Edge Protocol},
+  title = {naeural_client: Python SDK for Naeural Edge Protocol},
   year = {2024},
-  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/PyE2}},
+  howpublished = {\url{https://github.com/NaeuralEdgeProtocol/naeural_client}},
 }
 ```
 
