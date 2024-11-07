@@ -1,5 +1,5 @@
 # local dependencies
-from PyE2.io_formatter import BaseFormatter
+from naeural_client.io_formatter import BaseFormatter
 
 
 class DummyFormatter(BaseFormatter):

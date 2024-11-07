@@ -1,7 +1,7 @@
 from abc import abstractclassmethod
 import threading
 from functools import partial
-from PyE2 import Session, Pipeline, Instance
+from naeural_client import Session, Pipeline, Instance
 
 from naeural_core.business.base import BasePluginExecutor as BaseClass
 from extensions.business.mixins.chain_dist_merge_mixin import _ChainDistMergeMixin
