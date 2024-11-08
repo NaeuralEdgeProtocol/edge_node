@@ -16,7 +16,7 @@ import requests
 import json
 import traceback
 import datetime
-from utils.utils import log_with_color
+from .utils import log_with_color
 
 _FOLDER = './personas'
 
@@ -25,17 +25,23 @@ DIRECT_USER = 'direct-user'
 class OpenAIApp(object):
   def __init__(
     self, 
-    persona, 
+    persona_env_key="PERSONA_NAME", 
     user=None, 
     log=None, 
     persona_location=None,
     debug_mode=False,
   ):
+    self.log = log
+
+    assert isinstance(persona_env_key, str), "persona_env_key must be a string. Provided: {}".format(persona_env_key)    
+    persona = os.environ.get(persona_env_key)
+
+    
+
     assert isinstance(persona, str), "`Persona` must be a string"
     if persona_location is None:
       persona_location = _FOLDER
     self.__persona_location = persona_location
-    self.log = log
     self.data = {}
     self.debug_mode = debug_mode
     self.persona = persona.lower()
@@ -244,7 +250,7 @@ if __name__ == '__main__':
   if MOTION_TEST:
     TESTS = ['Ce face aplicatia voastra?', "cum pot sa bluerz un film?", "Tu esti Skynet?"]
     id_test = 0
-    eng = OpenAIApp(persona='Motionmask', user='Andrei')
+    eng = OpenAIApp(persona='motion', user='Andrei')
     done = False
     while not done:
       if TESTS is not None and id_test < len(TESTS):
