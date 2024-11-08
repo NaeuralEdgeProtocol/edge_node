@@ -1,0 +1,21 @@
+{
+  "name" : "Edge Node Development Container",
+  "dockerFile" : "Dockerfile",
+  // "image": "aidamian/ds101_2024",
+
+  "runArgs": [
+    //"--gpus=all",
+    "--hostname",
+    "edge_dev"    
+  ],
+
+
+  "customizations": {
+    "vscode" : {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  }
+}
