@@ -1,4 +1,18 @@
 import datetime
+import os
+
+
+class FakeAgent:
+  def __init__(self, log, bot_debug=False, **kwargs) -> None:
+    self.log = log
+    self.bot_debug = bot_debug
+    return
+      
+  def ask(self, question, user):
+    if self.bot_debug:
+      self.log.P("  FakeAgent: Asking question '{}' for user '{}'...".format(question, user))
+    return "Answer for {} is the question itself: {}".format(user, question)  
+
 def log_with_color(message: str, color: str, boxed:bool = False, **kwargs) -> None:
   """
   Log a message with color.
@@ -41,6 +55,38 @@ def log_with_color(message: str, color: str, boxed:bool = False, **kwargs) -> No
     message = f"{prefix}{message}"
   
   print(f"{color_codes.get(color, '')}{message}{end_color}", flush=True)
+  return
+
+
+def load_dotenv(filename=".env"):
+  """
+  Load environment variables from a .env file into the OS environment.
+
+  Parameters
+  ----------
+  filename : str, optional
+      The name of the .env file to load, by default ".env".
+  
+  Raises
+  ------
+  FileNotFoundError
+      If the specified .env file is not found in the current directory.
+  """
+  if not os.path.isfile(filename):
+    raise FileNotFoundError(f"{filename} not found in the current directory.")
+
+  with open(filename) as f:
+    for line in f:
+      # Strip whitespace and skip empty lines or comments
+      line = line.strip()
+      if not line or line.startswith("#"):
+        continue
+      
+      # Parse key-value pairs
+      if "=" in line:
+        key, value = line.split("=", 1)
+        key, value = key.strip(), value.strip()
+        os.environ[key] = value
   return
 
 

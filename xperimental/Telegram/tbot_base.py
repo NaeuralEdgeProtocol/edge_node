@@ -4,90 +4,19 @@ import datetime
 import threading
 import time
 import asyncio
+import json
 
 import telegram
 from telegram import Update, Message
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-
-__VERSION__ = '3.1.0'
-
-def log_with_color(message: str, color: str, boxed:bool = False, **kwargs) -> None:
-  """
-  Log a message with color.
-
-  Args:
-    message (str): The message to be logged.
-    color (str): The color to be used for logging. Valid color options are "yellow", "red", "gray", "light", and "green".
-
-  Returns:
-    None
-  """
-  color_codes = {
-    "y": "\033[93m",
-    "r": "\033[91m",
-    "gray": "\033[90m",
-    "light": "\033[97m",
-    "g": "\033[92m",
-    "b": "\033[94m",
-  }
-
-  if color not in color_codes:
-    color = "gray"
-
-  end_color = "\033[0m"
-  now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-  prefix = f"[{now_str}] "
-  
-  if boxed:
-    indent = 4
-    str_indent = ' ' * indent
-    spaces = 20
-    line0 = '#' * (len(message) + spaces + 2)
-    line1 = str_indent + line0
-    line2 = str_indent + '#' + ' ' * (len(line0) - 2) + '#'
-    line3 = str_indent + '#' + ' ' * (spaces // 2)  + message + ' ' * (spaces // 2) + '#'
-    line4 = str_indent + '#' + ' ' * (len(line0) - 2) + '#'
-    line5 = line1
-    message =  f"{prefix}\n{line1}\n{line2}\n{line3}\n{line4}\n{line5}"
-  else:
-    message = f"{prefix}{message}"
-  
-  print(f"{color_codes.get(color, '')}{message}{end_color}", flush=True)
-  return
+try: 
+  from utils.utils import log_with_color
+except ImportError:
+  from xperimental.Telegram.utils import log_with_color 
 
 
-
-def load_dotenv(filename=".env"):
-  """
-  Load environment variables from a .env file into the OS environment.
-
-  Parameters
-  ----------
-  filename : str, optional
-      The name of the .env file to load, by default ".env".
-  
-  Raises
-  ------
-  FileNotFoundError
-      If the specified .env file is not found in the current directory.
-  """
-  if not os.path.isfile(filename):
-    raise FileNotFoundError(f"{filename} not found in the current directory.")
-
-  with open(filename) as f:
-    for line in f:
-      # Strip whitespace and skip empty lines or comments
-      line = line.strip()
-      if not line or line.startswith("#"):
-        continue
-      
-      # Parse key-value pairs
-      if "=" in line:
-        key, value = line.split("=", 1)
-        key, value = key.strip(), value.strip()
-        os.environ[key] = value
-  return
+__VERSION__ = '3.1.3'
 
 
 class TelegramChatbot(object):
@@ -99,11 +28,48 @@ class TelegramChatbot(object):
     conversation_handler=None, 
     debug=False,
   ):
+    """
+    
+    Parameters:
+    -----------
+    
+    log : Logger
+      A logger object that has a method `P` for printing messages.
+      
+    bot_name_env_name : str
+      The name of the environment variable that contains the bot's name.
+      
+    token_env_name : str
+      The name of the environment variable that contains the bot's token.
+      
+    conversation_handler : object
+      An object that has a method `ask` that takes a question and returns an answer.
+      IMPORTANT: this object is expected to be thread-safe and to keep the state of 
+                 the conversation for each user.
+                 
+    debug : bool
+      If True, the bot will print debugging information.
+    
+    Usage:
+    ------
+    
+    bot = TelegramChatbot(
+      log=l,
+      conversation_handler=eng,  
+      debug=FULL_DEBUG,  
+    )
+    bot.run_threaded()
+    ...
+    bot.stop()
+    
+    """
     super().__init__()
     
     self.__log = log
     
     self.bot_debug = debug
+    
+    self.__stats = {}
 
     assert isinstance(bot_name_env_name, str), "bot_name_env_name must be a string. Provided: {}".format(bot_name_env_name)
     bot_name = os.environ.get(bot_name_env_name)
@@ -124,6 +90,22 @@ class TelegramChatbot(object):
     self.__asyncio_loop = None
     
     self.__build()
+    return
+  
+  def __add_user_info(self, user, question):
+    if user not in self.__stats:
+      self.__stats[user] = {
+        'questions': 0,
+        'last_question': None,
+        # 'last_answer': None,
+      }
+    self.__stats[user]['questions'] += 1
+    self.__stats[user]['last_question'] = question
+    return
+  
+  def dump_stats(self):
+    stats = json.dumps(self.__stats, indent=2)
+    self.bot_log("Bot stats:\n{}".format(stats), color='b')
     return
      
   def bot_log(self, s, color=None, low_priority=False, **kwargs):
@@ -150,6 +132,7 @@ class TelegramChatbot(object):
   
   
   def reply_wrapper(self, question, user):
+    self.__add_user_info(user=user, question=question)
     result = self.__eng.ask(question=question, user=user)
     return result
     
@@ -157,13 +140,14 @@ class TelegramChatbot(object):
   async def handle_response(self, user: str, text: str) -> str:    
     self.bot_log("  Preparing response for {}...".format(user), low_priority=True)    
     # Create your own response logic
-    processed: str = text.lower()
+    question: str = text.lower()
+    usr =  str(user).lower()
     loop = asyncio.get_running_loop()
     answer = await loop.run_in_executor(
       None,  # Use the default executor (a ThreadPoolExecutor)
-      self.__eng.ask,
-      processed,
-      str(user)
+      self.reply_wrapper,
+      question,
+      usr
     )
     return answer    
   
@@ -225,12 +209,13 @@ class TelegramChatbot(object):
     await context.bot.send_chat_action(chat_id=chat_id, action=telegram.constants.ChatAction.TYPING)
     
     # next line is the main logic of the bot
-    # TODO: must be converted to async
     response: str = await self.handle_response(user=initiator_id, text=text)
 
     # Reply normal if the message is in private
-    self.bot_log('  Bot resp: {}'.format(response), color='m', low_priority=True)
+    self.bot_log('  Bot resp: {}'.format(response), color='m', low_priority=True)    
     await message.reply_text(response)
+    if self.bot_debug:
+      self.dump_stats()
     return    
     
   
@@ -336,71 +321,4 @@ class TelegramChatbot(object):
     self.bot_runner()
     return  
   
-  
-if __name__ == "__main__":
-  
-  from naeural_core import Logger
-  THREADED_MODE, BLOCKING_MODE = "threaded", "blocking"
-  _MODES = [THREADED_MODE, BLOCKING_MODE]
-  
-  PERSONA_LOCATION = './models/personas/'
-  
-  FULL_DEBUG = True  
-  BOT_MODE = _MODES[0]
-  debug_time = 30
-  
-  
-  class FakeAgent:
-    def __init__(self, log) -> None:
-      self.log = log
-      return
-        
-    def ask(self, question, user):
-      if FULL_DEBUG:
-        self.log.P("  FakeAgent: Asking question '{}' for user '{}'...".format(question, user))
-      return "Answer for {} is the question itself: {}".format(user, question)  
-  
-  
-  l = Logger("TBOT", base_folder=".", app_folder="_local_cache")
-  load_dotenv()
-  
-  l.P("Preparing conversation handler...", color='b')
-  try:
-    from xperimental.Telegram.oaiwrapper import OpenAIApp
-    eng = OpenAIApp(
-      persona='', 
-      log=l,
-      persona_location=PERSONA_LOCATION,
-    )
-  except Exception as e:
-    l.P(f"Error preparing conversation handler: {e}", color='r')
-    eng = FakeAgent(log=l)
-  
-  l.P("Starting Telegram Bot...", color='b')
-  bot = TelegramChatbot(
-    log=l,
-    conversation_handler=eng,  
-    debug=FULL_DEBUG,  
-  )
-  
-  l.P("Running bot in {} mode...".format(BOT_MODE), color='b') 
-  
-  if BOT_MODE == BLOCKING_MODE:
-    bot.run_blocking()
-  elif BOT_MODE == THREADED_MODE:
-    bot.run_threaded()
-    start_time = time.time()
-    done = False
-    ping_interval = 10
-    interval_start = time.time()
-    while not done:
-      time.sleep(1)
-      if time.time() - interval_start > ping_interval:
-        bot.bot_log("MAIN: Ping from main thread", color='b')
-        interval_start = time.time()
-      elapsed = time.time() - start_time
-      if elapsed > debug_time:
-        bot.bot_log("MAIN: DEBUG_TIME elapsed. Exiting.", color='r')
-        done = True
-    bot.stop()
-    bot.bot_log("MAIN: System shutdown complete.", color='g')
+ 
