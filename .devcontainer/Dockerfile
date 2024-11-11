@@ -31,4 +31,6 @@ ENV EE_CONFIG .config_startup.json
 RUN pip install --no-cache-dir kmonitor naeural_client decentra-vision python-telegram-bot
 ## END do not move
 
+ENV AINODE_DEVCONTAINER Yes
+
 RUN pip install --no-cache-dir --no-deps naeural-core
