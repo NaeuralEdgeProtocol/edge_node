@@ -217,11 +217,11 @@ class _TelegramChatbotMixin(object):
   def bot_stop(self):
     self.bot_log("Stopping bot...", color='r')
     if self.__asyncio_loop is not None and self.__stop_event is not None:
-        self.bot_log("Signaling bot to stop...")
-        self.__stop_event.set()
+      self.bot_log("Signaling bot to stop...")
+      self.__stop_event.set()
     if self.__bot_thread is not None:
-        self.bot_log("Waiting for bot thread to join...")
-        self.__bot_thread.join()
+      self.bot_log("Waiting for bot thread to join...")
+      self.__bot_thread.join()
     self.bot_log("Bot stopped.", color='g')
     return
 
@@ -287,4 +287,9 @@ class _TelegramChatbotMixin(object):
       self.__class__.__name__,self.__bot_name, __VERSION__
       ), color='g', boxed=True
     )
+    return
+  
+  def on_close(self):
+    self.P("Initiating bot shutdown procedure...")
+    self.bot_stop()
     return

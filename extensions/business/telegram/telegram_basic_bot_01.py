@@ -21,9 +21,9 @@ _CONFIG = {
   },  
 }
 
-class BasicTelegramBot01Plugin(
-  BasePlugin,
+class TelegramBasicBot01Plugin(
   _TelegramChatbotMixin,
+  BasePlugin,
   ):  
   CONFIG = _CONFIG
   
@@ -48,11 +48,11 @@ class BasicTelegramBot01Plugin(
       self.P(f"Custom reply executor created: {self.__custom_handler}")
     return
   
+  
   def on_init(self):
     self.__token = self.cfg_telegram_bot_token
     self.__bot_name = self.cfg_telegram_bot_name
-    
-    
+        
     self.__last_status_check = 0
     self.__create_custom_reply_executor(
       str_base64_code=self.cfg_message_handler,
@@ -74,6 +74,8 @@ class BasicTelegramBot01Plugin(
       self.__failed = True
       raise ValueError("Custom reply executor could not be created")
     return
+  
+  
   
   def bot_msg_handler(self, message, user, **kwargs):
     result = self.__custom_handler(plugin=self, message=message, user=user)
