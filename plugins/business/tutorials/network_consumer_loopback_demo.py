@@ -29,6 +29,8 @@ _CONFIG = {
   **BasePlugin.CONFIG,
   'ALLOW_EMPTY_INPUTS' : True,
   
+  'PROCESS_DELAY' : 0,
+  
   'SEND_EACH' : 20,
 
   'VALIDATION_RULES' : {
@@ -65,7 +67,7 @@ class NetworkConsumerLoopbackDemoPlugin(BasePlugin):
       filtered_data = {
         k : v for k, v in data.items() if k in ['EE_SENDER', "DATA_ID", "DATA_JSON", "EE_TIMESTAMP"]
       }
-      self.P("Received data:\n{}".format(self.json_dumps(data, indent=2)))
+      self.P("Received data:\n{}".format(self.json_dumps(filtered_data, indent=2)))
     return
     
   
