@@ -27,6 +27,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # configure default config_startup file
 ENV EE_CONFIG .config_startup.json
 
+
 ## The following line should NOT be moved to based as it should always be updated
 RUN pip install --no-cache-dir kmonitor naeural_client decentra-vision python-telegram-bot
 ## END do not move

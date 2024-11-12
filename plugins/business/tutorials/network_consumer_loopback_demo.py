@@ -1,9 +1,13 @@
 """
 {
   "NAME" : "network_consumer_demo",
-  "TYPE" : "IotQueueListener",
+  "TYPE" : "NetworkListener",
   
-  "PATH_FILTER" : [null, null, "NETWORK_CONSUMER_LOOPBACK_DEMO", null],
+  "PATH_FILTER" : [
+      null, null, 
+      ["NETWORK_CONSUMER_LOOPBACK_DEMO", "NET_MON_01"],
+      null
+    ],
   "MESSAGE_FILTER" : {},
   
   "PLUGINS" : [
@@ -64,10 +68,13 @@ class NetworkConsumerLoopbackDemoPlugin(BasePlugin):
   def __maybe_process_received(self):
     data = self.dataapi_struct_data()
     if data is not None:
+      eeid = data.get('EE_ID', None)
       filtered_data = {
-        k : v for k, v in data.items() if k in ['EE_SENDER', "DATA_ID", "DATA_JSON", "EE_TIMESTAMP"]
+        k : v for k, v in data.items() if k in [
+          'EE_SENDER', "DATA_ID", "DATA_JSON", "EE_TIMESTAMP", "SIGNATURE"
+        ]
       }
-      self.P("Received data:\n{}".format(self.json_dumps(filtered_data, indent=2)))
+      self.P("Received data from '{}':\n{}".format(eeid, self.json_dumps(filtered_data, indent=2)))
     return
     
   
