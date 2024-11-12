@@ -156,8 +156,9 @@ class NaeuralAssistantPlugin(BasePlugin):
     -------
     node_ids : list[str] - a list of node ids that are allowed to process the requests of the specified type.
     """
-    # lst_allowed = self.session.get_allowed_nodes()
-    lst_allowed = self.netmon.accessible_nodes
+    lst_allowed = self.session.get_allowed_nodes()
+    # TODO: check why the following line produces a different result than the one above.
+    # lst_allowed = self.netmon.accessible_nodes
     self.P(f"Allowed nodes: {lst_allowed}")
     lst_online_agents = [self.get_agent_pipelines(x, agent_type=agent_type) for x in lst_allowed]
     lst_online_agents = sum(lst_online_agents, [])

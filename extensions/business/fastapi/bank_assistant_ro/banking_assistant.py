@@ -1,3 +1,5 @@
+from urllib3 import request
+
 from extensions.business.fastapi.assistant.naeural_assistant import NaeuralAssistantPlugin as BasePlugin
 
 
@@ -28,18 +30,21 @@ class BankingAssistantPlugin(BasePlugin):
   def relevant_plugin_signatures_llm(self):
     return ['ro_llama_agent']
 
-  def process_sys_info(self, system_info: str = None, **kwargs):
+  def compute_request_body_llm(self, request_id, body):
     """
-    Process the system information before sending it to the agent.
+    Compute the request body to be sent to the agent's pipeline.
     Parameters
     ----------
-    system_info : str - the system information from the request
+    request_id : str - the request id
+    body : dict - the request body
 
     Returns
     -------
-    res : str - the system information
+    to_send : dict - the request body to be sent to the agent's pipeline
     """
-    sys_info = super(BankingAssistantPlugin, self).process_sys_info(system_info, **kwargs)
-    if len(sys_info) == 0:
-      return "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
-    return f"Esti un asistent bancar excelent si raspunzi concis luand mereu in considerare: {sys_info}"
+    request_dict = super(BankingAssistantPlugin, self).compute_request_body_llm(request_id, body)
+    context = request_dict['STRUCT_DATA'][0]['system_info']
+    request_dict['STRUCT_DATA'][0]['context'] = context
+    request_dict['STRUCT_DATA'][0]['system_info'] = "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
+    return request_dict
+
