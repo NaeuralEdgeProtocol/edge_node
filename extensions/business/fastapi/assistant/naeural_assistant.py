@@ -116,12 +116,12 @@ class NaeuralAssistantPlugin(BasePlugin):
       'model_name': processed_data.get('model_name'),
     }
 
-  def get_agent_pipelines(self, node_id, agent_type='llm'):
+  def get_agent_pipelines(self, node_addr, agent_type='llm'):
     """
     Here, given a node, a list of all the pipelines containing an LLM agent is returned.
     Parameters
     ----------
-    node_id : str - the node id
+    node_addr : str - the node address
     agent_type : str - the type of agent to look for
 
     Returns
@@ -129,7 +129,8 @@ class NaeuralAssistantPlugin(BasePlugin):
     pipelines : list[Pipeline] - a list of pipelines containing an LLM agent
     """
     res = []
-    lst_active = self.session.get_active_pipelines(node_id)
+    # TODO: replace with self.netmon.network_node_pipelines(node_addr) after possible refactoring
+    lst_active = self.session.get_active_pipelines(node_addr)
     relevant_signatures = self.get_relevant_plugin_signatures(agent_type=agent_type)
     for pipeline_id, pipeline in lst_active.items():
       plugin_instances = pipeline.lst_plugin_instances
@@ -155,10 +156,12 @@ class NaeuralAssistantPlugin(BasePlugin):
     -------
     node_ids : list[str] - a list of node ids that are allowed to process the requests of the specified type.
     """
-    lst_allowed = self.session.get_allowed_nodes()
+    # lst_allowed = self.session.get_allowed_nodes()
+    lst_allowed = self.netmon.accessible_nodes
     self.P(f"Allowed nodes: {lst_allowed}")
     lst_online_agents = [self.get_agent_pipelines(x, agent_type=agent_type) for x in lst_allowed]
     lst_online_agents = sum(lst_online_agents, [])
+    # This may also need refactoring after switching to netmon API
     self.P(f"Online agents: {[(x.node_addr, x.name) for x in lst_online_agents]}")
     return lst_online_agents
 
@@ -255,6 +258,7 @@ class NaeuralAssistantPlugin(BasePlugin):
 
     """
     to_send = self.compute_request_body(request_id, body, request_type=request_type)
+    # Maybe refactor after switching to netmon API
     pipeline.send_pipeline_command(to_send, wait_confirmation=False)
     return
 
@@ -307,6 +311,7 @@ class NaeuralAssistantPlugin(BasePlugin):
         'error': f'No {request_type.upper()} agents({needed_signatures}) are online. Please try again later.'
       }
     # endif no online agents
+    # Maybe refactor after switching to netmon API
     pipeline = self.np.random.choice(lst_online_agents)
     self.register_network_request(
       request_id=request_id,

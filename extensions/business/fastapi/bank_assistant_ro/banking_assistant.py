@@ -27,3 +27,19 @@ class BankingAssistantPlugin(BasePlugin):
 
   def relevant_plugin_signatures_llm(self):
     return ['ro_llama_agent']
+
+  def process_sys_info(self, system_info: str = None, **kwargs):
+    """
+    Process the system information before sending it to the agent.
+    Parameters
+    ----------
+    system_info : str - the system information from the request
+
+    Returns
+    -------
+    res : str - the system information
+    """
+    sys_info = super(BankingAssistantPlugin, self).process_sys_info(system_info, **kwargs)
+    if len(sys_info) == 0:
+      return "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
+    return f"Esti un asistent bancar excelent si raspunzi concis luand mereu in considerare: {sys_info}"
