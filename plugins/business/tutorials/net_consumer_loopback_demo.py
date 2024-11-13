@@ -5,14 +5,14 @@
   
   "PATH_FILTER" : [
       null, null, 
-      ["NETWORK_CONSUMER_LOOPBACK_DEMO", "NET_MON_01"],
+      ["NET_CONSUMER_LOOPBACK_DEMO", "NET_MON_01"],
       null
     ],
   "MESSAGE_FILTER" : {},
   
   "PLUGINS" : [
     {
-      "SIGNATURE" : "NETWORK_CONSUMER_LOOPBACK_DEMO",
+      "SIGNATURE" : "NET_CONSUMER_LOOPBACK_DEMO",
       "INSTANCES" : [
         {
           "INSTANCE_ID" : "NETWORK_CONSUMER_DEMO_INST1"
@@ -42,7 +42,7 @@ _CONFIG = {
   },
 }
 
-class NetworkConsumerLoopbackDemoPlugin(BasePlugin):
+class NetConsumerLoopbackDemoPlugin(BasePlugin):
   
   
   def on_init(self):
