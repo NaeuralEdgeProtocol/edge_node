@@ -35,7 +35,9 @@ _CONFIG = {
   
   'PROCESS_DELAY' : 0,
   
-  'SEND_EACH' : 5,
+  'SEND_EACH' : 10,
+  
+  'REQUEST_CONFIGS_EACH' : 30,
   
   'VALIDATION_RULES' : {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
@@ -48,25 +50,35 @@ class NetConfigDemoPlugin(BasePlugin):
   def on_init(self):
     self.P("Network peer config watch demo initializing...")
     self.__last_data_time = 0
+    self.__new_nodes_this_iter = 0
     self.__allowed_nodes = {}
     return
   
   def __maybe_send(self):
     if self.time() - self.__last_data_time > self.cfg_send_each:
-      self.P("I have {} pipelines locally. Sending requests to all nodes...".format(
-        len(self.local_pipelines)
-      ))
       self.__last_data_time = self.time()
-      # now send some requests
-      for node in self.__allowed_nodes:
-        addr = node
-        self.cmdapi_send_instance_command(
-          pipeline="admin_pipeline",
-          signature="UPDATE_MONITOR_01",
-          instance_id="UPDATE_MONITOR_01_INST",
-          instance_command="GET_PIPELINES",
-          node_address=addr,
-        )
+      if len(self.__allowed_nodes) == 0:
+        self.P("No allowed nodes to send requests to. Waiting for network data...")
+      else:
+        self.P("I have {} pipelines locally. Sending requests to all nodes...".format(
+          len(self.local_pipelines)
+        ))        
+        # now send some requests
+        for node_addr in self.__allowed_nodes:
+          last_request = self.__allowed_nodes[node_addr].get("last_config_get", 0)
+          if (self.time() - last_request) > self.cfg_request_configs_each:
+            self.P("Sending GET_PIPELINES <{}>...".format(node_addr))
+            self.cmdapi_send_instance_command(
+              pipeline="admin_pipeline",
+              signature="UPDATE_MONITOR_01",
+              instance_id="UPDATE_MONITOR_01_INST",
+              instance_command="GET_PIPELINES",
+              node_address=node_addr,
+            )
+          #endif enough time since last request of this node
+        #endfor __allowed_nodes
+      #endif len(__allowed_nodes) == 0
+    #endif time to send
     return
   
   def __maybe_process_received(self):
@@ -76,21 +88,45 @@ class NetConfigDemoPlugin(BasePlugin):
       sender = data.get(self.const.PAYLOAD_DATA.EE_SENDER, None)
       signature = data.get(self.const.PAYLOAD_DATA.SIGNATURE, None)
       is_encrypted = data.get(self.const.PAYLOAD_DATA.EE_IS_ENCRYPTED, False)
-      self.P("Received {} '{}' data from '{}' <{}>".format(
+      self.P("Received {} '{}' data from {}".format(
         "encrypted" if is_encrypted else "unencrypted",
-        signature, eeid, sender
+        signature, f"'{eeid}' <{sender}>" if sender != self.ee_addr else "SELF"
       ))
       if signature == "NET_MON_01":        
         nodes_data = data.get("CURRENT_NETWORK")
-        if nodes_data is not None:
-          self.P("Received NET_MON_01 net-map data for {} nodes. Here is one of them:\n{}".format(
-            len(nodes_data), nodes_data[list(nodes_data.keys())[0]]
-          ))
-          # get all whitelists
-          # check if ee_addr in whitelist then add to allowed nodes
-          # 
-      elif signature == "UPDATE_MONITOR_01":
-        self.P("Received UPDATE_MONITOR_01 data: \n{}".format(data))
+        self.__new_nodes_this_iter = 0
+        for node_data in nodes_data.values():
+          addr = node_data.get("address", None)
+          if addr == self.ee_addr:
+            # its us, no need to check whitelist
+            continue
+          whitelist = node_data.get("whitelist", [])
+          for ee_addr in whitelist:
+            if ee_addr in self.ee_addr:
+              # we have found a whitelist that contains our address
+              if addr not in self.__allowed_nodes:
+                self.__allowed_nodes[addr] = {
+                  "whitelist" : whitelist,
+                  "last_config_get" : 0
+                } 
+                self.__new_nodes_this_iter += 1
+              #endif not in allowed nodes
+            #endif ee_addr in whitelist
+          # endfor whitelist
+        #endfor nodes_data
+        self.P("Found {} new nodes in the network that allow us to send commands.".format(
+          self.__new_nodes_this_iter
+        ))
+      #endif signature == "NET_MON_01"
+      
+      elif signature == "UPDATE_MONITOR_01":        
+        self.P("Received UPDATE_MONITOR_01 data: \n{}".format(
+          self.json_dumps(data, indent=2)
+        ))
+        if sender in self.__allowed_nodes:
+          self.__allowed_nodes[sender]["last_config_get"] = self.time()
+          self.P(f"Updated last_config_get for node '{sender}'")
+      #endif signature == "UPDATE_MONITOR_01"
       
     return
     

@@ -4,11 +4,11 @@
   // "image": "aidamian/ds101_2024",
 
   "runArgs": [
-    //"--gpus=all",
+    //"--gpus=all", // Use this option if you have a GPU
     "--hostname",
     "edge_dev"    
   ],
-
+  
   
   "customizations": {
     "vscode" : {
