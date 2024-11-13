@@ -42,7 +42,7 @@ _CONFIG = {
   },
 }
 
-class PeerConfigDemoPlugin(BasePlugin):
+class NetConfigDemoPlugin(BasePlugin):
   
   
   def on_init(self):
