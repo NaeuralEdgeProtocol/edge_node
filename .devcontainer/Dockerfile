@@ -7,7 +7,6 @@ COPY  . /edge_node
 # set a generic env variable 
 ENV AINODE_DOCKER Yes
 
-
 # set a generic env variable 
 ENV AINODE_DOCKER_SOURCE main
 

@@ -26,7 +26,6 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
 
   def __init__(self, **kwargs):
     super(EpochManager01Plugin, self).__init__(**kwargs)
-    self.__bc_engine=self.global_shmem[self.ct.BLOCKCHAIN_MANAGER],
     return
   
   def __sign(self, data):
@@ -35,7 +34,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     Returns the signature. 
     Use the data param as it will be modified in place.
     """
-    signature = self.__bc_engine.sign(data, add_data=True, use_digest=True)
+    signature = self.bc.sign(data, add_data=True, use_digest=True)
     return signature
 
   def __get_response(self, dct_data: dict):
