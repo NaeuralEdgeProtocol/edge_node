@@ -33,6 +33,8 @@ _CONFIG = {
   **BasePlugin.CONFIG,
   'ALLOW_EMPTY_INPUTS' : True,
   
+  'MAX_INPUTS_QUEUE_SIZE' : 16,
+  
   'PROCESS_DELAY' : 0,
   
   'SEND_EACH' : 10,
@@ -146,8 +148,10 @@ class NetConfigDemoPlugin(BasePlugin):
           )
           decrypted_data = self.json_loads(str_decrypted_data)
           if decrypted_data is not None:
-            self.P("Decrypted data:\n{}".format(
-              self.json_dumps(decrypted_data, indent=2)
+            received_pipelines = decrypted_data.get("EE_PIPELINES", [])
+            self.P("Decrypted data size {} with pipelines:\n{}".format(
+              len(str_decrypted_data),
+              self.json_dumps(received_pipelines, indent=2),              
             ))
           else:
             self.P("Failed to decrypt data.", color='r')
