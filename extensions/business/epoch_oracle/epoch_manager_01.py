@@ -26,7 +26,17 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
 
   def __init__(self, **kwargs):
     super(EpochManager01Plugin, self).__init__(**kwargs)
+    self.__bc_engine=self.global_shmem[self.ct.BLOCKCHAIN_MANAGER],
     return
+  
+  def __sign(self, data):
+    """
+    Sign the given data using the blockchain engine.
+    Returns the signature. 
+    Use the data param as it will be modified in place.
+    """
+    signature = self.__bc_engine.sign(data, add_data=True, use_digest=True)
+    return signature
 
   def __get_response(self, dct_data: dict):
     """
@@ -59,6 +69,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     dct_data['server_current_epoch'] = self.__get_current_epoch()
     # TODO: make in the format "84 days, 8:47:51"
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
+    self.__sign(dct_data)
     return dct_data
 
   def __get_current_epoch(self):

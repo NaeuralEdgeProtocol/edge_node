@@ -60,21 +60,21 @@ class NetConfigDemoPlugin(BasePlugin):
       if len(self.__allowed_nodes) == 0:
         self.P("No allowed nodes to send requests to. Waiting for network data...")
       else:
-        self.P("I have {} pipelines locally. Sending requests to all nodes...".format(
-          len(self.local_pipelines)
-        ))        
+        self.P(f"I have {len(self.local_pipelines)} pipelines locally. Sending requests to all nodes...")        
         # now send some requests
         for node_addr in self.__allowed_nodes:
+          node_ee_id = self.netmon.network_node_eeid(node_addr)
           last_request = self.__allowed_nodes[node_addr].get("last_config_get", 0)
           if (self.time() - last_request) > self.cfg_request_configs_each:
-            self.P("Sending GET_PIPELINES <{}>...".format(node_addr))
+            self.P(f"Sending GET_PIPELINES to '{node_ee_id}' <{node_addr}>...")
             self.cmdapi_send_instance_command(
               pipeline="admin_pipeline",
               signature="UPDATE_MONITOR_01",
               instance_id="UPDATE_MONITOR_01_INST",
-              instance_command="GET_PIPELINES",
+              instance_command={ "COMMAND": "GET_PIPELINES" },
               node_address=node_addr,
             )
+            self.__allowed_nodes[node_addr]["last_config_get"] = self.time()
           #endif enough time since last request of this node
         #endfor __allowed_nodes
       #endif len(__allowed_nodes) == 0
@@ -124,7 +124,7 @@ class NetConfigDemoPlugin(BasePlugin):
           self.json_dumps(data, indent=2)
         ))
         if sender in self.__allowed_nodes:
-          self.__allowed_nodes[sender]["last_config_get"] = self.time()
+          #
           self.P(f"Updated last_config_get for node '{sender}'")
       #endif signature == "UPDATE_MONITOR_01"
       
