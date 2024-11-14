@@ -29,4 +29,5 @@ RUN pip install --no-cache-dir kmonitor naeural_client decentra-vision python-te
 
 ENV AINODE_DEVCONTAINER Yes
 
+
 RUN pip install --no-cache-dir --no-deps naeural-core
