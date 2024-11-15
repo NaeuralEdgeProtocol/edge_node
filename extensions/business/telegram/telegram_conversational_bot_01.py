@@ -187,6 +187,13 @@ class TelegramConversationalBot01Plugin(
     return
 
   def bot_msg_handler(self, message, user, **kwargs):
+    if message == '\\reset':
+      self.__user_data[user] = {
+        'system_prompt': self.cfg_system_prompt or '',
+        'messages': []
+      }
+      return "Conversation history reset."
+    # endif conversation is reset
     self.maybe_init_user_data(user)
     self.P(f"Received message from {user}: {message}")
     response = self.get_response(user, message)
