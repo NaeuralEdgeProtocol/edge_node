@@ -1,5 +1,3 @@
-from urllib3 import request
-
 from extensions.business.fastapi.assistant.naeural_assistant import NaeuralAssistantPlugin as BasePlugin
 
 
@@ -43,8 +41,11 @@ class BankingAssistantPlugin(BasePlugin):
     to_send : dict - the request body to be sent to the agent's pipeline
     """
     request_dict = super(BankingAssistantPlugin, self).compute_request_body_llm(request_id, body)
-    context = request_dict['STRUCT_DATA'][0]['system_info']
-    request_dict['STRUCT_DATA'][0]['context'] = context
-    request_dict['STRUCT_DATA'][0]['system_info'] = "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
+    sys_info = request_dict['STRUCT_DATA'][0]['system_info']
+    if len(sys_info) > 0:
+      new_sys_info = "Esti un asistent bancar excelent la o banca despre care stii urmatoarele: " + sys_info
+    else:
+      new_sys_info = "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
+    request_dict['STRUCT_DATA'][0]['system_info'] = new_sys_info
     return request_dict
 
