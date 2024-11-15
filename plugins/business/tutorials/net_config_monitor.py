@@ -22,6 +22,13 @@
   ]
 }
 
+The full algoritm of this plugin is as follows:
+1. At each iteration we check if data is avail from NET_MON_01.
+2. If data is avail, we determine which nodes are allowed by which nodes from the list of active nodes.
+3. For current node now I have the list of all nodes that allow me to connect to them.
+4. At next iteration I will send COMMAND to UPDATE_MONITOR_01 for any required and allowed nodes.
+5. If I receive data from UPDATE_MONITOR_01, I will *decrypt* it and update the list of pipelines for the sender node.
+
 """
 from naeural_core.business.base import BasePluginExecutor as BasePlugin
 
