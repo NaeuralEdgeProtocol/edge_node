@@ -2,7 +2,7 @@
   "EE_ID": "XXXXXXXXXX",
   "SECURED" : true,
   "IO_FORMATTER" : "",
-  "MAIN_LOOP_RESOLUTION" : 5,
+  "MAIN_LOOP_RESOLUTION" : 10,
 
   "SYSTEM_TEMPERATURE_CHECK" : false,
   
