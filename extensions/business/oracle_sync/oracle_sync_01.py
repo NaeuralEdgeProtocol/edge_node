@@ -648,9 +648,9 @@ class OracleSync01Plugin(BaseClass):
                f"Current epoch {epoch}", color='r')
         return
 
-      self.__last_epoch_synced = epoch
-
       self.netmon.epoch_manager.update_epoch_availability(epoch, agreed_median_table)
+
+      self.__last_epoch_synced = epoch
       return
 
     # S8_SEND_REQUEST_AGREED_MEDIAN_TABLE
