@@ -39,6 +39,16 @@ Pipeline config:
   "PATH_FILTER" : [None, None, "ORACLE_SYNC_01", None],
   "MESSAGE_FILTER" : {},
 }
+
+
+To deploy for the first time:
+1. Set `last_epoch_synced = X-1` in epoch manager
+2. Start boxes in epoch X-1, let them run through epoch X-1, and let them enter in epoch X
+3. During epoch X, deploy the plugin on all oracles
+4. The plugins will skip the first sync process, because current epoch (X)
+   is the same as the last epoch synced (X-1) + 1
+4. Let all oracles run through epoch X, until they enter epoch X+1
+5. When they enter epoch X+1, the plugin will start the sync process
 """
 
 from naeural_core.business.base import BasePluginExecutor as BaseClass
@@ -256,7 +266,7 @@ class OracleSync01Plugin(BaseClass):
       self.first_time_agreed_median_table_sent = None
       self.last_time_agreed_median_table_sent = None
 
-      self.__last_epoch_synced = 0  # TODO: change the initial value
+      self.__last_epoch_synced = self.netmon.epoch_manager.get_last_sync_epoch()
       self.first_time_request_agreed_median_table_sent = None
       self.last_time_request_agreed_median_table_sent = None
       return
@@ -284,6 +294,10 @@ class OracleSync01Plugin(BaseClass):
         request_agreed_median_table = oracle_data.get('REQUEST_AGREED_MEDIAN_TABLE')
         start_epoch = oracle_data.get('START_EPOCH')
         end_epoch = oracle_data.get('END_EPOCH')
+
+        if stage != self.STATES.S8_SEND_REQUEST_AGREED_MEDIAN_TABLE:
+          # received a message from a different stage
+          continue
 
         if request_agreed_median_table:
           self.P(f"Received request from oracle {sender}: {stage = }, {start_epoch = }, {end_epoch = }")
@@ -655,8 +669,12 @@ class OracleSync01Plugin(BaseClass):
         sender = dct_message.get(self.ct.PAYLOAD_DATA.EE_SENDER)
         oracle_data = dct_message.get('ORACLE_DATA')
         dct_epoch_agreed_median_table = oracle_data.get('EPOCH__AGREED_MEDIAN_TABLE')
+        stage = oracle_data.get('STAGE')
 
-        # TODO: check stage ok (from S0)
+        if stage != self.STATES.S0_WAIT_FOR_EPOCH_CHANGE:
+          # received a message from a different stage
+          continue
+
         if not self.__check_received_epoch__agreed_median_table_ok(sender, oracle_data):
           continue
 
@@ -673,9 +691,16 @@ class OracleSync01Plugin(BaseClass):
 
         # sort dct_epoch_agreed_median_table by epoch in ascending order
         received_epochs = sorted(dct_epoch_agreed_median_table.keys())
-        self.P(f"Received availability table for epochs {received_epochs} from {sender = }")
 
-        self.dct_median_tables[sender] = dct_epoch_agreed_median_table
+        if self.__last_epoch_synced + 1 not in received_epochs or self.__current_epoch - 1 not in received_epochs:
+          # Expected epochs in range [last_epoch_synced + 1, current_epoch - 1]
+          # received epochs don t contain the full range
+          continue
+
+        self.P(f"Received availability table for epochs {received_epochs} from {sender = }. Keeping only the "
+               f"tables for epochs in range [{self.__last_epoch_synced + 1}, {self.__current_epoch - 1}]")
+        self.dct_median_tables[sender] = {i: dct_epoch_agreed_median_table[i]
+                                          for i in range(self.__last_epoch_synced + 1, self.__current_epoch)}
       # end for received messages
 
       # Send request to get agreed value from oracles
@@ -767,7 +792,15 @@ class OracleSync01Plugin(BaseClass):
         # end for epoch agreed table
       # end for received messages
 
-      for epoch, lst_agreed_median_table in dct_epoch_lst_agreed_median_table.items():
+      # we make sure the epochs are in ascending order
+      epochs_in_order = sorted(dct_epoch_lst_agreed_median_table.keys())
+      for epoch in epochs_in_order:
+        if epoch <= self.__last_epoch_synced:
+          self.P(f"Epoch {epoch} already synced "
+                 f"(last_epoch_synced= {self.__last_epoch_synced}). Skipping", color='r')
+          # we already have the agreed median table for this epoch
+          continue
+        lst_agreed_median_table = dct_epoch_lst_agreed_median_table[epoch]
         # im expecting all median tables to contain all nodes
         # but some errors can occur, so this does no harm
         all_nodes = set().union(*(set(value_table.keys()) for value_table in lst_agreed_median_table))
