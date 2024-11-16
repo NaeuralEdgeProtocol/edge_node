@@ -23,6 +23,18 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      - name: Retrieve version
+        id: retrieve_version
+        run: |
+          echo "VERSION=$(cat ver.py | grep -o "'.*'")" >> $GITHUB_ENV
+
+      - name: Debug version
+        run: |
+          VERSION=${VERSION//\'/}
+          echo "Develop version to build: '$VERSION'"
+        env:
+          VERSION: ${{ env.VERSION }}
+
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
