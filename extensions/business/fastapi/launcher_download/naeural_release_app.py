@@ -154,7 +154,11 @@ class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
 
       # Add the latest release section
       latest_release = releases[0]
-      self.P("latest_release:\n{} ".format(self.json_dumps(latest_release, indent=2)))
+      dct_info = {
+        k : v for k, v in latest_release.items() 
+        if k in ['tag_name', 'published_at', 'tarball_url', 'zipball_url', 'created_at']
+      }
+      self.P("latest_release:\n{} ".format(self.json_dumps(dct_info, indent=2)))
       latest_release_section = f"""
           <div class="latest-release" id="latest-release">
               <h2>Latest Release: {latest_release['tag_name'].replace("'","")}</h2>

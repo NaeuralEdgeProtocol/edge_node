@@ -1,4 +1,4 @@
-from PyE2 import Payload, Session
+from naeural_client import Payload, Session
 
 from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin as BasePlugin
 from extensions.business.utils.ai4e_utils import AI4E_CONSTANTS, Job, get_job_config, job_data_to_id

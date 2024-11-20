@@ -23,6 +23,29 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      ## version getting and debugging
+
+      - name: Retrieve edge node version
+        id: retrieve_version
+        run: |
+          echo "VERSION=$(cat ver.py | grep -o "'.*'")" >> $GITHUB_ENV
+
+      - name: Check latest naeural_core version
+        id: check_core_latest_version
+        run: |
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/naeural-core/json | jq -r '.info.version')
+          echo "LATEST_NAEURAL_CORE_VERSION=$LATEST_VERSION" >> $GITHUB_ENV          
+
+      - name: Debug version
+        run: |
+          VERSION=${VERSION//\'/}
+          echo "Develop version to build: '$VERSION'"
+          echo "Latest naeural_core version on PyPI: '$LATEST_NAEURAL_CORE_VERSION'"
+        env:
+          VERSION: ${{ env.VERSION }}
+          LATEST_NAEURAL_CORE_VERSION: ${{ env.LATEST_NAEURAL_CORE_VERSION }}
+
+      ## End of version getting and debugging
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3

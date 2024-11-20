@@ -27,3 +27,25 @@ class BankingAssistantPlugin(BasePlugin):
 
   def relevant_plugin_signatures_llm(self):
     return ['ro_llama_agent']
+
+  def compute_request_body_llm(self, request_id, body):
+    """
+    Compute the request body to be sent to the agent's pipeline.
+    Parameters
+    ----------
+    request_id : str - the request id
+    body : dict - the request body
+
+    Returns
+    -------
+    to_send : dict - the request body to be sent to the agent's pipeline
+    """
+    request_dict = super(BankingAssistantPlugin, self).compute_request_body_llm(request_id, body)
+    sys_info = request_dict['STRUCT_DATA'][0]['system_info']
+    if len(sys_info) > 0:
+      new_sys_info = "Esti un asistent bancar excelent la o banca despre care stii urmatoarele: " + sys_info
+    else:
+      new_sys_info = "Esti un asistent bancar excelent care raspunde concis si vrea sa ajute oamenii."
+    request_dict['STRUCT_DATA'][0]['system_info'] = new_sys_info
+    return request_dict
+

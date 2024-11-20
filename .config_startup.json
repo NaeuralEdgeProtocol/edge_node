@@ -2,7 +2,7 @@
   "EE_ID": "XXXXXXXXXX",
   "SECURED" : true,
   "IO_FORMATTER" : "",
-  "MAIN_LOOP_RESOLUTION" : 5,
+  "MAIN_LOOP_RESOLUTION" : 10,
 
   "SYSTEM_TEMPERATURE_CHECK" : false,
   
@@ -86,28 +86,13 @@
   },
   
   "ADMIN_PIPELINE" : {
-    "MINIO_MONIT_01": {
-      "MINIO_HOST"          : null,
-      "MINIO_ACCESS_KEY"    : null,
-      "MINIO_SECRET_KEY"    : null,
-      "MINIO_SECURE"        : null
-    },
-    
-    "REST_CUSTOM_EXEC_01" : {
-      "ALLOW_EMPTY_INPUTS"      : true,
-      "RUN_WITHOUT_IMAGE"       : true,
-      "SEND_MANIFEST_EACH"      : 301
-    },
 
-    "SELF_CHECK_01" : {
-      "DISK_LOW_PRC"  : 0.15,
-      "MEM_LOW_PRC"   : 0.15,
-      "PROCESS_DELAY" : 5
-    },  
+    "NET_CONFIG_MONITOR" : {
+      "PROCESS_DELAY" : 0
+    },
     
     "NET_MON_01" : {
-      "PROCESS_DELAY" : 10,
-      "SUPERVISOR"    : "$EE_SUPERVISOR"
+      "PROCESS_DELAY" : 10
     },
     
     "UPDATE_MONITOR_01" : {
@@ -123,12 +108,8 @@
           
 
       "RELEASE_TAG" : "release-tag-for-yaml-config"
-    },
-
-    "SYSTEM_HEALTH_MONITOR_01": {
-      "PROCESS_DELAY"    : 180,
-      "KERNEL_LOG_LEVEL" : "emerg,alert,crit,err"
     }
+
   },
 
   "COMMUNICATION_ENVIRONMENT" : {

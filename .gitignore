@@ -148,8 +148,6 @@ inference/model_testing/_local_cache/_logs/MPTF.txt
 inference/model_testing/_local_cache/_logs/20211224_102325_MPTF_001_log.txt
 
 
-# vscode stuff
-.vscode
 plugins/libs/_cache/
 core/utils/_cache/
 plugins/business/scoring_plugins/_local_cache/

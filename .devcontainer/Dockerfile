@@ -20,14 +20,14 @@ ENV AINODE_ENV_VER $AI_ENV_VER
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
-# althouh this is not recommended as it should be in .env file
-# ENV EE_DEVICE cuda:0
-
 # configure default config_startup file
 ENV EE_CONFIG .config_startup.json
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir --no-deps naeural-core
+## The following line should NOT be moved to based as it should always be updated
+RUN pip install --no-cache-dir kmonitor naeural_client decentra-vision python-telegram-bot
+## END do not move
 
-CMD ["python3","device.py"]
+ENV AINODE_DEVCONTAINER Yes
+
+
+RUN pip install --no-cache-dir --no-deps naeural-core
