@@ -107,7 +107,8 @@
       "REBOOT_ON_RESTART"   : false,
           
 
-      "RELEASE_TAG" : "release-tag-for-yaml-config"
+      "TODO": "Review this and how develop nodes will differ from main nodes.",
+      "RELEASE_TAG" : "develop"
     }
 
   },
