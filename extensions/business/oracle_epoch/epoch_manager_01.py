@@ -93,6 +93,33 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     return self.netmon.epoch_manager.get_current_epoch()
   
   
+  def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list):
+    """
+    Sign the given data using the blockchain engine.
+    Returns the signature. 
+    Use the data param as it will be modified in place.
+    """
+
+    eth_signature = self.bc.eth_sign_node_epochs(
+      node=node_addr, 
+      epochs=epochs,
+      epochs_vals=epochs_vals, 
+      signature_only=True,
+    )
+    eth_address = self.bc.eth_address
+
+    data = {
+      'node': node_addr,
+      'epochs': epochs,
+      'epochs_vals': epochs_vals,
+      
+      'eth_signed_data' : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
+      'eth_signature': eth_signature,
+      'eth_address': eth_address,
+    }    
+    return data
+  
+  
   def __get_node_epochs(self, node_addr: str):
     """
     Get the epochs availabilities for a given node.
@@ -121,24 +148,10 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
       node_addr, 
       autocomplete=True,
       as_list=True
-    )
-    
+    )    
     epochs = list(range(1, len(epochs_vals) + 1))
     
-    eth_signature = self.bc.eth_sign_node_epochs(
-      node=node_addr, 
-      epochs=epochs,
-      epochs_vals=epochs_vals, 
-      signature_only=True,
-    )
-    eth_address = self.bc.eth_address
-
-    data = {
-      'node': node_addr,
-      'epochs_vals': epochs_vals,
-      'eth_signature': eth_signature,
-      'eth_address': eth_address,
-    }
+    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
     return data
 
   # List of endpoints, these are basically wrappers around the netmon
@@ -267,12 +280,17 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     if not isinstance(epoch, int):
       return None
     epoch_val = self.netmon.epoch_manager.get_node_epoch(node_addr, epoch)
+    
+    epochs = [epoch]
+    epochs_vals = [epoch_val]
+
+    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
 
     response = self.__get_response({
-      'node': node_addr,
       'epoch_id': epoch,
       'epoch_val': epoch_val,
       'epoch_prc': round(epoch_val / 255, 4),
+      **data
     })
     return response
 
@@ -320,11 +338,16 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     if not isinstance(node_addr, str):
       return None
     last_epoch_val = self.netmon.epoch_manager.get_node_last_epoch(node_addr)
+    last_epoch = self.__get_current_epoch() - 1
+    
+    epochs = [last_epoch]
+    epochs_vals = [last_epoch_val]
+    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
 
     response = self.__get_response({
-      'node': node_addr,
-      'last_epoch_id': self.__get_current_epoch() - 1,
+      'last_epoch_id': last_epoch,
       'last_epoch_val': last_epoch_val,
       'last_epoch_prc': round(last_epoch_val / 255, 4),
+      **data,
     })
     return response
