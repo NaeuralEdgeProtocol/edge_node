@@ -154,11 +154,28 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
       return None
     if not isinstance(node_addr, str):
       return None
-    epochs_vals = self.netmon.epoch_manager.get_node_epochs(node_addr, autocomplete=True)
+    
+    epochs_vals = self.netmon.epoch_manager.get_node_epochs(
+      node_addr, 
+      autocomplete=True,
+      as_list=True
+    )
+    
+    epochs = list(range(1, len(epochs_vals) + 1))
+    
+    eth_signature = self.bc.eth_sign_node_epochs(
+      node=node_addr, 
+      epochs=epochs,
+      epochs_vals=epochs_vals, 
+      signature_only=True,
+    )
+    eth_address = self.bc.eth_address
 
     response = self.__get_response({
       'node': node_addr,
       'epochs_vals': epochs_vals,
+      'eth_signature': eth_signature,
+      'eth_address': eth_address,
     })
     return response
 
