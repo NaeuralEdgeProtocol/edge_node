@@ -54,14 +54,14 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     Parameters
     ----------
     dct_data : dict
-        The data to include in the response.
+        The data to include in the response - data already prepared 
 
     Returns
     -------
     dict
         The input dictionary with the following keys added:
-        - server_id: str
-            The address of the current node.
+        - server_alias: str
+            The literal alias of the current node.
 
         - server_time: str
             The current time in UTC of the current node.
@@ -73,7 +73,9 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
             The time that the current node has been running.
     """
     str_utc_date = self.datetime.now(self.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-    dct_data['server_id'] = self.node_addr
+    # dct_data['server_id'] = self.node_addr # redundant due to the EE_SENDER
+    dct_data['server_alias'] - self.node_id
+    dct_data['server_version'] = self.ee_ver
     dct_data['server_time'] = str_utc_date
     dct_data['server_current_epoch'] = self.__get_current_epoch()
     # TODO: make in the format "84 days, 8:47:51"
