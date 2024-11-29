@@ -120,7 +120,7 @@
 
     "QOS" : 2,
     "CONN_MAX_RETRY_ITERS" : 5,
-    "LOG_SEND_COMMANDS" : true,
+    "LOG_SEND_COMMANDS" : false,
 
     "SAVE_RECEIVED_COMMANDS" : true,
     
