@@ -192,6 +192,43 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     return response
 
   @FastApiWebAppPlugin.endpoint
+  # /active_nodes_list
+  def active_nodes_list(self):
+    """
+    Returns the list of known and currently active nodes in the network.
+    For all the nodes use the `nodes_list` endpoint.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following keys:
+        - nodes: list
+            A list of strings, each string is the address of a node in the network.
+
+        - server_id: str
+            The address of the responding node.
+
+        - server_time: str
+            The current time in UTC of the responding node.
+
+        - server_current_epoch: int
+            The current epoch of the responding node.
+
+        - server_uptime: str
+            The time that the responding node has been running.
+    """
+    nodes = self.netmon.epoch_manager.get_node_list()
+    nodes = [
+      x for x in nodes 
+      if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
+    ]
+    response = self.__get_response({
+      'nodes': nodes,
+    })
+    return response
+
+
+  @FastApiWebAppPlugin.endpoint
   # /node_epochs
   def node_epochs(self, node_addr: str):
     """
