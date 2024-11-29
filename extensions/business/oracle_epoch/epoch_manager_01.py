@@ -74,7 +74,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     """
     str_utc_date = self.datetime.now(self.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     # dct_data['server_id'] = self.node_addr # redundant due to the EE_SENDER
-    dct_data['server_alias'] - self.node_id
+    dct_data['server_alias'] = self.node_id
     dct_data['server_version'] = self.ee_ver
     dct_data['server_time'] = str_utc_date
     dct_data['server_current_epoch'] = self.__get_current_epoch()
