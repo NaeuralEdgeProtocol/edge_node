@@ -1,23 +1,19 @@
-from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin
+from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-  **FastApiWebAppPlugin.CONFIG,
-  'USE_NGROK': False,
-  'NGROK_ENABLED': False,
-  'NGROK_DOMAIN': None,
-  'NGROK_EDGE_LABEL': None,
+  **BasePlugin.CONFIG,
 
   'PORT': None,
   'ASSETS': 'plugins/business/fastapi/epoch_manager',
   'VALIDATION_RULES': {
-    **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
+    **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
 }
 
 
-class EpochManager01Plugin(FastApiWebAppPlugin):
+class EpochManager01Plugin(BasePlugin):
   """
   This plugin is a FastAPI web app that provides endpoints to interact with the
   EpochManager of the Neural Core.
@@ -27,8 +23,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
   def __init__(self, **kwargs):
     super(EpochManager01Plugin, self).__init__(**kwargs)
     return
-  
-  
+
   def on_init(self):
     super(EpochManager01Plugin, self).on_init()
     my_address = self.bc.address
@@ -159,7 +154,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
   # List of endpoints, these are basically wrappers around the netmon
   # epoch manager.
 
-  @FastApiWebAppPlugin.endpoint
+  @BasePlugin.endpoint
   # /nodes_list
   def nodes_list(self):
     """
@@ -191,7 +186,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     })
     return response
 
-  @FastApiWebAppPlugin.endpoint
+  @BasePlugin.endpoint
   # /active_nodes_list
   def active_nodes_list(self):
     """
@@ -227,8 +222,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     })
     return response
 
-
-  @FastApiWebAppPlugin.endpoint
+  @BasePlugin.endpoint
   # /node_epochs
   def node_epochs(self, node_addr: str):
     """
@@ -269,7 +263,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     response = self.__get_response(self.__get_node_epochs(node_addr))
     return response
 
-  @FastApiWebAppPlugin.endpoint
+  @BasePlugin.endpoint
   # /node_epoch
   def node_epoch(self, node_addr: str, epoch: int):
     """
@@ -333,7 +327,7 @@ class EpochManager01Plugin(FastApiWebAppPlugin):
     })
     return response
 
-  @FastApiWebAppPlugin.endpoint
+  @BasePlugin.endpoint
   # /node_last_epoch
   def node_last_epoch(self, node_addr: str):
     """
