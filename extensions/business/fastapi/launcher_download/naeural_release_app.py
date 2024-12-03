@@ -1,9 +1,9 @@
-from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebAppPlugin
+from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
 __VER__ = '0.2.0.0'
 
 _CONFIG = {
-  **FastApiWebAppPlugin.CONFIG,
+  **BasePlugin.CONFIG,
 
   'ASSETS' : 'plugins/business/fastapi/launcher_download',
   'JINJA_ARGS': {
@@ -22,11 +22,11 @@ _CONFIG = {
   "RELEASES_REPO_URL": "https://api.github.com/repos/NaeuralEdgeProtocol/edge_node_launcher",
   'VALIDATION_RULES': {
 
-    **FastApiWebAppPlugin.CONFIG['VALIDATION_RULES'],
+    **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
 }
 
-class NaeuralReleaseAppPlugin(FastApiWebAppPlugin):
+class NaeuralReleaseAppPlugin(BasePlugin):
 
   CONFIG = _CONFIG
 
