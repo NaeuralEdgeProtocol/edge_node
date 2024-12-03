@@ -146,7 +146,7 @@ class EpochManager01Plugin(BasePlugin):
       autocomplete=True,
       as_list=True
     )    
-    epochs = list(range(1, len(epochs_vals) + 1))
+    epochs = list(range(1, len(epochs_vals) + 1)) if epochs_vals is not None else None
     
     data = self.__get_signed_data(node_addr, epochs, epochs_vals)
     return data
