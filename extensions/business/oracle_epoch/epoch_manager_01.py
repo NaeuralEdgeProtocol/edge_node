@@ -110,14 +110,17 @@ class EpochManager01Plugin(BasePlugin):
       'epochs': epochs,
       'epochs_vals': epochs_vals,
       
-      'eth_signed_data' : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
+      'eth_signed_data' : {
+        "input" : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
+        "signature_field" : "eth_signature",        
+      },
       'eth_signature': eth_signature,
       'eth_address': eth_address,
     }    
     return data
   
   
-  def __get_node_epochs(self, node_addr: str):
+  def __get_node_epochs(self, node_addr: str, start_epoch: int = 1, end_epoch: int = None):
     """
     Get the epochs availabilities for a given node.
 
@@ -125,6 +128,12 @@ class EpochManager01Plugin(BasePlugin):
     ----------
     node_addr : str
         The address of a node.
+        
+    start_epoch : int
+        The first epoch to get the availability for.
+        
+    end_epoch : int
+        The last epoch to get the availability for.
 
     Returns
     -------
@@ -141,14 +150,49 @@ class EpochManager01Plugin(BasePlugin):
             
 
     """
-    epochs_vals = self.netmon.epoch_manager.get_node_epochs(
-      node_addr, 
-      autocomplete=True,
-      as_list=True
-    )    
-    epochs = list(range(1, len(epochs_vals) + 1)) if epochs_vals is not None else None
+    error_msg = None
+    if end_epoch is None:
+      end_epoch = self.__get_current_epoch() - 1
+    if node_addr is None:
+      error_msg = "Node address is None"
+    if not isinstance(node_addr, str):
+      error_msg = "Node address is not a string"
+    if isinstance(start_epoch, str):
+      start_epoch = int(start_epoch)
+    if isinstance(end_epoch, str):
+      end_epoch = int(end_epoch)
+    if not isinstance(start_epoch, int):
+      error_msg = "Start epoch is not an integer"
+    if not isinstance(end_epoch, int):
+      error_msg = "End epoch is not an integer"
+    if start_epoch > end_epoch:
+      error_msg = "Start epoch is greater than end epoch"
+    if end_epoch < 1:
+      error_msg = "End epoch is less than 1"
+    if end_epoch >= self.__get_current_epoch():
+      error_msg = "End epoch is greater or equal than the current epoch"
     
-    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
+    if error_msg is not None:
+      data = {
+        'node': node_addr,
+        'error': error_msg,
+      }
+    else:
+      epochs_vals = self.netmon.epoch_manager.get_node_epochs(
+        node_addr, 
+        autocomplete=True,
+        as_list=False
+      )    
+      if epochs_vals is None:
+        data = {
+          'node': node_addr,
+          'error': "No epochs found for the node",
+        }
+      else:
+        epochs = list(range(start_epoch, end_epoch + 1)) 
+        epochs_vals_selected = [epochs_vals[x] for x in epochs]
+        data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
+    #endif
     return data
 
   # List of endpoints, these are basically wrappers around the netmon
@@ -181,10 +225,16 @@ class EpochManager01Plugin(BasePlugin):
             The time that the responding node has been running.
     """
     nodes = self.netmon.epoch_manager.get_node_list()
+    nodes = {
+      x : {
+        "alias" :  self.netmon.network_node_eeid(addr=x),
+      } for x in nodes 
+    }    
     response = self.__get_response({
       'nodes': nodes,
     })
     return response
+  
 
   @BasePlugin.endpoint
   # /active_nodes_list
@@ -213,25 +263,33 @@ class EpochManager01Plugin(BasePlugin):
             The time that the responding node has been running.
     """
     nodes = self.netmon.epoch_manager.get_node_list()
-    nodes = [
-      x for x in nodes 
+    nodes = {
+      x : {
+        "alias" :  self.netmon.network_node_eeid(addr=x),
+      } for x in nodes 
       if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
-    ]
+    }
     response = self.__get_response({
       'nodes': nodes,
     })
     return response
-
+  
+  
   @BasePlugin.endpoint
-  # /node_epochs
-  def node_epochs(self, node_addr: str):
+  def node_epochs_range(self, node_addr : str, start_epoch : int, end_epoch : int):
     """
-    Returns the list of epochs availabilities for a given node.
+    Returns the list of epochs availabilities for a given node in a given range of epochs.
 
     Parameters
     ----------
     node_addr : str
         The address of a node.
+        
+    start_epoch : int
+        The first epoch of the range.
+        
+    end_epoch : int
+        The last epoch of the range.
 
     Returns
     -------
@@ -254,6 +312,27 @@ class EpochManager01Plugin(BasePlugin):
 
         - server_uptime: str
             The time that the responding node has been running.
+    """  
+    response = self.__get_response(self.__get_node_epochs(
+      node_addr, start_epoch=start_epoch, end_epoch=end_epoch
+    ))
+    return response
+
+  @BasePlugin.endpoint
+  # /node_epochs
+  def node_epochs(self, node_addr: str):
+    """
+    Returns the list of epochs availabilities for a given node.
+
+    Parameters
+    ----------
+    node_addr : str
+        The address of a node.
+
+    Returns
+    -------
+    dict
+
     """
     if node_addr is None:
       return None
@@ -291,40 +370,22 @@ class EpochManager01Plugin(BasePlugin):
 
         - epoch_prc: float
             The availability score of the node in the epoch as a percentage (between 0 and 1).
-
-        - server_id: str
-            The address of the responding node.
-
-        - server_time: str
-            The current time in UTC of the responding node.
-
-        - server_current_epoch: int
-            The current epoch of the responding node.
-
-        - server_uptime: str
-            The time that the responding node has been running.
     """
-    if node_addr is None or epoch is None:
-      return None
-    if not isinstance(node_addr, str):
-      return None
-    if isinstance(epoch, str):
-      epoch = int(epoch)
-    if not isinstance(epoch, int):
-      return None
-    epoch_val = self.netmon.epoch_manager.get_node_epoch(node_addr, epoch)
-    
-    epochs = [epoch]
-    epochs_vals = [epoch_val]
-
-    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
-
-    response = self.__get_response({
-      'epoch_id': epoch,
-      'epoch_val': epoch_val,
-      'epoch_prc': round(epoch_val / 255, 4),
-      **data
-    })
+    data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
+    if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
+      epoch_val = data['epochs_vals'][0]
+      epoch_val_direct = self.netmon.epoch_manager.get_node_epoch(node_addr, epoch)
+      assert epoch_val == epoch_val_direct
+      response = self.__get_response({
+        'epoch_id': epoch,
+        'epoch_val': epoch_val,
+        'epoch_prc': round(epoch_val / 255, 4),
+        **data
+      })
+    else:
+      response = self.__get_response({
+        **data
+      })
     return response
 
   @BasePlugin.endpoint
@@ -354,33 +415,21 @@ class EpochManager01Plugin(BasePlugin):
         - last_epoch_prc: float
             The availability score of the node in the last epoch as a percentage (between 0 and 1).
 
-        - server_id: str
-            The address of the responding node.
-
-        - server_time: str
-            The current time in UTC of the responding node.
-
-        - server_current_epoch: int
-            The current epoch of the responding node.
-
-        - server_uptime: str
-            The time that the responding node has been running.
     """
-    if node_addr is None:
-      return None
-    if not isinstance(node_addr, str):
-      return None
-    last_epoch_val = self.netmon.epoch_manager.get_node_last_epoch(node_addr)
-    last_epoch = self.__get_current_epoch() - 1
-    
-    epochs = [last_epoch]
-    epochs_vals = [last_epoch_val]
-    data = self.__get_signed_data(node_addr, epochs, epochs_vals)
-
-    response = self.__get_response({
-      'last_epoch_id': last_epoch,
-      'last_epoch_val': last_epoch_val,
-      'last_epoch_prc': round(last_epoch_val / 255, 4),
-      **data,
-    })
+    epoch = self.__get_current_epoch() - 1
+    data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
+    if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
+      epoch_val = data['epochs_vals'][0]
+      epoch_val_direct = self.netmon.epoch_manager.get_node_epoch(node_addr, epoch)
+      assert epoch_val == epoch_val_direct
+      response = self.__get_response({
+        'last_epoch_id': epoch,
+        'last_epoch_val': epoch_val,
+        'last_epoch_prc': round(epoch_val / 255, 4),
+        **data
+      })
+    else:
+      response = self.__get_response({
+        **data
+      })
     return response
