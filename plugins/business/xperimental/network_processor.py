@@ -11,6 +11,8 @@ _CONFIG = {
   'ALLOW_EMPTY_INPUTS' : False,
   
   'ACCEPT_SELF' : False,
+  
+  'FULL_DEBUG_PAYLOADS' : False,
 
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -50,6 +52,8 @@ class NetworkProcessorPlugin(BaseClass):
           self.P("Payload signature verification FAILED: {}".format(data), color="red")
           continue
         payload_path = data.get(self.const.PAYLOAD_DATA.EE_PAYLOAD_PATH, [None, None, None, None])        
+        if self.cfg_full_debug_payloads:
+          self.P("RECV: {}".format(payload_path))
         is_self = payload_path == self.get_instance_path()
         if is_self and not self.cfg_accept_self:
           continue

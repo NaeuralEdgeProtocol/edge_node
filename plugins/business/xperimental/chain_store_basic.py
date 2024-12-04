@@ -1,14 +1,16 @@
 """
+```json
 {
-  "TYPE" : "NetworkListener"
+  "TYPE" : "NetworkListener",
   "NAME" : "chain_store_test1",
   
-  "PLUGINS" [
+  "PLUGINS" : [
     {
       "SIGNATURE" : "CHAIN_STORE_BASIC",
       "INSTANCES" : [
         {
-          "INSTANCE_ID" : "DEFAULT"
+          "INSTANCE_ID" : "DEFAULT",
+          "FULL_DEBUG_PAYLOADS" : true
         }
       ]
     },
@@ -24,10 +26,10 @@
 }
 
 {
-  "TYPE" : "NetworkListener"
+  "TYPE" : "NetworkListener",
   "NAME" : "chain_store_test2",
   
-  "PLUGINS" [
+  "PLUGINS" : [
     {
       "SIGNATURE" : "CHAIN_STORE_BASIC",
       "INSTANCES" : [
@@ -46,8 +48,7 @@
     }
   ]
 }
-
-
+```
 
 """
 
@@ -72,10 +73,17 @@ class ChainStoreBasicPlugin(BaseClass):
   
   
   def on_init(self):
-    self.__chain_storage = {}
     self.__key_owners = {}
     self.__key_confirmations = self.defaultdict(int)
     self.__ops = self.deque()
+    self.__chain_storage = {}
+
+    ## DEBUG ONLY:
+    if "__chain_storage" in self.plugins_shmem:
+      self.P("Chain storage already exists", color="r")
+      self.__chain_storage = self.plugins_shmem["__chain_storage"]
+    ## END DEBUG ONLY
+    
     self.plugins_shmem["__chain_storage"] = self.__chain_storage
     self.plugins_shmem["__chain_storage_get"] = self._get_value
     self.plugins_shmem["__chain_storage_set"] = self._set_value
@@ -86,8 +94,6 @@ class ChainStoreBasicPlugin(BaseClass):
     return
   
   def _set_value(self, key, value, owner=None):
-    if keyhash is None:
-      keyhash = self.uuid()
     self.__chain_storage[key] = value
     self.__key_owners[key] = owner
     self.__ops.append({      
