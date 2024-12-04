@@ -92,7 +92,8 @@
     },
     
     "NET_MON_01" : {
-      "PROCESS_DELAY" : 10
+      "PROCESS_DELAY" : 10,
+      "SUPERVISOR" : "$EE_SUPERVISOR"
     },
     
     "UPDATE_MONITOR_01" : {
