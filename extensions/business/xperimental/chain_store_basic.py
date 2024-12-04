@@ -52,7 +52,7 @@
 
 """
 
-from plugins.business.xperimental.network_processor import NetworkProcessorPlugin as BaseClass
+from extensions.business.xperimental.network_processor import NetworkProcessorPlugin as BaseClass
 
 _CONFIG = {
   **BaseClass.CONFIG,
@@ -80,7 +80,7 @@ class ChainStoreBasicPlugin(BaseClass):
 
     ## DEBUG ONLY:
     if "__chain_storage" in self.plugins_shmem:
-      self.P("Chain storage already exists", color="r")
+      self.P(" === Chain storage already exists", color="r")
       self.__chain_storage = self.plugins_shmem["__chain_storage"]
     ## END DEBUG ONLY
     
@@ -94,14 +94,17 @@ class ChainStoreBasicPlugin(BaseClass):
     return
   
   def _set_value(self, key, value, owner=None):
+    if owner is None:
+      owner = self.get_instance_path()
     self.__chain_storage[key] = value
     self.__key_owners[key] = owner
     self.__ops.append({      
         "op" : "STORE",
         "key": key,        
         "value" : value,   
-        "owner" : self.get_instance_path(),
+        "owner" : owner,
     })
+    self.P(" === Key {} stored by {}".format(key, owner))
     return
   
   def __maybe_broadcast(self):
@@ -121,7 +124,7 @@ class ChainStoreBasicPlugin(BaseClass):
       if key is None or hash is None:
         return
       if self.__chain_storage.get(key, None) == value:
-        self.P(f"KV already exists owned by {owner}")
+        self.P(f" === KV already exists owned by {owner}")
       else:
         self._set_value(key, value, owner=owner)
         
@@ -143,7 +146,7 @@ class ChainStoreBasicPlugin(BaseClass):
         valid = self.__chain_storage.get(key, None) == value and self.__key_owners.get(key, None) == owner
         if valid:
           self.__key_confirmations[key] += 1
-          self.P(f"Key {key} confirmed by {confirm_by}. Confirmations: {self.__key_confirmations[key]}")
+          self.P(f" === Key {key} confirmed by {confirm_by}. Confirmations: {self.__key_confirmations[key]}")
     return
   
 

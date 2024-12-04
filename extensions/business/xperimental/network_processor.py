@@ -47,7 +47,11 @@ class NetworkProcessorPlugin(BaseClass):
     datas = self.dataapi_struct_datas()    
     if len(datas) > 0:
       for data in datas:
-        verified = self.bc.verify(data)
+        try:
+          verified = self.bc.verify(data, str_signature=None, sender_address=None)
+        except Exception as e:
+          self.P(f"{e}: {data}")
+          continue
         if not verified:
           self.P("Payload signature verification FAILED: {}".format(data), color="red")
           continue

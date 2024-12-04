@@ -20,14 +20,23 @@ class ChainStoreTestPlugin(BaseClass):
   
   ## Move to  base_plugin
   def chainstore_set(self, key, value):
-    self.P("Setting data: {} -> {}".format(key, value), color="green")
-    self.plugins_shmem['__chain_storage_set'](key, value)
+    func = self.plugins_shmem.get('__chain_storage_set')
+    if func is not None:
+      self.P("Setting data: {} -> {}".format(key, value), color="green")
+      func(key, value)
+    else:
+      self.P("No chain storage set function found", color="red")
     return
   
   
   def chainstore_get(self, key):
-    value = self.plugins_shmem['__chain_storage_get'](key)
-    self.P("Getting data: {} -> {}".format(key, value), color="green")
+    func = self.plugins_shmem.get('__chain_storage_get')
+    if func is not None:
+      value = func(key)
+      self.P("Getting data: {} -> {}".format(key, value), color="green")
+    else:
+      self.P("No chain storage get function found", color="red")
+      value = None
     return value
   
   
