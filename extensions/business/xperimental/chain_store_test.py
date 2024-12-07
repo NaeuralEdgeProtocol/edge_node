@@ -1,4 +1,56 @@
+"""
+```json
+{
+  "TYPE" : "NetworkListener",
+  "NAME" : "chain_store_test1",
+  
+  "PLUGINS" : [
+    {
+      "SIGNATURE" : "CHAIN_STORE_BASIC",
+      "INSTANCES" : [
+        {
+          "INSTANCE_ID" : "DEFAULT",
+          "FULL_DEBUG_PAYLOADS" : true
+        }
+      ]
+    },
+    {
+      "SIGNATURE" : "CHAIN_STORE_TEST",
+      "INSTANCES" : [
+        {
+          "INSTANCE_ID" : "DEFAULT"
+        }
+      ]
+    }
+  ]
+}
 
+{
+  "TYPE" : "NetworkListener",
+  "NAME" : "chain_store_test2",
+  
+  "PLUGINS" : [
+    {
+      "SIGNATURE" : "CHAIN_STORE_BASIC",
+      "INSTANCES" : [
+        {
+          "INSTANCE_ID" : "DEFAULT"
+        }
+      ]
+    },
+    {
+      "SIGNATURE" : "CHAIN_STORE_TEST",
+      "INSTANCES" : [
+        {
+          "INSTANCE_ID" : "DEFAULT"
+        }
+      ]
+    }
+  ]
+}
+```
+
+"""
 
 from naeural_core.business.base import BasePluginExecutor as BaseClass
 

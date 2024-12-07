@@ -1,58 +1,6 @@
-"""
-```json
-{
-  "TYPE" : "NetworkListener",
-  "NAME" : "chain_store_test1",
-  
-  "PLUGINS" : [
-    {
-      "SIGNATURE" : "CHAIN_STORE_BASIC",
-      "INSTANCES" : [
-        {
-          "INSTANCE_ID" : "DEFAULT",
-          "FULL_DEBUG_PAYLOADS" : true
-        }
-      ]
-    },
-    {
-      "SIGNATURE" : "CHAIN_STORE_TEST",
-      "INSTANCES" : [
-        {
-          "INSTANCE_ID" : "DEFAULT"
-        }
-      ]
-    }
-  ]
-}
 
-{
-  "TYPE" : "NetworkListener",
-  "NAME" : "chain_store_test2",
-  
-  "PLUGINS" : [
-    {
-      "SIGNATURE" : "CHAIN_STORE_BASIC",
-      "INSTANCES" : [
-        {
-          "INSTANCE_ID" : "DEFAULT"
-        }
-      ]
-    },
-    {
-      "SIGNATURE" : "CHAIN_STORE_TEST",
-      "INSTANCES" : [
-        {
-          "INSTANCE_ID" : "DEFAULT"
-        }
-      ]
-    }
-  ]
-}
-```
 
-"""
-
-from extensions.business.xperimental.network_processor import NetworkProcessorPlugin as BaseClass
+from naeural_core.business.base.network_processor import NetworkProcessorPlugin as BaseClass
 
 _CONFIG = {
   **BaseClass.CONFIG,
@@ -73,6 +21,10 @@ class ChainStoreBasicPlugin(BaseClass):
   
   
   def on_init(self):
+    super().on_init() # not mandatory anymore?
+    
+    self.P(" === ChainStoreBasicPlugin INIT")
+    
     self.__key_owners = {}
     self.__key_confirmations = self.defaultdict(int)
     self.__ops = self.deque()
