@@ -8,6 +8,10 @@ _CONFIG = {
   'ALLOW_EMPTY_INPUTS' : True,
   
   "ACCEPT_SELF" : False,
+  
+  "CHAIN_STORE_DEBUG" : True,
+  
+  "FULL_DEBUG_PAYLOADS" : False,
 
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -19,86 +23,169 @@ __VER__ = '0.1.0'
 class ChainStoreBasicPlugin(BaseClass):
   CONFIG = _CONFIG
   
+  CS_STORE = "SSTORE"
+  CS_CONFIRM = "SCONFIRM"
+  CS_DATA = "CHAIN_STORE_DATA"
+  CS_CONFIRM_BY = "confirm_by"
+  CS_CONFIRMATIONS = "confirms"
+  CS_OP = "op"
+  CS_KEY = "key"
+  CS_VALUE = "value"
+  CS_OWNER = "owner"
+  CS_STORAGE_MEM = "__chain_storage" # shared memory key
+  CS_GETTER = "__chain_storage_get"
+  CS_SETTER = "__chain_storage_set"
+  
+  
+  
   
   def on_init(self):
     super().on_init() # not mandatory anymore?
     
     self.P(" === ChainStoreBasicPlugin INIT")
     
-    self.__key_owners = {}
-    self.__key_confirmations = self.defaultdict(int)
+    self.__chainstore_identity = "CS_MSG_{}".format(self.uuid(7))
+    
     self.__ops = self.deque()
     self.__chain_storage = {}
 
     ## DEBUG ONLY:
-    if "__chain_storage" in self.plugins_shmem:
+    if self.CS_STORAGE_MEM in self.plugins_shmem:
       self.P(" === Chain storage already exists", color="r")
-      self.__chain_storage = self.plugins_shmem["__chain_storage"]
+      self.__chain_storage = self.plugins_shmem[self.CS_STORAGE_MEM]
     ## END DEBUG ONLY
     
-    self.plugins_shmem["__chain_storage"] = self.__chain_storage
-    self.plugins_shmem["__chain_storage_get"] = self._get_value
-    self.plugins_shmem["__chain_storage_set"] = self._set_value
+    self.plugins_shmem[self.CS_STORAGE_MEM] = self.__chain_storage
+    self.plugins_shmem[self.CS_GETTER] = self._get_value
+    self.plugins_shmem[self.CS_SETTER] = self._set_value
     return
   
-  def _get_value(self, key):
-    self.__chain_storage.get(key, None)
+  
+  def __get_key_value(self, key):
+    return self.__chain_storage.get(key, {}).get(self.CS_VALUE, None)
+
+  def __get_key_owner(self, key):
+    return self.__chain_storage.get(key, {}).get(self.CS_OWNER, None)
+  
+  def __get_key_confirmations(self, key):
+    return self.__chain_storage.get(key, {}).get(self.CS_CONFIRMATIONS, 0)
+    
+  def __reset_confirmations(self, key):
+    self.__chain_storage[key][self.CS_CONFIRMATIONS] = 0
     return
   
-  def _set_value(self, key, value, owner=None):
+  def __increment_confirmations(self, key):
+    self.__chain_storage[key][self.CS_CONFIRMATIONS] += 1
+    return
+  
+  
+  def __set_key_value(self, key, value, owner):
+    self.__chain_storage[key] = {
+      self.CS_VALUE : value,
+      self.CS_OWNER : owner,
+      self.CS_CONFIRMATIONS : 0,
+    }
+    return
+
+
+  def _get_value(self, key, get_owner=False, debug=False):
+    """ This method is called to get a value from the chain storage """
+    if debug:
+      self.P(" === Getting value for key {}".format(key))
+    value = self.__get_key_value(key)
+    if get_owner:
+      owner = self.__get_key_owner(key)
+      return value, owner
+    return value
+
+
+  def _set_value(self, key, value, owner=None, debug=False):
+    """ This method is called to set a value in the chain storage and push a broadcast request to the network """
     if owner is None:
       owner = self.get_instance_path()
-    self.__chain_storage[key] = value
-    self.__key_owners[key] = owner
-    self.__ops.append({      
-        "op" : "STORE",
-        "key": key,        
-        "value" : value,   
-        "owner" : owner,
-    })
-    self.P(" === Key {} stored by {}".format(key, owner))
+    need_store = True
+    if key in self.__chain_storage:
+      existing_value = self.__get_key_value(key)
+      existing_owner = self.__get_key_owner(key)
+      if existing_value == value:
+        if self.cfg_chain_store_debug:
+          self.P(f" === Key {key} already stored by {existing_owner} has the same value")
+        need_store = False
+    if need_store:
+      self.__set_key_value(key, value, owner)
+      self.__reset_confirmations(key)
+      # now send set-value confirmation to all
+      self.__ops.append({      
+          self.CS_OP : self.CS_STORE,
+          self.CS_KEY: key,        
+          self.CS_VALUE : value,   
+          self.CS_OWNER : owner,
+      })
+      if debug:
+        self.P(" === Key {} locally stored by {}".format(key, owner))
+    return need_store
+
+
+  def __maybe_broadcast(self):
+    """ This method is called to broadcast the chain store operations to the network """
+    while len(self.__ops) > 0:
+      if self.cfg_chain_store_debug:
+        self.P(f" === Broadcasting {len(self.__ops)} chain store {self.CS_STORE} ops")
+      data = {
+        self.CS_DATA : self.__ops.popleft()
+      }
+      self.add_payload_by_fields(**data)
+    return
+
+
+  def __exec_store(self, data):
+    """ This method is called when a store operation is received from the network """
+    key = data.get(self.CS_KEY, None)
+    value = data.get(self.CS_VALUE , None)
+    owner = data.get(self.CS_OWNER, None)
+  
+    result = self._set_value(key, value, owner=owner)
+    if result:
+      # now send confirmation of the storage execution
+      if self.cfg_chain_store_debug:
+        self.P(f" === Sending confirmation of storage of key {key} by {owner}")
+      self.add_payload_by_fields(
+        **{
+            self.CS_DATA : {
+              self.CS_OP : self.CS_CONFIRM,
+              self.CS_KEY: key,
+              self.CS_VALUE : value,
+              self.CS_OWNER : owner,
+              self.CS_CONFIRM_BY : self.get_instance_path(),
+            }
+        }
+      )
     return
   
-  def __maybe_broadcast(self):
-    while len(self.__ops) > 0:
-      self.add_payload_by_fields(
-        chain_store_data=self.__ops.popleft()
-      )
+  def __exec_received_confirm(self, data):
+    """ This method is called when a confirmation of a broadcasted store operation is received from the network """
+    key = data.get(self.CS_KEY, None)
+    value = data.get(self.CS_VALUE, None)
+    owner = data.get(self.CS_OWNER, None)
+    confirm_by = data.get(self.CS_CONFIRM_BY, None)
+    
+    local_owner = self.__get_key_owner(key)
+    local_value = self.__get_key_value(key)
+    if self.cfg_chain_store_debug:
+      self.P(f" === Received conf from {confirm_by} for  {key}={value}, owner{owner}")
+    if owner == local_owner and value == local_value:
+      self.__increment_confirmations(key)
+      if self.cfg_chain_store_debug:
+        self.P(f" === Key {key} confirmed by {confirm_by}")
     return
   
   def on_payload_chain_store_basic(self, payload):
-    data = payload.get("chain_store_data", {})
-    operation = data.get("op", None)
-    if operation == "STORE":
-      key = data.get("key", None)
-      value = data.get("value", None)
-      owner = data.get("owner", None)
-      if key is None or hash is None:
-        return
-      if self.__chain_storage.get(key, None) == value:
-        self.P(f" === KV already exists owned by {owner}")
-      else:
-        self._set_value(key, value, owner=owner)
-        
-      self.add_payload_by_fields(
-        chain_store_data={
-          "op" : "CONFIRM",
-          "key": key,
-          "value" : value,
-          "owner" : owner,
-          "confirm_by" : self.get_instance_path(),
-        }
-      )
-    elif operation == "CONFIRM":
-      key = data.get("key", None)
-      value = data.get("value", None)
-      owner = data.get("owner", None)
-      if owner == self.get_instance_path():
-        confirm_by = data.get("confirm_by", None)
-        valid = self.__chain_storage.get(key, None) == value and self.__key_owners.get(key, None) == owner
-        if valid:
-          self.__key_confirmations[key] += 1
-          self.P(f" === Key {key} confirmed by {confirm_by}. Confirmations: {self.__key_confirmations[key]}")
+    data = payload.get(self.CS_DATA, {})
+    operation = data.get(self.CS_OP, None)
+    if operation == self.CS_STORE:
+      self.__exec_store(data)      
+    elif operation == self.CS_CONFIRM:
+      self.__exec_received_confirm(data)
     return
   
 

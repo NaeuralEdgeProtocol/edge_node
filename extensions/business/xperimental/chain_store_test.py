@@ -9,7 +9,7 @@
       "SIGNATURE" : "CHAIN_STORE_BASIC",
       "INSTANCES" : [
         {
-          "INSTANCE_ID" : "DEFAULT",
+          "INSTANCE_ID" : "CHAIN_STORE_MGR_1",
           "FULL_DEBUG_PAYLOADS" : true
         }
       ]
@@ -18,7 +18,7 @@
       "SIGNATURE" : "CHAIN_STORE_TEST",
       "INSTANCES" : [
         {
-          "INSTANCE_ID" : "DEFAULT"
+          "INSTANCE_ID" : "CHAIN_STORE_TEST_1"
         }
       ]
     }
@@ -34,7 +34,7 @@
       "SIGNATURE" : "CHAIN_STORE_BASIC",
       "INSTANCES" : [
         {
-          "INSTANCE_ID" : "DEFAULT"
+          "INSTANCE_ID" : "CHAIN_STORE_MGR_2"
         }
       ]
     },
@@ -42,7 +42,7 @@
       "SIGNATURE" : "CHAIN_STORE_TEST",
       "INSTANCES" : [
         {
-          "INSTANCE_ID" : "DEFAULT"
+          "INSTANCE_ID" : "CHAIN_STORE_TEST_2"
         }
       ]
     }
@@ -59,7 +59,7 @@ _CONFIG = {
   
   'ALLOW_EMPTY_INPUTS' : False,
   
-  "PROCESS_DELAY" : 5,
+  "PROCESS_DELAY" : 60,
   
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -71,23 +71,27 @@ class ChainStoreTestPlugin(BaseClass):
   CONFIG = _CONFIG  
   
   ## Move to  base_plugin
-  def chainstore_set(self, key, value):
+  def chainstore_set(self, key, value, debug=False):
     func = self.plugins_shmem.get('__chain_storage_set')
     if func is not None:
-      self.P("Setting data: {} -> {}".format(key, value), color="green")
-      func(key, value)
+      if debug:
+        self.P("Setting data: {} -> {}".format(key, value), color="green")
+      func(key, value, debug=debug)
     else:
-      self.P("No chain storage set function found", color="red")
+      if debug:
+        self.P("No chain storage set function found", color="red")
     return
   
   
-  def chainstore_get(self, key):
+  def chainstore_get(self, key, debug=False):
     func = self.plugins_shmem.get('__chain_storage_get')
     if func is not None:
-      value = func(key)
-      self.P("Getting data: {} -> {}".format(key, value), color="green")
+      value = func(key, debug=debug)
+      if debug:
+        self.P("Getting data: {} -> {}".format(key, value), color="green")
     else:
-      self.P("No chain storage get function found", color="red")
+      if debug:
+        self.P("No chain storage get function found", color="red")
       value = None
     return value
   
@@ -102,22 +106,23 @@ class ChainStoreTestPlugin(BaseClass):
   
   # END Move to base_plugin
   
+  
+  
   def on_init(self):
-    self.__myself = self.uuid()
     self.__shown = 0
     return
   
   
   def process(self):
-    key = self.__myself
-    value = self.chainstore_get(key)
+    key = self.get_instance_id() # some arbitrary key
+    value = self.chainstore_get(key, debug=True)
     if value is None:
-      self.P("My value is not in the chainstorage... setting it")
-      value = ".".join(self.get_instance_path())
-      self.chainstore_set(key, value)
+      self.P(f"My key '{key}' is not in the chainstorage... setting it")
+      value = "VALUE-{}".format(self.get_instance_id()[-4:]) # some arbitrary value
+      self.chainstore_set(key, value, debug=True)
       self.P(f"Done setting value: {key}:{value}")
     elif self.__shown < 5:
-      self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage)))
+      self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
       self.__shown += 1      
     return
   
