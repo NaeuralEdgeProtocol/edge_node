@@ -1,3 +1,14 @@
+"""
+TODO:
+
+  - Solve the issue for set-contention in the chain storage when two nodes try to set the same key at the same time
+    - implement a lock mechanism for the chain storage when setting a key value
+  - review chain store confirmations and max confirmations
+  
+  
+
+
+"""
 
 
 from naeural_core.business.base.network_processor import NetworkProcessorPlugin as BaseClass
@@ -12,6 +23,8 @@ _CONFIG = {
   "CHAIN_STORE_DEBUG" : True,
   
   "FULL_DEBUG_PAYLOADS" : False,
+  
+  "CHAIN_PEERS_REFRESH_INTERVAL" : 60,
 
   'VALIDATION_RULES' : { 
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -28,6 +41,7 @@ class ChainStoreBasicPlugin(BaseClass):
   CS_DATA = "CHAIN_STORE_DATA"
   CS_CONFIRM_BY = "confirm_by"
   CS_CONFIRMATIONS = "confirms"
+  CS_MAX_CONFIRMATIONS = "max_confirms"
   CS_OP = "op"
   CS_KEY = "key"
   CS_VALUE = "value"
@@ -47,7 +61,13 @@ class ChainStoreBasicPlugin(BaseClass):
     self.__chainstore_identity = "CS_MSG_{}".format(self.uuid(7))
     
     self.__ops = self.deque()
-    self.__chain_storage = {}
+    
+    try:
+      self.__chain_storage = self.cacheapi_load_pickle(default={}, verbose=True)
+    except Exception as e:
+      self.P(f" === Chain storage could not be loaded: {e}")
+      self.__chain_storage = {}
+      
 
     ## DEBUG ONLY:
     if self.CS_STORAGE_MEM in self.plugins_shmem:
@@ -58,45 +78,68 @@ class ChainStoreBasicPlugin(BaseClass):
     self.plugins_shmem[self.CS_STORAGE_MEM] = self.__chain_storage
     self.plugins_shmem[self.CS_GETTER] = self._get_value
     self.plugins_shmem[self.CS_SETTER] = self._set_value
+    
+    self.__last_chain_peers_refresh = 0
+    self.__chain_peers = []
+    self.__maybe_refresh_chain_peers()
     return
   
   
+  def __maybe_refresh_chain_peers(self):
+    if (self.time() - self.__last_chain_peers_refresh) > self.cfg_chain_peers_refresh_interval:
+      self.__chain_peers = self.bc.get_whitelist(with_prefix=True)
+      self.__last_chain_peers_refresh = self.time()
+    return
+  
+  
+  def __send_data_to_chain_peers(self, data):
+    self.send_encrypted_payload(node_addr=self.__chain_peers, **data)
+    return
+  
+  
+  def __get_min_peer_confirmations(self):
+    return len(self.__chain_peers) // 2 + 1
+  
+  
+  def __save_chain_storage(self):
+    self.cacheapi_save_pickle(self.__chain_storage, verbose=True)
+    self.__last_chain_storage_save = self.time()
+    return
+  
+  ## START setter-getter methods
+
   def __get_key_value(self, key):
     return self.__chain_storage.get(key, {}).get(self.CS_VALUE, None)
 
+
   def __get_key_owner(self, key):
     return self.__chain_storage.get(key, {}).get(self.CS_OWNER, None)
-  
+
+
   def __get_key_confirmations(self, key):
     return self.__chain_storage.get(key, {}).get(self.CS_CONFIRMATIONS, 0)
-    
+
+
   def __reset_confirmations(self, key):
     self.__chain_storage[key][self.CS_CONFIRMATIONS] = 0
+    self.__chain_storage[key][self.CS_MAX_CONFIRMATIONS] = self.__get_min_peer_confirmations()
     return
-  
+
+
   def __increment_confirmations(self, key):
     self.__chain_storage[key][self.CS_CONFIRMATIONS] += 1
     return
-  
-  
+
+
   def __set_key_value(self, key, value, owner):
     self.__chain_storage[key] = {
       self.CS_VALUE : value,
       self.CS_OWNER : owner,
       self.CS_CONFIRMATIONS : 0,
+      self.CS_MAX_CONFIRMATIONS : self.__get_min_peer_confirmations(),
     }
+    self.__save_chain_storage()
     return
-
-
-  def _get_value(self, key, get_owner=False, debug=False):
-    """ This method is called to get a value from the chain storage """
-    if debug:
-      self.P(" === Getting value for key {}".format(key))
-    value = self.__get_key_value(key)
-    if get_owner:
-      owner = self.__get_key_owner(key)
-      return value, owner
-    return value
 
 
   def _set_value(self, key, value, owner=None, debug=False):
@@ -122,8 +165,22 @@ class ChainStoreBasicPlugin(BaseClass):
           self.CS_OWNER : owner,
       })
       if debug:
-        self.P(" === Key {} locally stored by {}".format(key, owner))
+        self.P(f" === Key {key} locally stored by {owner}")
+      # at this point we can wait until we have enough confirmations
     return need_store
+
+
+  def _get_value(self, key, get_owner=False, debug=False):
+    """ This method is called to get a value from the chain storage """
+    if debug:
+      self.P(f" === Getting value for key {key}")
+    value = self.__get_key_value(key)
+    if get_owner:
+      owner = self.__get_key_owner(key)
+      return value, owner
+    return value
+  
+  ### END setter-getter methods
 
 
   def __maybe_broadcast(self):
@@ -131,14 +188,13 @@ class ChainStoreBasicPlugin(BaseClass):
     This method is called to broadcast the chain store operations to the network.
     For each operation in the queue, a broadcast is sent to the network    
     """
-    broadcast_addresses = self.bc.get_whitelist(with_prefix=True)
     if self.cfg_chain_store_debug and len(self.__ops) > 0:
-      self.P(f" === Broadcasting {len(self.__ops)} chain store {self.CS_STORE} ops to {broadcast_addresses}")
+      self.P(f" === Broadcasting {len(self.__ops)} chain store {self.CS_STORE} ops to {self.__chain_peers}")
     while len(self.__ops) > 0:
       data = {
         self.CS_DATA : self.__ops.popleft()
       }
-      self.send_encrypted_payload(node_addr=broadcast_addresses, **data) 
+      self.__send_data_to_chain_peers(data)
     return
 
 
@@ -155,9 +211,8 @@ class ChainStoreBasicPlugin(BaseClass):
     result = self._set_value(key, value, owner=owner)
     if result:
       # now send confirmation of the storage execution
-      broadcast_addresses = self.bc.get_whitelist(with_prefix=True)
       if self.cfg_chain_store_debug:
-        self.P(f" === Sending storage confirm of {key} by {owner} to {broadcast_addresses}")
+        self.P(f" === Sending storage confirm of {key} by {owner} to {self.__chain_peers}")
       data = {
         self.CS_DATA : {
           self.CS_OP : self.CS_CONFIRM,
@@ -167,9 +222,10 @@ class ChainStoreBasicPlugin(BaseClass):
           self.CS_CONFIRM_BY : self.get_instance_path(),
         }
       }
-      self.send_encrypted_payload(node_addr=broadcast_addresses, **data)
+      self.__send_data_to_chain_peers(data)
     return
-  
+
+
   def __exec_received_confirm(self, data):
     """ This method is called when a confirmation of a broadcasted store operation is received from the network """
     key = data.get(self.CS_KEY, None)
@@ -186,7 +242,8 @@ class ChainStoreBasicPlugin(BaseClass):
       if self.cfg_chain_store_debug:
         self.P(f" === Key {key} confirmed by {confirm_by}")
     return
-  
+
+
   def on_payload_chain_store_basic(self, payload):
     sender = payload.get(self.const.PAYLOAD_DATA.EE_SENDER, None)
     destination = payload.get(self.const.PAYLOAD_DATA.EE_DESTINATION, None)
@@ -218,5 +275,6 @@ class ChainStoreBasicPlugin(BaseClass):
 
   
   def process(self):
+    self.__maybe_refresh_chain_peers()
     self.__maybe_broadcast()
     return 
