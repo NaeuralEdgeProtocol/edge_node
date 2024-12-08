@@ -13,7 +13,7 @@ _CONFIG = {
   
   "FULL_DEBUG_PAYLOADS" : False,
 
-  'VALIDATION_RULES' : {
+  'VALIDATION_RULES' : { 
     **BaseClass.CONFIG['VALIDATION_RULES'],
   },  
 }
@@ -127,19 +127,27 @@ class ChainStoreBasicPlugin(BaseClass):
 
 
   def __maybe_broadcast(self):
-    """ This method is called to broadcast the chain store operations to the network """
+    """ 
+    This method is called to broadcast the chain store operations to the network.
+    For each operation in the queue, a broadcast is sent to the network    
+    """
+    broadcast_addresses = self.bc.get_whitelist(with_prefix=True)
+    if self.cfg_chain_store_debug and len(self.__ops) > 0:
+      self.P(f" === Broadcasting {len(self.__ops)} chain store {self.CS_STORE} ops to {broadcast_addresses}")
     while len(self.__ops) > 0:
-      if self.cfg_chain_store_debug:
-        self.P(f" === Broadcasting {len(self.__ops)} chain store {self.CS_STORE} ops")
       data = {
         self.CS_DATA : self.__ops.popleft()
       }
-      self.add_payload_by_fields(**data)
+      self.send_encrypted_payload(node_addr=broadcast_addresses, **data) 
     return
 
 
   def __exec_store(self, data):
-    """ This method is called when a store operation is received from the network """
+    """ 
+    This method is called when a store operation is received from the network. The method will:
+      - set the value in the chain storage
+      - send a ecrypted confirmation of the storage operation to the network
+    """
     key = data.get(self.CS_KEY, None)
     value = data.get(self.CS_VALUE , None)
     owner = data.get(self.CS_OWNER, None)
@@ -147,19 +155,19 @@ class ChainStoreBasicPlugin(BaseClass):
     result = self._set_value(key, value, owner=owner)
     if result:
       # now send confirmation of the storage execution
+      broadcast_addresses = self.bc.get_whitelist(with_prefix=True)
       if self.cfg_chain_store_debug:
-        self.P(f" === Sending confirmation of storage of key {key} by {owner}")
-      self.add_payload_by_fields(
-        **{
-            self.CS_DATA : {
-              self.CS_OP : self.CS_CONFIRM,
-              self.CS_KEY: key,
-              self.CS_VALUE : value,
-              self.CS_OWNER : owner,
-              self.CS_CONFIRM_BY : self.get_instance_path(),
-            }
+        self.P(f" === Sending storage confirm of {key} by {owner} to {broadcast_addresses}")
+      data = {
+        self.CS_DATA : {
+          self.CS_OP : self.CS_CONFIRM,
+          self.CS_KEY: key,
+          self.CS_VALUE : value,
+          self.CS_OWNER : owner,
+          self.CS_CONFIRM_BY : self.get_instance_path(),
         }
-      )
+      }
+      self.send_encrypted_payload(node_addr=broadcast_addresses, **data)
     return
   
   def __exec_received_confirm(self, data):
@@ -180,7 +188,26 @@ class ChainStoreBasicPlugin(BaseClass):
     return
   
   def on_payload_chain_store_basic(self, payload):
-    data = payload.get(self.CS_DATA, {})
+    sender = payload.get(self.const.PAYLOAD_DATA.EE_SENDER, None)
+    destination = payload.get(self.const.PAYLOAD_DATA.EE_DESTINATION, None)
+    is_encrypted = payload.get(self.const.PAYLOAD_DATA.EE_ENCRYPTED_DATA, False)
+    destination = destination if isinstance(destination, list) else [destination]
+    if self.cfg_full_debug_payloads:
+      self.P(f" === on_payload_chain_store_basic from {sender} (enc={is_encrypted})")
+      if self.ee_addr in destination:
+        self.P(f" === on_payload_chain_store_basic received for me")
+      else:
+        self.P(f" === on_payload_chain_store_basic to {destination} (not for me)", color='r')
+        return
+    # try to decrypt the payload
+    decrypted_data = self.receive_and_decrypt_payload(data=payload)    
+    if self.cfg_full_debug_payloads:
+      if decrypted_data is None or len(decrypted_data) == 0:
+        self.P(f" === on_payload_chain_store_basic FAILED decrypting payload")
+      else:
+        self.P(f" === on_payload_chain_store_basic decrypted payload OK")
+    # get the data and call the appropriate operation method
+    data = decrypted_data.get(self.CS_DATA, {})
     operation = data.get(self.CS_OP, None)
     if operation == self.CS_STORE:
       self.__exec_store(data)      
