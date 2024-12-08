@@ -1,6 +1,6 @@
 from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.1.0.0'
+__VER__ = '0.2.1'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -29,7 +29,7 @@ class EpochManager01Plugin(BasePlugin):
     my_address = self.bc.address
     my_node_info = self.__get_node_epochs(my_address)
     self.P("Started {} plugin. Local node info:\n{}".format(
-      self.__class__.__name__, self.json_dumps(my_node_info, indent=2))
+      self.__class__.__name__, self.json_dumps(my_node_info))
     )
     return
   
