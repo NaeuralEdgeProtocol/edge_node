@@ -16,13 +16,12 @@ from naeural_core.business.base.network_processor import NetworkProcessorPlugin 
 _CONFIG = {
   **BaseClass.CONFIG,
   
-  'ALLOW_EMPTY_INPUTS' : True,
-  
+  'ALLOW_EMPTY_INPUTS' : True,  
   "ACCEPT_SELF" : False,
   
-  "CHAIN_STORE_DEBUG" : True,
-  
   "FULL_DEBUG_PAYLOADS" : False,
+  "CHAIN_STORE_DEBUG" : True, # main debug flag
+  
   
   "CHAIN_PEERS_REFRESH_INTERVAL" : 60,
 
