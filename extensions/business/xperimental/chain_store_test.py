@@ -114,11 +114,11 @@ class ChainStoreTestPlugin(BaseClass):
   
   
   def process(self):
-    key = self.get_instance_id() # some arbitrary key
+    key = f"K_{self.node_id}{self.get_instance_id()}" # some arbitrary key
     value = self.chainstore_get(key, debug=True)
     if value is None:
       self.P(f"My key '{key}' is not in the chainstorage... setting it")
-      value = "VALUE-{}".format(self.get_instance_id()[-4:]) # some arbitrary value
+      value = f"VALUE-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
       self.chainstore_set(key, value, debug=True)
       self.P(f"Done setting value: {key}:{value}")
     elif self.__shown < 5:

@@ -2,7 +2,10 @@
 TODO:
 
   - Solve the issue for set-contention in the chain storage when two nodes try to set the same key at the same time
-    - implement a lock mechanism for the chain storage when setting a key value
+    - (better) implement a lock mechanism for the chain storage when setting a key value that 
+      will allow multiple nodes to compete for the set-operation and thus load-balance it
+      OR
+    - implement set-value moving TOKEN via the network
   - review chain store confirmations and max confirmations
   
   
@@ -87,6 +90,9 @@ class ChainStoreBasicPlugin(BaseClass):
   def __maybe_refresh_chain_peers(self):
     if (self.time() - self.__last_chain_peers_refresh) > self.cfg_chain_peers_refresh_interval:
       self.__chain_peers = self.bc.get_whitelist(with_prefix=True)
+      # now check and preserve only online peers
+      
+      #
       self.__last_chain_peers_refresh = self.time()
     return
   
@@ -155,7 +161,7 @@ class ChainStoreBasicPlugin(BaseClass):
         need_store = False
     if need_store:
       self.__set_key_value(key, value, owner)
-      self.__reset_confirmations(key)
+      # self.__reset_confirmations(key)
       # now send set-value confirmation to all
       self.__ops.append({      
           self.CS_OP : self.CS_STORE,
