@@ -59,7 +59,7 @@ _CONFIG = {
   
   'ALLOW_EMPTY_INPUTS' : False,
   
-  "PROCESS_DELAY" : 30,
+  "PROCESS_DELAY" : 10,
   
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -122,29 +122,29 @@ class ChainStoreTestPlugin(BaseClass):
   def on_init(self):
     self.__shown = 0
     self.__iter = 0
+    self.__key_count = 0
     return
   
   
   def process(self):
     self.__iter += 1
-    if self.__iter % 3 == 0:
-      key = f"K{self.__iter}-{self.node_id}-{self.uuid(4)}" # some arbitrary key
+    if self.__iter % 3 == 0 and self.__key_count < 9:
+      self.__key_count += 1
+      key = f"K{self.__key_count}-{self.node_id}-{self.uuid(4)}" # some arbitrary key
       value = self.chainstore_get(key, debug=True)
       if value is None:
         self.P(f"My key '{key}' is not in the chainstorage... setting it")
-        value = f"V{self.__iter}-{self.node_id}-{self.uuid(4)}" # some arbitrary value
+        value = f"V{self.__key_count}-{self.node_id}-{self.uuid(4)}" # some arbitrary value
         ok = self.chainstore_set(key, value, debug=True)
         if not ok:
           self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
         else:
           self.P(f"Done setting value: {key}:{value}")
           
-    if self.__shown < 10:
-      self.P("Chainstore: \n{}\n".format(
-        self.json_dumps(self.chainstorage, indent=2),
-      ))
-      self.__shown += 1
-      
+        self.P("Chainstore: \n{}\n".format(
+          self.json_dumps(self.chainstorage, indent=2),
+        ))
+        self.__shown += 1      
     return
   
   
