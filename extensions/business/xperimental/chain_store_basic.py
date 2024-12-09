@@ -221,7 +221,7 @@ class ChainStoreBasicPlugin(BaseClass):
             need_store = False
           else:
             self.P(f" === Retrying key '{key}' after timeout", color='r')
-            self._ops.append(op)
+            self.__ops.append(op)
         # end if timeout
         self.sleep(0.05)
     return need_store
@@ -304,7 +304,7 @@ class ChainStoreBasicPlugin(BaseClass):
   def on_payload_chain_store_basic(self, payload):
     sender = payload.get(self.const.PAYLOAD_DATA.EE_SENDER, None)
     destination = payload.get(self.const.PAYLOAD_DATA.EE_DESTINATION, None)
-    is_encrypted = payload.get(self.const.PAYLOAD_DATA.EE_ENCRYPTED_DATA, False)
+    is_encrypted = payload.get(self.const.PAYLOAD_DATA.EE_IS_ENCRYPTED, False)
     destination = destination if isinstance(destination, list) else [destination]
     if self.cfg_full_debug_payloads:
       self.P(f" === on_payload_chain_store_basic from {sender} (enc={is_encrypted})")
@@ -317,12 +317,18 @@ class ChainStoreBasicPlugin(BaseClass):
     decrypted_data = self.receive_and_decrypt_payload(data=payload)    
     if self.cfg_full_debug_payloads:
       if decrypted_data is None or len(decrypted_data) == 0:
-        self.P(f" === on_payload_chain_store_basic FAILED decrypting payload")
+        self.P(f" === on_payload_chain_store_basic FAILED decrypting payload", color='r')
       else:
         self.P(f" === on_payload_chain_store_basic decrypted payload OK")
     # get the data and call the appropriate operation method
     data = decrypted_data.get(self.CS_DATA, {})
     operation = data.get(self.CS_OP, None)
+    owner = data.get(self.CS_OWNER, None)
+    if self.cfg_full_debug_payloads:
+      if operation is None:
+        self.P(f" === on_payload_chain_store_basic NO OPERATION from data: {data}", color='r')
+      else:
+        self.P(f" === on_payload_chain_store_basic operation={operation} from owner={owner}")
     if operation == self.CS_STORE:
       self.__exec_store(data)      
     elif operation == self.CS_CONFIRM:

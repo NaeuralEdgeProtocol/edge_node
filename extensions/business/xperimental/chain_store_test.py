@@ -116,11 +116,11 @@ class ChainStoreTestPlugin(BaseClass):
   
   def process(self):
     self.__iter += 1
-    key = f"K1_{self.node_id}{self.get_instance_id()}" # some arbitrary key
+    key = f"K1_{self.node_id}_{self.get_instance_id()}" # some arbitrary key
     value = self.chainstore_get(key, debug=True)
     if value is None:
       self.P(f"My key '{key}' is not in the chainstorage... setting it")
-      value = f"V1-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
+      value = f"V1_{self.node_id}_{self.get_instance_id()[-4:]}" # some arbitrary value
       ok = self.chainstore_set(key, value, debug=True)
       if not ok:
         self.P(f"Failed to set value: {key}:{value}", color="red")
@@ -131,11 +131,11 @@ class ChainStoreTestPlugin(BaseClass):
       self.__shown += 1
     
     if self.__iter > 4:
-      key = f"K2_{self.node_id}{self.get_instance_id()}" # some arbitrary key
+      key = f"K2_{self.node_id}_{self.get_instance_id()}" # some arbitrary key
       value = self.chainstore_get(key, debug=True)
       if value is None:
         self.P(f"My key '{key}' is not in the chainstorage... setting it")
-        value = f"V2-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
+        value = f"V2_{self.node_id}_{self.get_instance_id()[-4:]}" # some arbitrary value
         ok = self.chainstore_set(key, value, debug=True)
         if not ok:
           self.P(f"Failed to set value: {key}:{value}", color="red")  
