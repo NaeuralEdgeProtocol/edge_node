@@ -80,7 +80,7 @@ class ChainStoreTestPlugin(BaseClass):
           self.P("Setting data: {} -> {}".format(key, value), color="green")
         self.start_timer("chainstore_set")
         result = func(key, value, debug=debug)
-        elapsed = self.end_timer("chainstore_set")
+        elapsed = self.end_timer("chainstore_set")        
         if debug:
           self.P(" ====> `chainstore_set` elapsed time: {:.6f}".format(elapsed), color="green")
       else:
@@ -127,35 +127,23 @@ class ChainStoreTestPlugin(BaseClass):
   
   def process(self):
     self.__iter += 1
-    key = f"K1_{self.node_id}_{self.get_instance_id()}" # some arbitrary key
-    value = self.chainstore_get(key, debug=True)
-    if value is None:
-      self.P(f"My key '{key}' is not in the chainstorage... setting it")
-      value = f"V1_{self.node_id}_{self.get_instance_id()[-4:]}" # some arbitrary value
-      ok = self.chainstore_set(key, value, debug=True)
-      if not ok:
-        self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
-      else:
-        self.P(f"Done setting value: {key}:{value}")
-    elif self.__shown < 5:
-      self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
-      self.__shown += 1
-    
-    if self.__iter > 4:
-      key = f"K2_{self.node_id}_{self.get_instance_id()}" # some arbitrary key
+    if self.__iter % 3 == 0:
+      key = f"K{self.__iter}-{self.node_id}-{self.uuid(4)}" # some arbitrary key
       value = self.chainstore_get(key, debug=True)
       if value is None:
         self.P(f"My key '{key}' is not in the chainstorage... setting it")
-        value = f"V2_{self.node_id}_{self.get_instance_id()[-4:]}" # some arbitrary value
+        value = f"V{self.__iter}-{self.node_id}-{self.uuid(4)}" # some arbitrary value
         ok = self.chainstore_set(key, value, debug=True)
         if not ok:
-          self.P(f"Failed to set value: {key}:{value}", color="red")  
+          self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
         else:
           self.P(f"Done setting value: {key}:{value}")
-        self.__shown = 0
-      elif self.__shown < 5:
-        self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
-        self.__shown += 1
+          
+    if self.__shown < 10:
+      self.P("Chainstore: \n{}\n".format(
+        self.json_dumps(self.chainstorage, indent=2),
+      ))
+      self.__shown += 1
       
     return
   
