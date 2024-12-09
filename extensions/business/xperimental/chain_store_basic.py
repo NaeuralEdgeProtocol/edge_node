@@ -160,9 +160,13 @@ class ChainStoreBasicPlugin(BaseClass):
   def __increment_confirmations(self, key):
     self.__chain_storage[key][self.CS_CONFIRMATIONS] += 1
     return
+  
+  def __set_confirmations(self, key, confirmations):
+    self.__chain_storage[key][self.CS_CONFIRMATIONS] = confirmations
+    return
 
 
-  def __set_key_value(self, key, value, owner):
+  def __set_key_value(self, key, value, owner, sync_storage=False):
     """
     
     """
@@ -174,8 +178,10 @@ class ChainStoreBasicPlugin(BaseClass):
       self.CS_KEY   : key,
       self.CS_VALUE : value,
       self.CS_OWNER : owner,
-    }
+    }    
     self.__reset_confirmations(key)
+    if sync_storage:
+      self.__set_confirmations(key, -1) # set to -1 to indicate that the key is remote synced on this node
     self.__save_chain_storage()
     return
 
@@ -220,7 +226,7 @@ class ChainStoreBasicPlugin(BaseClass):
     if need_store:
       if debug:
         self.P(f" === {where}Setting value for key {key}={value} by {owner}, remote={sync_storage}")
-      self.__set_key_value(key, value, owner)
+      self.__set_key_value(key, value, owner, sync_storage=sync_storage)
       if not sync_storage:      
         # now send set-value confirmation to all
         op = {      
@@ -236,7 +242,7 @@ class ChainStoreBasicPlugin(BaseClass):
         _timeout = self.time() + 10
         _done = False
         _prev_confirm = 0
-        _max_retries = 1
+        _max_retries = 2
         _retries = 0
         while not _done: # this LOCKS the calling thread set_value
           recv_confirm = self.__get_key_confirmations(key)
@@ -261,10 +267,12 @@ class ChainStoreBasicPlugin(BaseClass):
               need_store = False
             else:
               if debug:
-                self.P(f" === {where}Retrying key '{key}' after timeout", color='r')
+                self.P(f" === {where}Retrying key '{key}' with timeout...", color='r')
               self.__ops.append(op)
+              _timeout = self.time() + 10
+            # end if retries
           # end if timeout
-          self.sleep(0.05)
+          self.sleep(0.100)  # sleep for 100ms to give protocol sync time
         # end while not done
       else:
         if debug:

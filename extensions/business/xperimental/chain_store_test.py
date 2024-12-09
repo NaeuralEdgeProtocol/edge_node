@@ -78,7 +78,11 @@ class ChainStoreTestPlugin(BaseClass):
       if func is not None:
         if debug:
           self.P("Setting data: {} -> {}".format(key, value), color="green")
+        self.start_timer("chainstore_set")
         result = func(key, value, debug=debug)
+        elapsed = self.end_timer("chainstore_set")
+        if debug:
+          self.P(" ====> `chainstore_set` elapsed time: {:.6f}".format(elapsed), color="green")
       else:
         if debug:
           self.P("No chain storage set function found", color="red")
