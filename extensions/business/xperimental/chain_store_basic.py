@@ -46,7 +46,7 @@ _CONFIG = {
   },  
 }
 
-__VER__ = '0.1.0'
+__VER__ = '0.8.1'
 
 class ChainStoreBasicPlugin(BaseClass):
   CONFIG = _CONFIG
