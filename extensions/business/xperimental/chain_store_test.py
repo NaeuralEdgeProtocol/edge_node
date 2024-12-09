@@ -59,7 +59,7 @@ _CONFIG = {
   
   'ALLOW_EMPTY_INPUTS' : False,
   
-  "PROCESS_DELAY" : 30,
+  "PROCESS_DELAY" : 10,
   
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -72,27 +72,38 @@ class ChainStoreTestPlugin(BaseClass):
   
   ## Move to  base_plugin
   def chainstore_set(self, key, value, debug=False):
-    func = self.plugins_shmem.get('__chain_storage_set')
-    if func is not None:
-      if debug:
-        self.P("Setting data: {} -> {}".format(key, value), color="green")
-      func(key, value, debug=debug)
-    else:
-      if debug:
-        self.P("No chain storage set function found", color="red")
-    return
+    result = False
+    try:
+      func = self.plugins_shmem.get('__chain_storage_set')
+      if func is not None:
+        if debug:
+          self.P("Setting data: {} -> {}".format(key, value), color="green")
+        self.start_timer("chainstore_set")
+        result = func(key, value, debug=debug)
+        elapsed = self.end_timer("chainstore_set")        
+        if debug:
+          self.P(" ====> `chainstore_set` elapsed time: {:.6f}".format(elapsed), color="green")
+      else:
+        if debug:
+          self.P("No chain storage set function found", color="red")
+    except:
+      pass
+    return result
   
   
   def chainstore_get(self, key, debug=False):
-    func = self.plugins_shmem.get('__chain_storage_get')
-    if func is not None:
-      value = func(key, debug=debug)
-      if debug:
-        self.P("Getting data: {} -> {}".format(key, value), color="green")
-    else:
-      if debug:
-        self.P("No chain storage get function found", color="red")
-      value = None
+    value = None
+    try:
+      func = self.plugins_shmem.get('__chain_storage_get')
+      if func is not None:
+        value = func(key, debug=debug)
+        if debug:
+          self.P("Getting data: {} -> {}".format(key, value), color="green")
+      else:
+        if debug:
+          self.P("No chain storage get function found", color="red")
+    except:
+      pass
     return value
   
   
@@ -111,41 +122,29 @@ class ChainStoreTestPlugin(BaseClass):
   def on_init(self):
     self.__shown = 0
     self.__iter = 0
+    self.__key_count = 0
     return
   
   
   def process(self):
     self.__iter += 1
-    key = f"K1_{self.node_id}{self.get_instance_id()}" # some arbitrary key
-    value = self.chainstore_get(key, debug=True)
-    if value is None:
-      self.P(f"My key '{key}' is not in the chainstorage... setting it")
-      value = f"V1-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
-      ok = self.chainstore_set(key, value, debug=True)
-      if not ok:
-        self.P(f"Failed to set value: {key}:{value}", color="red")
-      else:
-        self.P(f"Done setting value: {key}:{value}")
-    elif self.__shown < 5:
-      self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
-      self.__shown += 1
-    
-    if self.__iter > 4:
-      key = f"K2_{self.node_id}{self.get_instance_id()}" # some arbitrary key
+    if self.__iter % 3 == 0 and self.__key_count < 9:
+      self.__key_count += 1
+      key = f"K{self.__key_count}-{self.node_id}-{self.uuid(4)}" # some arbitrary key
       value = self.chainstore_get(key, debug=True)
       if value is None:
         self.P(f"My key '{key}' is not in the chainstorage... setting it")
-        value = f"V2-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
+        value = f"V{self.__key_count}-{self.node_id}-{self.uuid(4)}" # some arbitrary value
         ok = self.chainstore_set(key, value, debug=True)
         if not ok:
-          self.P(f"Failed to set value: {key}:{value}", color="red")  
+          self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
         else:
           self.P(f"Done setting value: {key}:{value}")
-        self.__shown = 0
-      elif self.__shown < 5:
-        self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
-        self.__shown += 1
-      
+          
+        self.P("Chainstore: \n{}\n".format(
+          self.json_dumps(self.chainstorage, indent=2),
+        ))
+        self.__shown += 1      
     return
   
   
