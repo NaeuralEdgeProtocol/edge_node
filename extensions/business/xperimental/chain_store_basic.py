@@ -55,6 +55,7 @@ class ChainStoreBasicPlugin(BaseClass):
   CS_CONFIRM = "SCONFIRM"
   CS_DATA = "CHAIN_STORE_DATA"
   CS_CONFIRM_BY = "confirm_by"
+  CS_CONFIRM_BY_ADDR = "confirm_by_addr"
   CS_CONFIRMATIONS = "confirms"
   CS_MIN_CONFIRMATIONS = "min_confirms"
   CS_OP = "op"
@@ -173,8 +174,31 @@ class ChainStoreBasicPlugin(BaseClass):
     return
 
 
-  def _set_value(self, key, value, owner=None, debug=False):
-    """ This method is called to set a value in the chain storage and push a broadcast request to the network """
+  def _set_value(self, key, value, owner=None, debug=False, sync_storage=False):
+    """ 
+    This method is called to set a value in the chain storage.
+    If called locally will push a broadcast request to the network, 
+    while if called from the network will set the value in the chain storage.
+    
+    Parameters:
+    ----------
+    
+    key : str
+      The key to set the value for
+      
+    value : any
+      The value to set
+      
+    owner : str 
+      The owner of the key-value pair
+      
+    debug : bool
+      If True will print debug messages
+      
+    sync : bool
+      If True will wait for confirmations before returning
+    
+    """
     if owner is None:
       owner = self.get_instance_path()
     need_store = True
@@ -186,44 +210,57 @@ class ChainStoreBasicPlugin(BaseClass):
           self.P(f" === Key {key} already stored by {existing_owner} has the same value")
         need_store = False
     if need_store:
+      if self.cfg_chain_store_debug:
+        self.P(f" === Setting value for key {key}={value} by {owner}")
       self.__set_key_value(key, value, owner)
-      # self.__reset_confirmations(key)
-      # now send set-value confirmation to all
-      op = {      
-          self.CS_OP : self.CS_STORE,
-          self.CS_KEY: key,        
-          self.CS_VALUE : value,   
-          self.CS_OWNER : owner,
-      }
-      self.__ops.append(op)
-      if debug:
-        self.P(f" === Key {key} locally stored by {owner}")
-      # at this point we can wait until we have enough confirmations
-      _timeout = self.time() + 10
-      _done = False
-      _prev_confirm = 0
-      _max_retries = 1
-      _retries = 0
-      while not _done: # this LOCKS the calling thread set_value
-        recv_confirm = self.__get_key_confirmations(key)
-        if recv_confirm > _prev_confirm:
-          _prev_confirm = recv_confirm
-          self.P(f" === Key received '{key}' has {recv_confirm} confirmations")
-        if recv_confirm >= self.__get_key_min_confirmations(key):
-          _done = True
-          self.P(f" === KEY CONFIRMED '{key}': has enough ({recv_confirm}) confirmations")
-        elif self.time() > _timeout:
-          self.P(f" === Key '{key}' has not enough confirmations after timeout", color='r')
-          _retries += 1
-          if _retries > _max_retries:
-            self.P(" === Key '{key}' has not enough confirmations after {_max_retries}retries", color='r')
+      if not sync_storage:      
+        # now send set-value confirmation to all
+        op = {      
+            self.CS_OP : self.CS_STORE,
+            self.CS_KEY: key,        
+            self.CS_VALUE : value,   
+            self.CS_OWNER : owner,
+        }
+        self.__ops.append(op)
+        if debug:
+          self.P(f" === Local key {key} locally stored for {owner}. Now waiting for confirmations...")
+        # at this point we can wait until we have enough confirmations
+        _timeout = self.time() + 10
+        _done = False
+        _prev_confirm = 0
+        _max_retries = 1
+        _retries = 0
+        while not _done: # this LOCKS the calling thread set_value
+          recv_confirm = self.__get_key_confirmations(key)
+          if recv_confirm > _prev_confirm:
+            _prev_confirm = recv_confirm
+            if self.cfg_chain_store_debug:
+              self.P(f" === Key received '{key}' has {recv_confirm} confirmations")
+          if recv_confirm >= self.__get_key_min_confirmations(key):
             _done = True
-            need_store = False
-          else:
-            self.P(f" === Retrying key '{key}' after timeout", color='r')
-            self.__ops.append(op)
-        # end if timeout
-        self.sleep(0.05)
+            if self.cfg_chain_store_debug:
+              self.P(f" === KEY CONFIRMED '{key}': has enough ({recv_confirm}) confirmations")
+          elif self.time() > _timeout:
+            if self.cfg_chain_store_debug:
+              self.P(f" === Key '{key}' has not enough confirmations after timeout", color='r')
+            _retries += 1
+            if _retries > _max_retries:
+              if self.cfg_chain_store_debug:
+                self.P(f" === Key '{key}' has not enough confirmations after {_max_retries} retries", color='r')
+              _done = True
+              need_store = False
+            else:
+              if self.cfg_chain_store_debug:
+                self.P(f" === Retrying key '{key}' after timeout", color='r')
+              self.__ops.append(op)
+          # end if timeout
+          self.sleep(0.05)
+        # end while not done
+      else:
+        if self.cfg_chain_store_debug:
+          self.P(f" === Remote key {key} locally stored for {owner} for sync")
+      # end if not sync_storage
+    # end if need_store
     return need_store
 
 
@@ -264,8 +301,9 @@ class ChainStoreBasicPlugin(BaseClass):
     key = data.get(self.CS_KEY, None)
     value = data.get(self.CS_VALUE , None)
     owner = data.get(self.CS_OWNER, None)
-  
-    result = self._set_value(key, value, owner=owner)
+    if self.cfg_chain_store_debug:
+      self.P(f" === Executing remote-sync store for {key}={value} by {owner}")
+    result = self._set_value(key, value, owner=owner, sync_storage=True)
     if result:
       # now send confirmation of the storage execution
       if self.cfg_chain_store_debug:
@@ -277,9 +315,13 @@ class ChainStoreBasicPlugin(BaseClass):
           self.CS_VALUE : value,
           self.CS_OWNER : owner,
           self.CS_CONFIRM_BY : self.get_instance_path(),
+          self.CS_CONFIRM_BY_ADDR : self.ee_addr,
         }
       }
       self.__send_data_to_chain_peers(data)
+    else:
+      if self.cfg_chain_store_debug:
+        self.P(f" === Store for {key}={value} by {owner} failed", color='r')
     return
 
 
@@ -306,6 +348,8 @@ class ChainStoreBasicPlugin(BaseClass):
     destination = payload.get(self.const.PAYLOAD_DATA.EE_DESTINATION, None)
     is_encrypted = payload.get(self.const.PAYLOAD_DATA.EE_IS_ENCRYPTED, False)
     destination = destination if isinstance(destination, list) else [destination]
+    decrypted_data = self.receive_and_decrypt_payload(data=payload)    
+    # DEBUG AREA
     if self.cfg_full_debug_payloads:
       self.P(f" === on_payload_chain_store_basic from {sender} (enc={is_encrypted})")
       if self.ee_addr in destination:
@@ -314,12 +358,12 @@ class ChainStoreBasicPlugin(BaseClass):
         self.P(f" === on_payload_chain_store_basic to {destination} (not for me)", color='r')
         return
     # try to decrypt the payload
-    decrypted_data = self.receive_and_decrypt_payload(data=payload)    
     if self.cfg_full_debug_payloads:
       if decrypted_data is None or len(decrypted_data) == 0:
         self.P(f" === on_payload_chain_store_basic FAILED decrypting payload", color='r')
       else:
         self.P(f" === on_payload_chain_store_basic decrypted payload OK")
+    # END DEBUG AREA    
     # get the data and call the appropriate operation method
     data = decrypted_data.get(self.CS_DATA, {})
     operation = data.get(self.CS_OP, None)
