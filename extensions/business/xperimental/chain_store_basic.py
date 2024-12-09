@@ -1,13 +1,24 @@
 """
 TODO:
 
+
   - Solve the issue for set-contention in the chain storage when two nodes try to set the same key at the same time
     - (better) implement a lock mechanism for the chain storage when setting a key value that 
       will allow multiple nodes to compete for the set-operation and thus load-balance it
       OR
     - implement set-value moving TOKEN via the network
-  - review chain store confirmations and max confirmations
   
+
+  - peer-to-peer managed:
+    - node 1 registers a app_id X via a list of peers that includes node 1, node 2 and node 3
+    - node 2 sets value by:
+      - key
+      - value 
+      - app_id X
+    - node 2 broadcasts the set opration to all app_id X peers (not all peers)
+    - node 2 waits for confirmations from at least half of the app_id peers
+    - if node 4 tries to set key in app_id X, it will be rejected
+    
   
 
 
@@ -26,6 +37,8 @@ _CONFIG = {
   "CHAIN_STORE_DEBUG" : True, # main debug flag
   
   
+  "MIN_CONFIRMATIONS" : 1,
+  
   "CHAIN_PEERS_REFRESH_INTERVAL" : 60,
 
   'VALIDATION_RULES' : { 
@@ -43,7 +56,7 @@ class ChainStoreBasicPlugin(BaseClass):
   CS_DATA = "CHAIN_STORE_DATA"
   CS_CONFIRM_BY = "confirm_by"
   CS_CONFIRMATIONS = "confirms"
-  CS_MAX_CONFIRMATIONS = "max_confirms"
+  CS_MIN_CONFIRMATIONS = "min_confirms"
   CS_OP = "op"
   CS_KEY = "key"
   CS_VALUE = "value"
@@ -89,10 +102,11 @@ class ChainStoreBasicPlugin(BaseClass):
   
   def __maybe_refresh_chain_peers(self):
     if (self.time() - self.__last_chain_peers_refresh) > self.cfg_chain_peers_refresh_interval:
-      self.__chain_peers = self.bc.get_whitelist(with_prefix=True)
+      _chain_peers = self.bc.get_whitelist(with_prefix=True)
       # now check and preserve only online peers
-      
-      #
+      self.__chain_peers = [
+        peer for peer in _chain_peers if self.netmon.network_node_is_online(peer)
+      ]
       self.__last_chain_peers_refresh = self.time()
     return
   
@@ -103,6 +117,8 @@ class ChainStoreBasicPlugin(BaseClass):
   
   
   def __get_min_peer_confirmations(self):
+    if self.cfg_min_confirmations is not None and self.cfg_min_confirmations > 0:
+      return self.cfg_min_confirmations    
     return len(self.__chain_peers) // 2 + 1
   
   
@@ -123,11 +139,14 @@ class ChainStoreBasicPlugin(BaseClass):
 
   def __get_key_confirmations(self, key):
     return self.__chain_storage.get(key, {}).get(self.CS_CONFIRMATIONS, 0)
+  
+  def __get_key_min_confirmations(self, key):
+    return self.__chain_storage.get(key, {}).get(self.CS_MIN_CONFIRMATIONS, 0)
 
 
   def __reset_confirmations(self, key):
     self.__chain_storage[key][self.CS_CONFIRMATIONS] = 0
-    self.__chain_storage[key][self.CS_MAX_CONFIRMATIONS] = self.__get_min_peer_confirmations()
+    self.__chain_storage[key][self.CS_MIN_CONFIRMATIONS] = self.__get_min_peer_confirmations()
     return
 
 
@@ -137,12 +156,19 @@ class ChainStoreBasicPlugin(BaseClass):
 
 
   def __set_key_value(self, key, value, owner):
-    self.__chain_storage[key] = {
+    """
+    
+    """
+    # key should be composed of the chainstore app identity and the actual key
+    # so if two chainstore apps are running on the same node, they will not overwrite each other
+    # also this way we can implement chaistore app allow-listing
+    chain_key = key
+    self.__chain_storage[chain_key] = {
+      self.CS_KEY   : key,
       self.CS_VALUE : value,
       self.CS_OWNER : owner,
-      self.CS_CONFIRMATIONS : 0,
-      self.CS_MAX_CONFIRMATIONS : self.__get_min_peer_confirmations(),
     }
+    self.__reset_confirmations(key)
     self.__save_chain_storage()
     return
 
@@ -163,15 +189,41 @@ class ChainStoreBasicPlugin(BaseClass):
       self.__set_key_value(key, value, owner)
       # self.__reset_confirmations(key)
       # now send set-value confirmation to all
-      self.__ops.append({      
+      op = {      
           self.CS_OP : self.CS_STORE,
           self.CS_KEY: key,        
           self.CS_VALUE : value,   
           self.CS_OWNER : owner,
-      })
+      }
+      self.__ops.append(op)
       if debug:
         self.P(f" === Key {key} locally stored by {owner}")
       # at this point we can wait until we have enough confirmations
+      _timeout = self.time() + 10
+      _done = False
+      _prev_confirm = 0
+      _max_retries = 1
+      _retries = 0
+      while not _done: # this LOCKS the calling thread set_value
+        recv_confirm = self.__get_key_confirmations(key)
+        if recv_confirm > _prev_confirm:
+          _prev_confirm = recv_confirm
+          self.P(f" === Key received '{key}' has {recv_confirm} confirmations")
+        if recv_confirm >= self.__get_key_min_confirmations(key):
+          _done = True
+          self.P(f" === KEY CONFIRMED '{key}': has enough ({recv_confirm}) confirmations")
+        elif self.time() > _timeout:
+          self.P(f" === Key '{key}' has not enough confirmations after timeout", color='r')
+          _retries += 1
+          if _retries > _max_retries:
+            self.P(" === Key '{key}' has not enough confirmations after {_max_retries}retries", color='r')
+            _done = True
+            need_store = False
+          else:
+            self.P(f" === Retrying key '{key}' after timeout", color='r')
+            self._ops.append(op)
+        # end if timeout
+        self.sleep(0.05)
     return need_store
 
 

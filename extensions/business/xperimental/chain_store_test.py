@@ -59,7 +59,7 @@ _CONFIG = {
   
   'ALLOW_EMPTY_INPUTS' : False,
   
-  "PROCESS_DELAY" : 60,
+  "PROCESS_DELAY" : 30,
   
   'VALIDATION_RULES' : {
     **BaseClass.CONFIG['VALIDATION_RULES'],
@@ -110,20 +110,42 @@ class ChainStoreTestPlugin(BaseClass):
   
   def on_init(self):
     self.__shown = 0
+    self.__iter = 0
     return
   
   
   def process(self):
-    key = f"K_{self.node_id}{self.get_instance_id()}" # some arbitrary key
+    self.__iter += 1
+    key = f"K1_{self.node_id}{self.get_instance_id()}" # some arbitrary key
     value = self.chainstore_get(key, debug=True)
     if value is None:
       self.P(f"My key '{key}' is not in the chainstorage... setting it")
-      value = f"VALUE-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
-      self.chainstore_set(key, value, debug=True)
-      self.P(f"Done setting value: {key}:{value}")
+      value = f"V1-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
+      ok = self.chainstore_set(key, value, debug=True)
+      if not ok:
+        self.P(f"Failed to set value: {key}:{value}", color="red")
+      else:
+        self.P(f"Done setting value: {key}:{value}")
     elif self.__shown < 5:
       self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
-      self.__shown += 1      
+      self.__shown += 1
+    
+    if self.__iter > 4:
+      key = f"K2_{self.node_id}{self.get_instance_id()}" # some arbitrary key
+      value = self.chainstore_get(key, debug=True)
+      if value is None:
+        self.P(f"My key '{key}' is not in the chainstorage... setting it")
+        value = f"V2-{self.node_id}-{self.get_instance_id()[-4:]}" # some arbitrary value
+        ok = self.chainstore_set(key, value, debug=True)
+        if not ok:
+          self.P(f"Failed to set value: {key}:{value}", color="red")  
+        else:
+          self.P(f"Done setting value: {key}:{value}")
+        self.__shown = 0
+      elif self.__shown < 5:
+        self.P("Chainstore: \n{}".format(self.json_dumps(self.chainstorage, indent=2)))
+        self.__shown += 1
+      
     return
   
   
