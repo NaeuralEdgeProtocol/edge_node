@@ -72,27 +72,34 @@ class ChainStoreTestPlugin(BaseClass):
   
   ## Move to  base_plugin
   def chainstore_set(self, key, value, debug=False):
-    func = self.plugins_shmem.get('__chain_storage_set')
-    if func is not None:
-      if debug:
-        self.P("Setting data: {} -> {}".format(key, value), color="green")
-      func(key, value, debug=debug)
-    else:
-      if debug:
-        self.P("No chain storage set function found", color="red")
-    return
+    result = False
+    try:
+      func = self.plugins_shmem.get('__chain_storage_set')
+      if func is not None:
+        if debug:
+          self.P("Setting data: {} -> {}".format(key, value), color="green")
+        result = func(key, value, debug=debug)
+      else:
+        if debug:
+          self.P("No chain storage set function found", color="red")
+    except:
+      pass
+    return result
   
   
   def chainstore_get(self, key, debug=False):
-    func = self.plugins_shmem.get('__chain_storage_get')
-    if func is not None:
-      value = func(key, debug=debug)
-      if debug:
-        self.P("Getting data: {} -> {}".format(key, value), color="green")
-    else:
-      if debug:
-        self.P("No chain storage get function found", color="red")
-      value = None
+    value = None
+    try:
+      func = self.plugins_shmem.get('__chain_storage_get')
+      if func is not None:
+        value = func(key, debug=debug)
+        if debug:
+          self.P("Getting data: {} -> {}".format(key, value), color="green")
+      else:
+        if debug:
+          self.P("No chain storage get function found", color="red")
+    except:
+      pass
     return value
   
   
@@ -123,7 +130,7 @@ class ChainStoreTestPlugin(BaseClass):
       value = f"V1_{self.node_id}_{self.get_instance_id()[-4:]}" # some arbitrary value
       ok = self.chainstore_set(key, value, debug=True)
       if not ok:
-        self.P(f"Failed to set value: {key}:{value}", color="red")
+        self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
       else:
         self.P(f"Done setting value: {key}:{value}")
     elif self.__shown < 5:

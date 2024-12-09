@@ -34,7 +34,7 @@ _CONFIG = {
   "ACCEPT_SELF" : False,
   
   "FULL_DEBUG_PAYLOADS" : False,
-  "CHAIN_STORE_DEBUG" : True, # main debug flag
+  "CHAIN_STORE_DEBUG" : False, # main debug flag
   
   
   "MIN_CONFIRMATIONS" : 1,
