@@ -101,6 +101,12 @@ class ChainStoreBasicPlugin(BaseClass):
     return
   
   
+  def __debug_dump_chain_storage(self):
+    if self.cfg_chain_store_debug:
+      self.P(" === Chain storage dump:\n{}".format(self.json_dumps(self.__chain_storage, indent=2)))
+    return
+  
+  
   def __maybe_refresh_chain_peers(self):
     if (self.time() - self.__last_chain_peers_refresh) > self.cfg_chain_peers_refresh_interval:
       _chain_peers = self.bc.get_whitelist(with_prefix=True)
@@ -195,10 +201,12 @@ class ChainStoreBasicPlugin(BaseClass):
     debug : bool
       If True will print debug messages
       
-    sync : bool
-      If True will wait for confirmations before returning
+    sync_storage : bool
+      If True will only set the local kv pair without broadcasting to the network
     
     """
+    where = "LOCAL: " if not sync_storage else "REMOTE: "
+    debug = debug or self.cfg_chain_store_debug
     if owner is None:
       owner = self.get_instance_path()
     need_store = True
@@ -206,12 +214,12 @@ class ChainStoreBasicPlugin(BaseClass):
       existing_value = self.__get_key_value(key)
       existing_owner = self.__get_key_owner(key)
       if existing_value == value:
-        if self.cfg_chain_store_debug:
+        if debug:
           self.P(f" === Key {key} already stored by {existing_owner} has the same value")
         need_store = False
     if need_store:
-      if self.cfg_chain_store_debug:
-        self.P(f" === Setting value for key {key}={value} by {owner}")
+      if debug:
+        self.P(f" === {where}Setting value for key {key}={value} by {owner}, remote={sync_storage}")
       self.__set_key_value(key, value, owner)
       if not sync_storage:      
         # now send set-value confirmation to all
@@ -223,7 +231,7 @@ class ChainStoreBasicPlugin(BaseClass):
         }
         self.__ops.append(op)
         if debug:
-          self.P(f" === Local key {key} locally stored for {owner}. Now waiting for confirmations...")
+          self.P(f" === {where}Local key {key} locally stored for {owner}. Now waiting for confirmations...")
         # at this point we can wait until we have enough confirmations
         _timeout = self.time() + 10
         _done = False
@@ -234,31 +242,33 @@ class ChainStoreBasicPlugin(BaseClass):
           recv_confirm = self.__get_key_confirmations(key)
           if recv_confirm > _prev_confirm:
             _prev_confirm = recv_confirm
-            if self.cfg_chain_store_debug:
-              self.P(f" === Key received '{key}' has {recv_confirm} confirmations")
+            if debug:
+              self.P(f" === {where}Key received '{key}' has {recv_confirm} confirmations")
           if recv_confirm >= self.__get_key_min_confirmations(key):
+            if debug:
+              self.P(f" === {where}KEY CONFIRMED '{key}': has enough ({recv_confirm}) confirmations")
             _done = True
-            if self.cfg_chain_store_debug:
-              self.P(f" === KEY CONFIRMED '{key}': has enough ({recv_confirm}) confirmations")
+            need_store = True
+            continue
           elif self.time() > _timeout:
-            if self.cfg_chain_store_debug:
-              self.P(f" === Key '{key}' has not enough confirmations after timeout", color='r')
+            if debug:
+              self.P(f" === {where}Key '{key}' has not enough confirmations after timeout", color='r')
             _retries += 1
             if _retries > _max_retries:
-              if self.cfg_chain_store_debug:
-                self.P(f" === Key '{key}' has not enough confirmations after {_max_retries} retries", color='r')
+              if debug:
+                self.P(f" === {where}Key '{key}' has not enough confirmations after {_max_retries} retries", color='r')
               _done = True
               need_store = False
             else:
-              if self.cfg_chain_store_debug:
-                self.P(f" === Retrying key '{key}' after timeout", color='r')
+              if debug:
+                self.P(f" === {where}Retrying key '{key}' after timeout", color='r')
               self.__ops.append(op)
           # end if timeout
           self.sleep(0.05)
         # end while not done
       else:
-        if self.cfg_chain_store_debug:
-          self.P(f" === Remote key {key} locally stored for {owner} for sync")
+        if debug:
+          self.P(f" === {where}key {key} locally stored for {owner} for sync")
       # end if not sync_storage
     # end if need_store
     return need_store
@@ -266,6 +276,7 @@ class ChainStoreBasicPlugin(BaseClass):
 
   def _get_value(self, key, get_owner=False, debug=False):
     """ This method is called to get a value from the chain storage """
+    debug = debug or self.cfg_chain_store_debug
     if debug:
       self.P(f" === Getting value for key {key}")
     value = self.__get_key_value(key)
@@ -302,12 +313,12 @@ class ChainStoreBasicPlugin(BaseClass):
     value = data.get(self.CS_VALUE , None)
     owner = data.get(self.CS_OWNER, None)
     if self.cfg_chain_store_debug:
-      self.P(f" === Executing remote-sync store for {key}={value} by {owner}")
+      self.P(f" === REMOTE: Executing remote-sync store for {key}={value} by {owner}")
     result = self._set_value(key, value, owner=owner, sync_storage=True)
     if result:
       # now send confirmation of the storage execution
       if self.cfg_chain_store_debug:
-        self.P(f" === Sending storage confirm of {key} by {owner} to {self.__chain_peers}")
+        self.P(f" === REMOTE: Sending storage confirm of {key} by {owner} to {self.__chain_peers}")
       data = {
         self.CS_DATA : {
           self.CS_OP : self.CS_CONFIRM,
@@ -321,7 +332,7 @@ class ChainStoreBasicPlugin(BaseClass):
       self.__send_data_to_chain_peers(data)
     else:
       if self.cfg_chain_store_debug:
-        self.P(f" === Store for {key}={value} by {owner} failed", color='r')
+        self.P(f" === REMOTE: Store for {key}={value} of {owner} failed", color='r')
     return
 
 
@@ -331,15 +342,16 @@ class ChainStoreBasicPlugin(BaseClass):
     value = data.get(self.CS_VALUE, None)
     owner = data.get(self.CS_OWNER, None)
     confirm_by = data.get(self.CS_CONFIRM_BY, None)
+    op = data.get(self.CS_OP, None)
     
     local_owner = self.__get_key_owner(key)
     local_value = self.__get_key_value(key)
     if self.cfg_chain_store_debug:
-      self.P(f" === Received conf from {confirm_by} for  {key}={value}, owner{owner}")
+      self.P(f" === LOCAL: Received {op} from {confirm_by} for  {key}={value}, owner{owner}")
     if owner == local_owner and value == local_value:
       self.__increment_confirmations(key)
       if self.cfg_chain_store_debug:
-        self.P(f" === Key {key} confirmed by {confirm_by}")
+        self.P(f" === LOCAL: Key {key} confirmed by {confirm_by}")
     return
 
 
