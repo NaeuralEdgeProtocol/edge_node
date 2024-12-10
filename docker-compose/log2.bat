@@ -1,0 +1,1 @@
+docker-compose logs naeural_02 -f -n 1000

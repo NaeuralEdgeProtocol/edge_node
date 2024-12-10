@@ -40,7 +40,7 @@ from naeural_core.business.base import BasePluginExecutor as BaseClass
 _CONFIG = {
   **BaseClass.CONFIG,
   
-  'ALLOW_EMPTY_INPUTS' : False,
+  'ALLOW_EMPTY_INPUTS' : True,
   
   "PROCESS_DELAY" : 10,
   
@@ -62,6 +62,7 @@ class ChainStoreTestPlugin(BaseClass):
   
   
   def process(self):
+    self.P(f"Running iteration {self.__iter}")
     self.__iter += 1
     if self.__iter % 3 == 0 and self.__key_count < 9:
       self.__key_count += 1
