@@ -108,7 +108,7 @@ class TelegramConversationalBot01Plugin(
         result = json_data
       # endif error in result
     except Exception as e:
-      self.P(f"URL request failed: {e}", color='r')
+      self.P(f"URL request failed with exception: {e}", color='r')
     # endtry
     return result
 
