@@ -77,9 +77,6 @@ class ChainStoreTestPlugin(BaseClass):
         else:
           self.P(f"Done setting value: {key}:{value}")
           
-        self.P("Chainstore: \n{}\n".format(
-          self.json_dumps(self._chainstorage, indent=2),
-        ))
         self.__shown += 1      
     return
   
