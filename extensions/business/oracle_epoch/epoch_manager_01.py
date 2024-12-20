@@ -73,9 +73,8 @@ class EpochManager01Plugin(BasePlugin):
     dct_data['server_version'] = self.ee_ver
     dct_data['server_time'] = str_utc_date
     dct_data['server_current_epoch'] = self.__get_current_epoch()
-    # TODO: make in the format "84 days, 8:47:51"
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
-    self.__sign(dct_data)
+    self.__sign(dct_data) # add the signature over full data
     return dct_data
 
   def __get_current_epoch(self):
@@ -107,6 +106,7 @@ class EpochManager01Plugin(BasePlugin):
 
     data = {
       'node': node_addr,
+      'node_eth_address': self.bc.node_address_to_eth_address(node_addr),
       'epochs': epochs,
       'epochs_vals': epochs_vals,
       
@@ -114,8 +114,8 @@ class EpochManager01Plugin(BasePlugin):
         "input" : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
         "signature_field" : "eth_signature",        
       },
-      'eth_signature': eth_signature,
-      'eth_address': eth_address,
+      'eth_signature': eth_signature, 
+      'eth_address': eth_address, # this is actually obsolete as it is already provided by "EE_ETH_SENDER"
     }    
     return data
   
@@ -228,6 +228,7 @@ class EpochManager01Plugin(BasePlugin):
     nodes = {
       x : {
         "alias" :  self.netmon.network_node_eeid(addr=x),
+        "eth_address" : self.bc.node_address_to_eth_address(x),
       } for x in nodes 
     }    
     response = self.__get_response({
@@ -266,6 +267,7 @@ class EpochManager01Plugin(BasePlugin):
     nodes = {
       x : {
         "alias" :  self.netmon.network_node_eeid(addr=x),
+        "eth_address" : self.bc.node_address_to_eth_address(x),        
       } for x in nodes 
       if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
     }
