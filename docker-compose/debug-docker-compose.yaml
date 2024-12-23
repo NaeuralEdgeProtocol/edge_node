@@ -30,6 +30,8 @@ services:
     volumes:
       - naeural_03:/edge_node/_local_cache
 
+
+
 volumes:
   naeural_01:
   naeural_02:
