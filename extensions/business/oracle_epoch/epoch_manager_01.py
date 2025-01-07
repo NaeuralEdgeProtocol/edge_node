@@ -1,3 +1,16 @@
+"""
+
+The EpochManager01Plugin is a FastAPI web app that provides endpoints to interact with the
+oracle network of the Naeural Edge Protocol
+
+Each request will generate data as follows:
+- availablity data is requested from the oracle API
+- the data is signed with EVM signature and signature/address is added
+- other oracle peers signatures are added - all must be on same agreed availability
+- package is node-signed and returned to the client
+
+"""
+
 from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
 __VER__ = '0.2.1'
@@ -102,7 +115,12 @@ class EpochManager01Plugin(BasePlugin):
       epochs_vals=epochs_vals, 
       signature_only=True,
     )
-    eth_address = self.bc.eth_address
+    eth_signatures = [eth_signature]
+    eth_addresses = [self.bc.eth_address]
+    
+    # now add oracle peers signatures and addresses
+    
+    
 
     data = {
       'node': node_addr,
@@ -114,8 +132,9 @@ class EpochManager01Plugin(BasePlugin):
         "input" : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
         "signature_field" : "eth_signature",        
       },
-      'eth_signature': eth_signature, 
-      'eth_address': eth_address, # this is actually obsolete as it is already provided by "EE_ETH_SENDER"
+      
+      'eth_signatures': eth_signatures, 
+      'eth_addresses': eth_addresses, 
     }    
     return data
   
