@@ -98,13 +98,12 @@
     
     "UPDATE_MONITOR_01" : {
       "PROCESS_DELAY"   : 60,
-      "###WORKING_HOURS"   : [["12:00", "12:30"]],    
       "VERSION_TOKEN"   : "$EE_GITVER",
       "RESTART_ON_BEHIND": true,
       "VERSION_URL"     : "https://raw.githubusercontent.com/NaeuralEdgeProtocol/edge_node/{}/ver.py",
       "USE_YAML" : false,
     
-      "FORCE_RESTART_AFTER" : 600,
+      "FORCE_RESTART_AFTER" : null,
       "REBOOT_ON_RESTART"   : false,
           
 

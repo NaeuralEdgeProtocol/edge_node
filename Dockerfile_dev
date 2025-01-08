@@ -7,7 +7,7 @@ COPY  . /edge_node
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes
 # set a generic env variable 
-ENV AINODE_DOCKER_SOURCE=main
+ENV AINODE_DOCKER_SOURCE=develop
 # set default Execution Engine id
 ENV EE_ID=E2dkr
 # Temporary fix:
