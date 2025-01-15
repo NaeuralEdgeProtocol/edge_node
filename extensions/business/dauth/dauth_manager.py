@@ -7,7 +7,7 @@ _CONFIG = {
   **BasePlugin.CONFIG,
 
   'PORT': None,
-  'ASSETS': 'plugins/business/fastapi/dauth_manager', # DO we need this ???
+  
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
@@ -96,7 +96,7 @@ class DauthManagerPlugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /get_auth_data
-  def get_auth_data(self, node_address: str, signature: str):
+  def get_auth_data(self, ee_sender: str, data: str, ee_sign: str, ee_hash: str):
     """
     Receive a request for authentication data from a node and return the data if the request is valid.
 
@@ -112,6 +112,30 @@ class DauthManagerPlugin(BasePlugin):
     
     """
     data = {}
+
+    # check signature
+    inputs = {      
+      'data': data,
+      'EE_SENDER': ee_sender,
+      'EE_SIGN' : ee_sign,
+      'EE_HASH' : ee_hash,
+    }
+    
+    verified = self.bc.verify(inputs)
+    
+    if not verified:
+      data['result'] {
+        'error': 'Invalid signature'
+      }
+    
+    # check if node_address is allowed
+    
+    # prepare the auth data
+    
+    # record the node_address and the auth data
+    
+    # return the auth data
+    
     response = self.__get_response({
       **data
     })

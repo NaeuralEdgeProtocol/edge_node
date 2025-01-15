@@ -15,19 +15,19 @@ class SupervisorFastApiWebApp(BasePlugin):
   CONFIG = _CONFIG
 
   def on_init(self):
-    self.__epoch_manager_running = False
+    self.__supervisor_fastapi_plugin_running = False
     super(SupervisorFastApiWebApp, self).on_init()
     return
 
   @property
   def __is_enabled(self):
     res = not self.cfg_disabled and self.cfg_ngrok_edge_label is not None and self.is_supervisor_node
-    if res != self.__epoch_manager_running:
-      self.__epoch_manager_running = res
+    if res != self.__supervisor_fastapi_plugin_running:
+      self.__supervisor_fastapi_plugin_running = res
       if res:
-        self.P("EpochManager is enabled.")
+        self.P(f"{self.__class__.__name__} is enabled.")
       else:
-        self.P("EpochManager is disabled.")
+        self.P(f"{self.__class__.__name__} is disabled.")
     # endif changed state
     return res
 
