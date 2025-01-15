@@ -1,12 +1,14 @@
 
 from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.2.1'
+__VER__ = '0.1.1'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
 
   'PORT': None,
+  
+  'ASSETS' : 'nothing', # TODO: this should not be required in future
   
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
