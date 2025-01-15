@@ -96,7 +96,7 @@ class DauthManagerPlugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /get_auth_data
-  def get_auth_data(self, ee_sender: str, data: str, ee_sign: str, ee_hash: str):
+  def get_auth_data(self, EE_SENDER: str, data: str, EE_SIGN: str, EE_HASH: str):
     """
     Receive a request for authentication data from a node and return the data if the request is valid.
 
@@ -125,9 +125,9 @@ class DauthManagerPlugin(BasePlugin):
     # check signature
     inputs = {      
       'data': data,
-      'EE_SENDER': ee_sender,
-      'EE_SIGN' : ee_sign,
-      'EE_HASH' : ee_hash,
+      'EE_SENDER': EE_SENDER,
+      'EE_SIGN' : EE_SIGN,
+      'EE_HASH' : EE_HASH,
     }
     
     verify_data = self.bc.verify(inputs, return_full_info=True)
