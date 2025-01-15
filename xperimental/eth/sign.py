@@ -12,7 +12,7 @@ if __name__ == '__main__' :
   eng1 = DefaultBlockEngine(
     log=l, name="test1", 
     config={
-        "PEM_FILE"     : "test1.pem",
+        "PEM_FILE"     : "nen2.pem",
         "PASSWORD"     : None,      
         "PEM_LOCATION" : "data"
       }
@@ -30,15 +30,12 @@ if __name__ == '__main__' :
   l.P(eng1.eth_account.address)
   l.P(eng1.eth_address == eng1.eth_account.address)
 
-  private_key = eng1.eth_account.key
-
-
    
-  node = "0xai_Amfnbt3N-qg2-qGtywZIPQBTVlAnoADVRmSAsdDhlQ-6"
+  node = "0xai_AvuUcmXyn6U3z8XRagqG8_d2sKCDZ5FIDpkUlpUz3Iuh"
   node_eth = eng1.node_address_to_eth_address(node)
   l.P("Node: {}\nNode Eth: {}".format(node, node_eth))
-  epochs = [245, 246, 247, 248, 249, 250]
-  epochs_vals = [124, 37, 30, 6, 19, 4]
+  epochs = [290, 291, 292]
+  epochs_vals = [254, 0, 242]
   USE_ETH_ADDR = True
   
   if USE_ETH_ADDR:  
@@ -53,4 +50,4 @@ if __name__ == '__main__' :
  
   s2 = eng1.eth_sign_message(types, values)
   l.P("Results:\n{}".format(json.dumps(s2, indent=2)))
-  l.P("Signature: {}".format(eng1.eth_sign_node_epochs(node, epochs, epochs_vals)))
+  l.P("Signature: {}".format(eng1.eth_sign_node_epochs(node_data, epochs, epochs_vals)))
