@@ -11,7 +11,11 @@ ADMIN_PIPELINE = {
 
   "NAEURAL_RELEASE_APP": {
     "NGROK_EDGE_LABEL": os.environ.get("EE_NGROK_EDGE_LABEL_RELEASE_APP"),
-  }
+  },
+  
+  'DAUTH_MANAGER': {
+    "NGROK_EDGE_LABEL": os.environ.get("EE_NGROK_EDGE_LABEL_DAUTH_MANAGER"),
+  },
   
 }
 

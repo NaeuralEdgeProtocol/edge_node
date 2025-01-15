@@ -111,7 +111,16 @@ class DauthManagerPlugin(BasePlugin):
         
     
     """
-    data = {}
+    data = {
+      'result': {
+        'error' : None,
+        'EE_MQTT_USER'  : None,
+        'EE_MQTT'   : None,
+        'EE_MQTT_HOST'   : None,
+        'EE_MQTT_PORT'  : None,
+        'EE_MQTT_SUBTOPIC' : None,
+      },
+    }
 
     # check signature
     inputs = {      
@@ -121,20 +130,22 @@ class DauthManagerPlugin(BasePlugin):
       'EE_HASH' : ee_hash,
     }
     
-    verified = self.bc.verify(inputs)
+    verify_data = self.bc.verify(inputs, return_full_info=True)
     
-    if not verified:
-      data['result'] {
-        'error': 'Invalid signature'
-      }
-    
-    # check if node_address is allowed
-    
-    # prepare the auth data
-    
-    # record the node_address and the auth data
-    
-    # return the auth data
+    if not verify_data.valid:
+      data['result']['error'] = 'Invalid signature: {}'.format(verify_data.message)
+    else:    
+      # check if node_address is allowed
+      
+      # prepare the auth data
+      for key in data['result']:
+        if key.startswith('EE_'):
+          data['result'][key] = self.os_environ.get(key)
+      
+      # self.chainstore_set()
+      # record the node_address and the auth data
+      
+      # return the auth data
     
     response = self.__get_response({
       **data
