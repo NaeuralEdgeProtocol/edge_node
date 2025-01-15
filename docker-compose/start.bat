@@ -1,4 +1,7 @@
 @echo off
+
+copy prod-docker-compose.yaml docker-compose.yaml
+
 REM Pull the latest images
 docker-compose pull
 

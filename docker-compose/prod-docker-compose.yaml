@@ -1,3 +1,4 @@
+
 services:
   naeural_01:
     image: naeural/edge_node:develop
@@ -8,6 +9,9 @@ services:
     env_file: .env
     volumes:
       - naeural_01:/edge_node/_local_cache
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"         
+      - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
   naeural_02:
     image: naeural/edge_node:develop
@@ -18,6 +22,9 @@ services:
     env_file: .env
     volumes:
       - naeural_02:/edge_node/_local_cache
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"         
+      - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
   naeural_03:
     image: naeural/edge_node:develop
@@ -28,6 +35,20 @@ services:
     env_file: .env
     volumes:
       - naeural_03:/edge_node/_local_cache
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"         
+      - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
+
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
+      - WATCHTOWER_CHECK_NEW_IMAGES=true      
+      - WATCHTOWER_LABEL_ENABLE=true        
 
 volumes:
   naeural_01:
