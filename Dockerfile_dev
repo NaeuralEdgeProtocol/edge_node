@@ -21,7 +21,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 # althouh this is not recommended as it should be in .env file
-# ENV EE_DEVICE cuda:0
+# ENV EE_DEVICE=cuda:0
 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir --no-deps naeural-core

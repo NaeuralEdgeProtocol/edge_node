@@ -2,18 +2,20 @@
 setlocal enabledelayedexpansion
 
 REM Hardcoded number of containers
-set NUM_CONTAINERS=1
-set NUM_SUPERVISORS=0
-@REM set CONTAINER_IMAGE=naeural/edge_node:develop
-set CONTAINER_IMAGE=local_edge_node
+set NUM_CONTAINERS=2
+set NUM_SUPERVISORS=1
+set CONTAINER_IMAGE=naeural/edge_node:develop
+@REM set CONTAINER_IMAGE=local_edge_node
 REM Use command parameter to set if the containers will be repeered at start.
 REM The default is false.
 set PEER=false
 
 REM Loop through all arguments
 for %%A in (%*) do (
-    if /i "%%A:~0,7"=="--peer=" (
-        set "PEER=%%A:~7%%"
+    echo Argument: %%A
+    if /i "%%A"=="--peer" (
+        echo Found --peer argument
+        set PEER=true
     )
 )
 
@@ -27,7 +29,7 @@ if /i "%PEER%" neq "true" if /i "%PEER%" neq "false" (
 REM Generic names for containers and edge nodes
 set GENERIC_EDGE_NODE_ID=cluster_nen_
 set GENERIC_CONTAINER_ID=naeural_0
-set GENERIC_CONTAINER_VOLUME=0naeural_0
+set GENERIC_CONTAINER_VOLUME=00cluster/naeural_0
 
 REM Watchtower service for automatic updates
 set WATCHTOWER_IMAGE=containrrr/watchtower
@@ -37,7 +39,7 @@ set WATCHTOWER_LABEL=com.centurylinklabs.watchtower.enable=true
 REM Generate the list of container IDs dynamically
 for /l %%i in (1,1,%NUM_CONTAINERS%) do (
     REM Generic container ID and edge node ID
-    set CONTAINER_IDS[%%i]=!GENERIC_CONTAINER_VOLUME!%%i
+    set CONTAINER_IDS[%%i]=!GENERIC_CONTAINER_ID!%%i
     set EDGE_NODE_IDS[%%i]=!GENERIC_EDGE_NODE_ID!%%i
     set CONTAINER_VOLUMES[%%i]=!GENERIC_CONTAINER_VOLUME!%%i
 
@@ -68,7 +70,7 @@ for /l %%i in (1,1,%NUM_CONTAINERS%) do (
     REM This can be done in case there need to be custom IDs for each container.
 @REM     echo       EE_ID: ^${EE_ID_0%%i?You must set the EE_ID_0%%i environment variable^} >> docker-compose.yaml
     echo       EE_ID: !EDGE_NODE_ID! >> docker-compose.yaml
-@REM     echo       EE_SUPERVISOR: !CONTAINER_IS_SUPERVISOR[%%i]! >> docker-compose.yaml
+    echo       EE_SUPERVISOR: !CONTAINER_IS_SUPERVISOR[%%i]! >> docker-compose.yaml
     echo     env_file: .env_cluster >> docker-compose.yaml
     echo     volumes: >> docker-compose.yaml
     echo       - ./!CONTAINER_VOLUME!:/edge_node/_local_cache >> docker-compose.yaml
@@ -96,12 +98,13 @@ echo       - WATCHTOWER_LABEL_ENABLE=true >> docker-compose.yaml
 echo. >> docker-compose.yaml
 
 
-REM Empty line for readability
-echo. >> docker-compose.yaml
-echo volumes: >> docker-compose.yaml
-for /l %%i in (1,1,%NUM_CONTAINERS%) do (
-    echo   !CONTAINER_VOLUMES[%%i]!: >> docker-compose.yaml
-)
+REM Maybe unnecessary
+@REM REM Empty line for readability
+@REM echo. >> docker-compose.yaml
+@REM echo volumes: >> docker-compose.yaml
+@REM for /l %%i in (1,1,%NUM_CONTAINERS%) do (
+@REM     echo   !CONTAINER_VOLUMES[%%i]!: >> docker-compose.yaml
+@REM )
 
 REM Pull the containers
 docker-compose pull
@@ -121,7 +124,7 @@ echo Containers are starting, and logs are being followed...
 echo For stopping the containers, run the stop.bat script.
 
 if /i "%PEER%" neq "true" (
-    echo Peering is disabled. To enable peering, run the peer_n_containers.bat script with `--peer=true` flag.
+    echo Peering is disabled. To enable peering, run the peer_n_containers.bat script with `--peer` flag.
     exit /b 0
 )
 
@@ -132,16 +135,34 @@ timeout /t 10 /nobreak >nul
 REM Peering containers
 echo Peering containers...
 
-SET PATH_TO_LOCAL_ADDRESS_FILE=/edge_node/_local_cache/_data/local_address.txt
+SET PATH_TO_LOCAL_ADDRESS_FILE_TXT=/edge_node/_local_cache/_data/local_address.txt
+SET PATH_TO_LOCAL_ADDRESS_FILE_JSON=/edge_node/_local_cache/_data/local_info.json
+REM The old format of the local_address file is a text file.
+SET USE_JSON_FILE=true
+REM Define the Python code as a variable for parsing the JSON
+set "PYTHON_CODE=import json, sys; data = json.load(sys.stdin); print(data['address'], data['alias'])"
 
-REM Loop over containers to extract local_address.txt and parse it
+REM Loop over containers to extract local_address.txt and parse it.
 for /l %%i in (1, 1, %NUM_CONTAINERS%) do (
-    REM Get the container's local_address.txt file
-    echo Extracting local address for container !EDGE_NODE_IDS[%%i]! from !PATH_TO_LOCAL_ADDRESS_FILE!
-    for /f "tokens=1,2" %%a in ('docker exec !CONTAINER_IDS[%%i]! cat !PATH_TO_LOCAL_ADDRESS_FILE!') do (
-        REM Store the address in the NODE_ADDRESSES array
-        set NODE_ADDRESSES[%%i]=%%a
+    if %USE_JSON_FILE% == true (
+        REM Parse the local_address.json file.
+        echo Extracting local address for container !EDGE_NODE_IDS[%%i]! from !PATH_TO_LOCAL_ADDRESS_FILE_JSON!
+
+        REM Use Python to extract address and alias from local_address.json
+        for /f "delims=" %%a in ('docker exec !CONTAINER_IDS[%%i]! sh -c "cat !PATH_TO_LOCAL_ADDRESS_FILE_JSON! | python3 -c \"!PYTHON_CODE!\""') do (
+            REM Store the address in the NODE_ADDRESSES array.
+            set NODE_ADDRESSES[%%i]=%%a
+        )
+    ) else (
+        REM This is for the old format of the local_address file. Only left for backward compatibility.
+        REM Parse the container's local_address.txt file.
+        echo Extracting local address for container !EDGE_NODE_IDS[%%i]! from !PATH_TO_LOCAL_ADDRESS_FILE_TXT!
+        for /f "tokens=1,2" %%a in ('docker exec !CONTAINER_IDS[%%i]! cat !PATH_TO_LOCAL_ADDRESS_FILE_TXT!') do (
+            REM Store the address in the NODE_ADDRESSES array.
+            set NODE_ADDRESSES[%%i]=%%a
+        )
     )
+    echo Local address for container !EDGE_NODE_IDS[%%i]!: !NODE_ADDRESSES[%%i]!
 )
 
 echo Local addresses for all containers:
