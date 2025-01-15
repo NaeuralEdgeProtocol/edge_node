@@ -102,34 +102,44 @@ class EpochManager01Plugin(BasePlugin):
     return self.netmon.epoch_manager.get_current_epoch()
   
   
+  def __eth_to_internal(self, eth_node_address):
+    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+  
+  
   def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list):
-    """
+    """    
     Sign the given data using the blockchain engine.
     Returns the signature. 
     Use the data param as it will be modified in place.
+    
+    Parameters
+    ----------
+    
+    node_addr: str
+      The internal node address (not EVM)
+    
     """
-
-    eth_signature = self.bc.eth_sign_node_epochs(
-      node=node_addr, 
+    node_addr_eth = self.bc.node_address_to_eth_address(node_addr)
+    res = self.bc.eth_sign_node_epochs(
+      node=node_addr_eth, 
       epochs=epochs,
       epochs_vals=epochs_vals, 
-      signature_only=True,
+      signature_only=False,
     )
+    eth_signature = res["signature"]
+    inputs = res["eth_signed_data"]
     eth_signatures = [eth_signature]
     eth_addresses = [self.bc.eth_address]
-    
     # now add oracle peers signatures and addresses
-    
-    
 
     data = {
       'node': node_addr,
-      'node_eth_address': self.bc.node_address_to_eth_address(node_addr),
+      'node_eth_address': node_addr_eth,
       'epochs': epochs,
       'epochs_vals': epochs_vals,
       
       'eth_signed_data' : {
-        "input" : ["node(string)", "epochs(uint256[])", "epochs_vals(uint256[])"],
+        "input" : inputs,
         "signature_field" : "eth_signature",        
       },
       
@@ -146,7 +156,7 @@ class EpochManager01Plugin(BasePlugin):
     Parameters
     ----------
     node_addr : str
-        The address of a node.
+        The internal address of a node.
         
     start_epoch : int
         The first epoch to get the availability for.
@@ -297,13 +307,13 @@ class EpochManager01Plugin(BasePlugin):
   
   
   @BasePlugin.endpoint
-  def node_epochs_range(self, node_addr : str, start_epoch : int, end_epoch : int):
+  def node_epochs_range(self, eth_node_addr : str, start_epoch : int, end_epoch : int):
     """
     Returns the list of epochs availabilities for a given node in a given range of epochs.
 
     Parameters
     ----------
-    node_addr : str
+    eth_node_addr : str
         The address of a node.
         
     start_epoch : int
@@ -334,6 +344,8 @@ class EpochManager01Plugin(BasePlugin):
         - server_uptime: str
             The time that the responding node has been running.
     """  
+    node_addr = self.__eth_to_internal(eth_node_addr)    
+    
     response = self.__get_response(self.__get_node_epochs(
       node_addr, start_epoch=start_epoch, end_epoch=end_epoch
     ))
@@ -341,20 +353,21 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_epochs
-  def node_epochs(self, node_addr: str):
+  def node_epochs(self, eth_node_addr: str):
     """
     Returns the list of epochs availabilities for a given node.
 
     Parameters
     ----------
-    node_addr : str
-        The address of a node.
+    eth_node_addr : str
+        The EVM address of a node.
 
     Returns
     -------
     dict
 
     """
+    node_addr = self.__eth_to_internal(eth_node_addr)    
     if node_addr is None:
       return None
     if not isinstance(node_addr, str):
@@ -365,14 +378,15 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_epoch
-  def node_epoch(self, node_addr: str, epoch: int):
+  def node_epoch(self, eth_node_addr: str, epoch: int):
     """
     Returns the availability of a given node in a given epoch.
 
     Parameters
     ----------
-    node_addr : str
-        The address of a node.
+    eth_node_addr : str
+        The EVM address of a node.
+        
     epoch : int
         The target epoch.
 
@@ -392,6 +406,7 @@ class EpochManager01Plugin(BasePlugin):
         - epoch_prc: float
             The availability score of the node in the epoch as a percentage (between 0 and 1).
     """
+    node_addr = self.__eth_to_internal(eth_node_addr)    
     data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
     if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
       epoch_val = data['epochs_vals'][0]
@@ -411,14 +426,14 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_last_epoch
-  def node_last_epoch(self, node_addr: str):
+  def node_last_epoch(self, eth_node_addr: str):
     """
     Returns the availability of a given node in the last epoch.
 
     Parameters
     ----------
-    node_addr : str
-        The address of a node.
+    eth_node_addr : str
+        The EVM address of a node.
 
     Returns
     -------
@@ -437,6 +452,7 @@ class EpochManager01Plugin(BasePlugin):
             The availability score of the node in the last epoch as a percentage (between 0 and 1).
 
     """
+    node_addr = self.__eth_to_internal(eth_node_addr)
     epoch = self.__get_current_epoch() - 1
     data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
     if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
