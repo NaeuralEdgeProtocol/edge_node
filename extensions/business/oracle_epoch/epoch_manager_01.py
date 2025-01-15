@@ -19,7 +19,7 @@ _CONFIG = {
   **BasePlugin.CONFIG,
 
   'PORT': None,
-  'ASSETS': 'plugins/business/fastapi/epoch_manager',
+  # 'ASSETS': 'plugins/business/fastapi/epoch_manager',
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
