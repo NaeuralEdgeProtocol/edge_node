@@ -104,18 +104,20 @@ class DauthManagerPlugin(BasePlugin):
 
     Parameters
     ----------
-    
-    body : dict
-      {
-        'EE_SENDER' : '',
-        'EE_SIGN' : '',
-        'EE_HASH' : '',
-        'data' : '',
-      }
+    {
+      "body" : {
+        "EE_SENDER" : "sender node address",
+        "EE_SIGN" : "sender signature on the message",
+        "EE_HASH" : "message hash",
+        "nonce" : "some-nonce"
+      }      
+    }
     
     """
+    
+    DAUTH_SUBKEY = 'auth'
     data = {
-      'result': {
+      DAUTH_SUBKEY : {
         'error' : None,
         'EE_MQTT_USER'  : None,
         'EE_MQTT'   : None,
@@ -127,11 +129,13 @@ class DauthManagerPlugin(BasePlugin):
 
     # check signature
     inputs = {      
-      'data': None,
-      'EE_SENDER': None,
-      'EE_SIGN' : None,
-      'EE_HASH' : None,
+      'nonce': None,
+      self.const.BASE_CT.BCct.SENDER: None,
+      self.const.BASE_CT.BCct.SIGN : None,
+      self.const.BASE_CT.BCct.HASH : None,
     }
+    
+    self.const.BASE_CT.BLOCKCHAIN_CONFIG
     
     inputs = {k : body.get(k) for k in inputs}
     
@@ -140,14 +144,14 @@ class DauthManagerPlugin(BasePlugin):
     verify_data = self.bc.verify(inputs, return_full_info=True)
     
     if not verify_data.valid:
-      data['result']['error'] = 'Invalid signature: {}'.format(verify_data.message)
+      data[DAUTH_SUBKEY]['error'] = 'Invalid signature: {}'.format(verify_data.message)
     else:    
       # check if node_address is allowed
       
       # prepare the auth data
-      for key in data['result']:
+      for key in data[DAUTH_SUBKEY]:
         if key.startswith('EE_'):
-          data['result'][key] = self.os_environ.get(key)
+          data[DAUTH_SUBKEY][key] = self.os_environ.get(key)
       
       # self.chainstore_set()
       # record the node_address and the auth data
