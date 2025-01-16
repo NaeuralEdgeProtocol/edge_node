@@ -96,21 +96,22 @@ class DauthManagerPlugin(BasePlugin):
     return dct_data
 
 
-  @BasePlugin.endpoint
+  @BasePlugin.endpoint(method="post")
   # /get_auth_data
-  def get_auth_data(self, EE_SENDER: str, data: str, EE_SIGN: str, EE_HASH: str):
+  def get_auth_data(self, body: dict):
     """
     Receive a request for authentication data from a node and return the data if the request is valid.
 
     Parameters
     ----------
     
-    node_address : str
-        The address of the node requesting the data.
-        
-    signature : str
-        The signature of the request.
-        
+    body : dict
+      {
+        'EE_SENDER' : '',
+        'EE_SIGN' : '',
+        'EE_HASH' : '',
+        'data' : '',
+      }
     
     """
     data = {
@@ -126,11 +127,15 @@ class DauthManagerPlugin(BasePlugin):
 
     # check signature
     inputs = {      
-      'data': data,
-      'EE_SENDER': EE_SENDER,
-      'EE_SIGN' : EE_SIGN,
-      'EE_HASH' : EE_HASH,
+      'data': None,
+      'EE_SENDER': None,
+      'EE_SIGN' : None,
+      'EE_HASH' : None,
     }
+    
+    inputs = {k : body.get(k) for k in inputs}
+    
+    self.P("Received request for auth data:\n{}".format(self.json_dumps(inputs, indent=2)))
     
     verify_data = self.bc.verify(inputs, return_full_info=True)
     
