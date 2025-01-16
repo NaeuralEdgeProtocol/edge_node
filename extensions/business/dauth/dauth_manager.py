@@ -10,6 +10,14 @@ _CONFIG = {
   
   'ASSETS' : 'nothing', # TODO: this should not be required in future
   
+  # required ENV keys are defined in plugin template and should be added here
+  
+  "AUTH_ENV_KEYS" : [
+  ],
+  
+  "AUTH_PREDEFINED_KEYS" : {
+  },
+  
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
   },
@@ -30,8 +38,9 @@ class DauthManagerPlugin(BasePlugin):
     super(DauthManagerPlugin, self).on_init()
     my_address = self.bc.address
     my_eth_address = self.bc.eth_address
-    self.P("Started {} plugin on {} / {}".format(
-      self.__class__.__name__, my_address, my_eth_address)
+    self.P("Started {} plugin on {} / {}\n - Auth keys: {}\n - Predefined keys: {}".format(
+      self.__class__.__name__, my_address, my_eth_address,
+      self.cfg_auth_env_keys, self.cfg_auth_predefined_keys)
     )
     return
   
@@ -115,15 +124,13 @@ class DauthManagerPlugin(BasePlugin):
     
     """
     
+    lst_auth_env_keys = self.cfg_auth_env_keys
+    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
+    
     DAUTH_SUBKEY = 'auth'
     data = {
       DAUTH_SUBKEY : {
         'error' : None,
-        'EE_MQTT_USER'  : None,
-        'EE_MQTT'   : None,
-        'EE_MQTT_HOST'   : None,
-        'EE_MQTT_PORT'  : None,
-        'EE_MQTT_SUBTOPIC' : None,
       },
     }
 
@@ -148,10 +155,14 @@ class DauthManagerPlugin(BasePlugin):
     else:    
       # check if node_address is allowed
       
-      # prepare the auth data
-      for key in data[DAUTH_SUBKEY]:
+      # prepare the env auth data
+      for key in lst_auth_env_keys:
         if key.startswith('EE_'):
           data[DAUTH_SUBKEY][key] = self.os_environ.get(key)
+      
+      # overwrite the predefined keys
+      for key in dct_auth_predefined_keys:
+        data[DAUTH_SUBKEY][key] = dct_auth_predefined_keys[key]
       
       # self.chainstore_set()
       # record the node_address and the auth data
