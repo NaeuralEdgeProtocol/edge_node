@@ -38,7 +38,7 @@ ADMIN_PIPELINE = {
     ],
     
     "AUTH_PREDEFINED_KEYS" : {
-      "EE_SUPERVISOR" : False,
+      # "EE_SUPERVISOR" : False, # this should not be enabled 
       "EE_SECURED" : 1
     },
   },
