@@ -146,7 +146,7 @@ class DauthManagerPlugin(BasePlugin):
     
     inputs = {k : body.get(k) for k in inputs}
     
-    self.P("Received request for auth data:\n{}".format(self.json_dumps(inputs, indent=2)))
+    self.P("Received request for auth data:\n{}".format(self.json_dumps(body, indent=2)))
     
     verify_data = self.bc.verify(inputs, return_full_info=True)
     
