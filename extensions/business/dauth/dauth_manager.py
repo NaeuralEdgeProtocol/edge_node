@@ -127,7 +127,7 @@ class DauthManagerPlugin(BasePlugin):
     lst_auth_env_keys = self.cfg_auth_env_keys
     dct_auth_predefined_keys = self.cfg_auth_predefined_keys
     
-    DAUTH_SUBKEY = 'auth'
+    DAUTH_SUBKEY = self.const.BASE_CT.DAUTH_SUBKEY
     data = {
       DAUTH_SUBKEY : {
         'error' : None,
@@ -136,10 +136,7 @@ class DauthManagerPlugin(BasePlugin):
 
     # check signature
     inputs = {      
-      'nonce': None,
-      self.const.BASE_CT.BCct.SENDER: None,
-      self.const.BASE_CT.BCct.SIGN : None,
-      self.const.BASE_CT.BCct.HASH : None,
+      k : None for k in self.const.BASE_CT.DAUTH_VARS
     }
     
     self.const.BASE_CT.BLOCKCHAIN_CONFIG
