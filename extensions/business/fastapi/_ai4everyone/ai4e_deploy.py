@@ -3,10 +3,6 @@ from naeural_core.business.default.web_app.fast_api_web_app import FastApiWebApp
 
 _CONFIG = {
   **BasePlugin.CONFIG,
-  'USE_NGROK': False,
-  'NGROK_ENABLED': False,
-  'NGROK_DOMAIN': None,
-  'NGROK_EDGE_LABEL': None,
 
   'SAVE_PERIOD': 60,
   'REQUEST_TIMEOUT': 600,

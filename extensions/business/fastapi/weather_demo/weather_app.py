@@ -4,14 +4,10 @@ __VER__ = '0.1.0.0'
 
 _CONFIG = {
   **FastApiWebAppPlugin.CONFIG,
-  'USE_NGROK' : False,
-  'NGROK_ENABLED': False,
-  'NGROK_DOMAIN' : None,
-  'NGROK_EDGE_LABEL' : None,
 
   'PORT' : None,
 
-  'ASSETS' : 'plugins/business/fastapi/weather_demo',
+  'ASSETS': 'plugins/extensions/fastapi/weather_demo',
   'JINJA_ARGS': {
     'html_files' : [
       {

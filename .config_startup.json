@@ -92,22 +92,23 @@
     },
     
     "NET_MON_01" : {
-      "PROCESS_DELAY" : 10
+      "PROCESS_DELAY" : 10,
+      "SUPERVISOR" : "$EE_SUPERVISOR"
     },
     
     "UPDATE_MONITOR_01" : {
       "PROCESS_DELAY"   : 60,
-      "WORKING_HOURS"   : [["12:00", "12:30"]],    
       "VERSION_TOKEN"   : "$EE_GITVER",
       "RESTART_ON_BEHIND": true,
       "VERSION_URL"     : "https://raw.githubusercontent.com/NaeuralEdgeProtocol/edge_node/{}/ver.py",
       "USE_YAML" : false,
     
-      "FORCE_RESTART_AFTER" : 600000,
+      "FORCE_RESTART_AFTER" : null,
       "REBOOT_ON_RESTART"   : false,
           
 
-      "RELEASE_TAG" : "release-tag-for-yaml-config"
+      "TODO": "Review this and how develop nodes will differ from main nodes.",
+      "RELEASE_TAG" : "develop"
     }
 
   },
@@ -119,7 +120,7 @@
 
     "QOS" : 2,
     "CONN_MAX_RETRY_ITERS" : 5,
-    "LOG_SEND_COMMANDS" : true,
+    "LOG_SEND_COMMANDS" : false,
 
     "SAVE_RECEIVED_COMMANDS" : true,
     
