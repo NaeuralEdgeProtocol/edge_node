@@ -119,6 +119,7 @@ class DauthManagerPlugin(BasePlugin):
         "EE_SIGN" : "sender signature on the message",
         "EE_HASH" : "message hash",
         "nonce" : "some-nonce"
+        ... other data
       }      
     }
     
@@ -133,19 +134,10 @@ class DauthManagerPlugin(BasePlugin):
         'error' : None,
       },
     }
-
-    # check signature
-    inputs = {      
-      k : None for k in self.const.BASE_CT.DAUTH_VARS
-    }
-    
-    self.const.BASE_CT.BLOCKCHAIN_CONFIG
-    
-    inputs = {k : body.get(k) for k in inputs}
     
     self.P("Received request for auth data:\n{}".format(self.json_dumps(body, indent=2)))
     
-    verify_data = self.bc.verify(inputs, return_full_info=True)
+    verify_data = self.bc.verify(body, return_full_info=True)
     
     if not verify_data.valid:
       data[DAUTH_SUBKEY]['error'] = 'Invalid signature: {}'.format(verify_data.message)
