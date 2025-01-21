@@ -1,7 +1,7 @@
 
 from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.1.1'
+__VER__ = '0.2.2'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -9,6 +9,8 @@ _CONFIG = {
   'PORT': None,
   
   'ASSETS' : 'nothing', # TODO: this should not be required in future
+  
+  'DAUTH_VERBOSE' : True,
   
   # required ENV keys are defined in plugin template and should be added here
   
@@ -135,13 +137,18 @@ class DauthManagerPlugin(BasePlugin):
       },
     }
     
-    self.P("Received request for auth data:\n{}".format(self.json_dumps(body, indent=2)))
+    if self.cfg_dauth_verbose:
+      self.P("Received request for auth:\n{}".format(self.json_dumps(body, indent=2)))
     
     verify_data = self.bc.verify(body, return_full_info=True)
     
     if not verify_data.valid:
       data[DAUTH_SUBKEY]['error'] = 'Invalid signature: {}'.format(verify_data.message)
+      if self.cfg_dauth_verbose:
+        self.P("Verification failed: {}".format(verify_data), color='r')
     else:    
+      if self.cfg_dauth_verbose:
+        self.P("Verification passed: {}".format(verify_data))
       # check if node_address is allowed
       
       # prepare the env auth data

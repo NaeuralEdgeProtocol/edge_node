@@ -1,3 +1,7 @@
+##
+## No need for Watchtower in this case, as we are using the (local) local_edge_node image
+##
+
 
 services:
   naeural_01:
@@ -9,6 +13,7 @@ services:
     env_file: .env
     volumes:
       - naeural_01:/edge_node/_local_cache
+       
 
   naeural_02:
     image: local_edge_node
@@ -19,6 +24,7 @@ services:
     env_file: .env
     volumes:
       - naeural_02:/edge_node/_local_cache
+         
 
   naeural_03:
     image: local_edge_node
@@ -29,8 +35,7 @@ services:
     env_file: .env
     volumes:
       - naeural_03:/edge_node/_local_cache
-
-
+        
 
 volumes:
   naeural_01:
