@@ -15,7 +15,7 @@ class SupervisorFastApiWebApp(BasePlugin):
   CONFIG = _CONFIG
 
   def on_init(self):
-    self.__supervisor_fastapi_plugin_running = False
+    self.__supervisor_fastapi_plugin_running = None
     super(SupervisorFastApiWebApp, self).on_init()
     return
 
@@ -25,9 +25,13 @@ class SupervisorFastApiWebApp(BasePlugin):
     if res != self.__supervisor_fastapi_plugin_running:
       self.__supervisor_fastapi_plugin_running = res
       if res:
-        self.P(f"{self.__class__.__name__} is enabled.")
+        self.P(f"{self.__class__.__name__} is enabled")
       else:
-        self.P(f"{self.__class__.__name__} is disabled.")
+        self.P(
+          f"{self.__class__.__name__} is disabled on non-super nodes.", 
+          color='r', 
+          boxed=True
+        )
     # endif changed state
     return res
 
