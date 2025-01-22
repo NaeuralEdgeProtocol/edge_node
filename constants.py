@@ -43,6 +43,11 @@ ADMIN_PIPELINE = {
     },
   },
   
+  'CSTORE_MANAGER': {
+    "NGROK_EDGE_LABEL": "$EE_NGROK_EDGE_LABEL_CSTORE_MANAGER",
+    "PROCESS_DELAY": 0,
+  },
+  
 }
 
 
