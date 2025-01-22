@@ -1,5 +1,11 @@
 FROM aidamian/base_edge_node_arm64_tegra:latest
 
+# first we copy the get_info script to the root folder
+WORKDIR /
+COPY get_node_info /usr/local/bin/get_node_info
+RUN chmod +x /usr/local/bin/get_node_info
+
+
 WORKDIR /edge_node
 
 COPY  . /edge_node
@@ -22,6 +28,9 @@ ENV AINODE_ENV_VER=$AI_ENV_VER
 
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 ENV EE_DEVICE=cuda:0
+
+ENV EE_ETH_ENABLED=true
+
 
 # configure default config_startup file
 ENV EE_CONFIG=.config_startup.json

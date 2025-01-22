@@ -1,13 +1,14 @@
 FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cu121-tr4.43.3
 
+
 WORKDIR /edge_node
 
 COPY  . /edge_node
 
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes
-# set a generic env variable
-ENV AINODE_DOCKER_SOURCE=main
+# set a generic env variable 
+ENV AINODE_DOCKER_SOURCE=develop
 # set default Execution Engine id
 ENV EE_ID=E2dkr
 # Temporary fix:
@@ -15,6 +16,9 @@ ENV AINODE_ENV=$AI_ENV
 ENV AINODE_ENV_VER=$AI_ENV_VER
 # configure default config_startup file
 ENV EE_CONFIG=.config_startup.json
+
+ENV EE_ETH_ENABLED=true
+
 
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

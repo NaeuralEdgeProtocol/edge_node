@@ -6,19 +6,12 @@ __VER__ = '0.2.2'
 _CONFIG = {
   **BasePlugin.CONFIG,
 
-  'PORT': None,
+  'PORT': 31234,
   
   'ASSETS' : 'nothing', # TODO: this should not be required in future
   
-  'DAUTH_VERBOSE' : True,
+  'CSTORE_VERBOSE' : True,
   
-  # required ENV keys are defined in plugin template and should be added here
-  
-  "AUTH_ENV_KEYS" : [
-  ],
-  
-  "AUTH_PREDEFINED_KEYS" : {
-  },
   
   'VALIDATION_RULES': {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
@@ -26,24 +19,23 @@ _CONFIG = {
 }
 
 
-class DauthManagerPlugin(BasePlugin):
+class CstoreManagerPlugin(BasePlugin):
   """
   This plugin is the dAuth FastAPI web app that provides an endpoints for decentralized authentication.
   """
   CONFIG = _CONFIG
 
   def __init__(self, **kwargs):
-    super(DauthManagerPlugin, self).__init__(**kwargs)
+    super(CstoreManagerPlugin, self).__init__(**kwargs)
     return
 
   def on_init(self):
-    super(DauthManagerPlugin, self).on_init()
+    super(CstoreManagerPlugin, self).on_init()
     my_address = self.bc.address
     my_eth_address = self.bc.eth_address
-    self.P("Started {} plugin on {} / {}\n - Auth keys: {}\n - Predefined keys: {}".format(
+    self.P("Started {} plugin on {} / {}".format(
       self.__class__.__name__, my_address, my_eth_address,
-      self.cfg_auth_env_keys, self.cfg_auth_predefined_keys)
-    )
+    ))
     return
   
   def __get_current_epoch(self):
@@ -57,10 +49,7 @@ class DauthManagerPlugin(BasePlugin):
     """
     return self.netmon.epoch_manager.get_current_epoch()
   
-  
-  def __eth_to_internal(self, eth_node_address):
-    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
-  
+   
   
   def __sign(self, data):
     """
@@ -105,65 +94,67 @@ class DauthManagerPlugin(BasePlugin):
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
     self.__sign(dct_data) # add the signature over full data
     return dct_data
+  
+  
+  def __get_keys(self):
+    result = []
+    _data = self.plugins_shmem.get('__chain_storage', {})
+    if isinstance(_data, dict):
+      result = list(_data.keys())
+    return result
 
 
-  @BasePlugin.endpoint(method="post")
-  # /get_auth_data
-  def get_auth_data(self, body: dict):
+  @BasePlugin.endpoint(method="get", require_token=False) 
+  def get_status(self):   # /get_status
     """
-    Receive a request for authentication data from a node and return the data if the request is valid.
-
-    Parameters
-    ----------
-    {
-      "body" : {
-        "EE_SENDER" : "sender node address",
-        "EE_SIGN" : "sender signature on the message",
-        "EE_HASH" : "message hash",
-        "nonce" : "some-nonce"
-        ... other data
-      }      
-    }
-    
     """
     
-    lst_auth_env_keys = self.cfg_auth_env_keys
-    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
-    
-    DAUTH_SUBKEY = self.const.BASE_CT.DAUTH_SUBKEY
     data = {
-      DAUTH_SUBKEY : {
-        'error' : None,
-      },
+      'keys' : self.__get_keys()
     }
     
-    if self.cfg_dauth_verbose:
-      self.P("Received request for auth:\n{}".format(self.json_dumps(body, indent=2)))
+    response = self.__get_response({
+      **data
+    })
+    return response
+
+
+  @BasePlugin.endpoint(method="get", require_token=True) 
+  def get_value(self, token, cstore_key : str):   # first parameter must be named token
+    """
+    """
     
-    verify_data = self.bc.verify(body, return_full_info=True)
+    if token not in ['admin']:
+      return "Unauthorized token"
     
-    if not verify_data.valid:
-      data[DAUTH_SUBKEY]['error'] = 'Invalid signature: {}'.format(verify_data.message)
-      if self.cfg_dauth_verbose:
-        self.P("Verification failed: {}".format(verify_data), color='r')
-    else:    
-      if self.cfg_dauth_verbose:
-        self.P("Verification passed: {}".format(verify_data))
-      # check if node_address is allowed
-      
-      # prepare the env auth data
-      for key in lst_auth_env_keys:
-        if key.startswith('EE_'):
-          data[DAUTH_SUBKEY][key] = self.os_environ.get(key)
-      
-      # overwrite the predefined keys
-      for key in dct_auth_predefined_keys:
-        data[DAUTH_SUBKEY][key] = dct_auth_predefined_keys[key]
-      
-      # self.chainstore_set()
-      # record the node_address and the auth data
-      
-      # return the auth data
+    value = self.chainstore_get(key=cstore_key, debug=True)
+    
+    data = {
+      cstore_key : value
+    }
+    
+    response = self.__get_response({
+      **data
+    })
+    return response
+
+  @BasePlugin.endpoint(method="get", require_token=True) 
+  def set_value(self, token, cstore_key : str, cstore_value : str):   # first parameter must be named token
+    """
+    """
+    
+    if token not in ['admin']:
+      return "Unauthorized token"
+    
+    value = self.chainstore_set(
+      key=cstore_key, 
+      value=cstore_value,
+      debug=True
+    )
+    
+    data = {
+      cstore_key : value
+    }
     
     response = self.__get_response({
       **data

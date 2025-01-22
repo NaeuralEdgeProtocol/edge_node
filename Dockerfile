@@ -1,5 +1,12 @@
 FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cu121-tr4.43.3
 
+# first we copy the get_info script to the root folder
+WORKDIR /
+COPY get_node_info /usr/local/bin/get_node_info
+RUN chmod +x /usr/local/bin/get_node_info
+
+
+
 WORKDIR /edge_node
 
 COPY  . /edge_node
@@ -15,6 +22,8 @@ ENV AINODE_ENV=$AI_ENV
 ENV AINODE_ENV_VER=$AI_ENV_VER
 # configure default config_startup file
 ENV EE_CONFIG=.config_startup.json
+
+ENV EE_ETH_ENABLED=true
 
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
