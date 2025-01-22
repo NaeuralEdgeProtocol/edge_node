@@ -13,3 +13,6 @@ if [ $# -eq 1 ]; then
 else
   echo "$1  $2" >> "$FILE"
 fi
+
+# now call get_node_info
+get_node_info
