@@ -26,6 +26,9 @@ ENV EE_ID=E2dkr
 ENV AINODE_ENV=$AI_ENV
 ENV AINODE_ENV_VER=$AI_ENV_VER
 
+ENV EE_ETH_ENABLED=true
+
+
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 ENV EE_DEVICE=cuda:0
 

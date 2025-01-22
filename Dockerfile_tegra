@@ -29,6 +29,9 @@ ENV AINODE_ENV_VER=$AI_ENV_VER
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 ENV EE_DEVICE=cuda:0
 
+ENV EE_ETH_ENABLED=true
+
+
 # configure default config_startup file
 ENV EE_CONFIG=.config_startup.json
 

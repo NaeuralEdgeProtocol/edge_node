@@ -17,6 +17,9 @@ ENV AINODE_ENV_VER=$AI_ENV_VER
 # configure default config_startup file
 ENV EE_CONFIG=.config_startup.json
 
+ENV EE_ETH_ENABLED=true
+
+
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
