@@ -1,0 +1,15 @@
+#!/bin/bash
+FILE=/edge_node/_local_cache/authorized_addrs
+
+# Check if at least one argument is provided
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 <address> [alias]"
+  exit 1
+fi
+
+# Append the address and optional alias as a new line at the end of the file
+if [ $# -eq 1 ]; then
+  echo "$1" >> "$FILE"
+else
+  echo "$1  $2" >> "$FILE"
+fi
