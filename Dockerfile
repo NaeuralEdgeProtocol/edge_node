@@ -28,6 +28,9 @@ ENV EE_CONFIG=.config_startup.json
 
 ENV EE_ETH_ENABLED=true
 
+ENV EE_HB_CONTAINS_PIPELINES=0
+ENV EE_HB_CONTAINS_ACTIVE_PLUGINS=1
+
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 

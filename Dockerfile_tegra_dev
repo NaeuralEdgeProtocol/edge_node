@@ -31,6 +31,8 @@ ENV AINODE_ENV=$AI_ENV
 ENV AINODE_ENV_VER=$AI_ENV_VER
 
 ENV EE_ETH_ENABLED=true
+ENV EE_HB_CONTAINS_PIPELINES=0
+ENV EE_HB_CONTAINS_ACTIVE_PLUGINS=1
 
 
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
