@@ -5,6 +5,9 @@ WORKDIR /
 COPY get_node_info /usr/local/bin/get_node_info
 RUN chmod +x /usr/local/bin/get_node_info
 
+COPY add_allowed /usr/local/bin/add_allowed
+RUN chmod +x /usr/local/bin/add_allowed
+
 
 
 WORKDIR /edge_node
