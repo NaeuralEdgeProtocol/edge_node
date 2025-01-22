@@ -94,6 +94,14 @@ class CstoreManagerPlugin(BasePlugin):
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
     self.__sign(dct_data) # add the signature over full data
     return dct_data
+  
+  
+  def __get_keys(self):
+    result = []
+    _data = self.plugins_shmem.get('__chain_storage', {})
+    if isinstance(_data, dict):
+      result = list(_data.keys())
+    return result
 
 
   @BasePlugin.endpoint(method="get", require_token=False) 
@@ -102,6 +110,7 @@ class CstoreManagerPlugin(BasePlugin):
     """
     
     data = {
+      'keys' : self.__get_keys()
     }
     
     response = self.__get_response({
@@ -118,7 +127,30 @@ class CstoreManagerPlugin(BasePlugin):
     if token not in ['admin']:
       return "Unauthorized token"
     
-    value = self.chainstore_get(cstore_key, debug=True)
+    value = self.chainstore_get(key=cstore_key, debug=True)
+    
+    data = {
+      cstore_key : value
+    }
+    
+    response = self.__get_response({
+      **data
+    })
+    return response
+
+  @BasePlugin.endpoint(method="get", require_token=True) 
+  def set_value(self, token, cstore_key : str, cstore_value : str):   # first parameter must be named token
+    """
+    """
+    
+    if token not in ['admin']:
+      return "Unauthorized token"
+    
+    value = self.chainstore_set(
+      key=cstore_key, 
+      value=cstore_value,
+      debug=True
+    )
     
     data = {
       cstore_key : value
