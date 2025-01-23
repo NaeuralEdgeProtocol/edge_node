@@ -42,7 +42,19 @@ After launching the Ratio1 Edge Node, you can inspect its status and view its se
 docker exec r1node get_node_info
 ```
 
-This command retrieves comprehensive information about the node, including its current status and unique identity within the network.
+This command retrieves comprehensive information about the node, including its current status and unique identity within the network such as below
+```json
+{
+  "address": "0xai_A2pPf0lxZSZkGONzLOmhzndncc1VvDBHfF-YLWlsrG9m",
+  "alias": "5ac5438a2775",
+  "eth_address": "0xc440cdD0BBdDb5a271de07d3378E31Cb8D9727A5",
+  "version_long": "v2.5.36 | core v7.4.23 | SDK 2.6.15",
+  "version_short": "v2.5.36",
+  "info": {
+    "whitelist": []
+  }
+}
+```
 
 ## Adding an Allowed Address
 
@@ -56,6 +68,29 @@ docker exec r1node add_allowed <address> [<alias>]
 - `<alias>`: (Optional) A friendly alias for the address.
 
 Upon execution, the node’s status will update, indicating that it is now ready to accept computation tasks from the specified SDK or Edge Node address.
+
+Running the command with valid node address and alias:
+
+```bash
+docker exec r1node add_allowed 0xai_AthDPWc_k3BKJLLYTQMw--Rjhe3B6_7w76jlRpT6nDeX some-node-alias
+```
+will result in a result such as:
+
+```json
+{
+  "address": "0xai_A2pPf0lxZSZkGONzLOmhzndncc1VvDBHfF-YLWlsrG9m",
+  "alias": "5ac5438a2775",
+  "eth_address": "0xc440cdD0BBdDb5a271de07d3378E31Cb8D9727A5",
+  "version_long": "v2.5.36 | core v7.4.23 | SDK 2.6.15",
+  "version_short": "v2.5.36",
+  "info": {
+    "whitelist": [
+      "0xai_AthDPWc_k3BKJLLYTQMw--Rjhe3B6_7w76jlRpT6nDeX"
+    ]
+  }
+}
+```
+
 
 ## Stopping the Edge Node
 
