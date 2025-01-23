@@ -14,5 +14,7 @@ else
   echo "$1  $2" >> "$FILE"
 fi
 
+# sleep before calling get_node_info
+sleep 3
 # now call get_node_info
 get_node_info
