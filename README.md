@@ -91,6 +91,16 @@ will result in a result such as:
 }
 ```
 
+## Inspecting the node performance / load history
+
+To inspect the node's performance and load history, execute the following command:
+
+```bash
+docker exec r1node get_node_history
+```
+
+This command will output a raw JSON that can be parsed for detailed information about the node's performance and load history.
+
 
 ## Stopping the Edge Node
 
