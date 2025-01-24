@@ -8,7 +8,7 @@
   
   "COMPRESS_HEARTBEAT" : true,
   
-  "MIN_AVAIL_MEM_THR"        : 0.25,
+  "MIN_AVAIL_MEM_THR"        : 0.09,
   "MIN_AVAIL_DISK_SIZE_GB"   : 10,
   "CRITICAL_RESTART_LOW_MEM" : 0.20,  
 

@@ -1,0 +1,2 @@
+#!/bin/bash
+cat /edge_node/_local_cache/_data/local_history.json
