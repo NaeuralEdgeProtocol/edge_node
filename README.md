@@ -100,7 +100,48 @@ docker exec r1node get_node_history
 ```
 
 This command will output a raw JSON that can be parsed for detailed information about the node's performance and load history.
+```json
+{
+    "cpu_load": [
+        15.9,
+        15.8
+    ],
+    "cpu_temp": [
+        null,
+        null
+    ],
+    "epoch": 21,
+    "epoch_avail": 0.0024,
+    "gpu_load": [
+        null,
+        null
+    ],
+    "gpu_occupied_memory": [
+        null,
+        null
+    ],
+    "gpu_total_memory": [
+        null,
+        null
+    ],
+    "occupied_memory": [
+        12.1,
+        12.1
+    ],
+    "timestamps": [
+        "2025-01-24 22:03:29.809281",
+        "2025-01-24 22:03:49.890208"
+    ],
+    "total_memory": [
+        15.6,
+        15.6
+    ],
+    "uptime": "06:18:03",
+    "version": "2.6.1"
+}
+```
 
+In the above example we expanded the JSON into a human readable format for better understanding. 
 
 ## Stopping the Edge Node
 
