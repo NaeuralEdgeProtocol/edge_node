@@ -37,15 +37,27 @@ class EpochManager01Plugin(BasePlugin):
     super(EpochManager01Plugin, self).__init__(**kwargs)
     return
 
+
   def on_init(self):
     super(EpochManager01Plugin, self).on_init()
     my_address = self.bc.address
-    my_node_info = self.__get_node_epochs(my_address)
-    self.P("Started {} plugin. Local node info:\n{}".format(
-      self.__class__.__name__, self.json_dumps(my_node_info))
+    current_epoch = self.__get_current_epoch()
+    start_epoch = current_epoch - 6
+    end_epoch = current_epoch - 1
+    if start_epoch < 1:
+      start_epoch = 1
+    if end_epoch < 1:
+      end_epoch = 1
+    my_node_info = self.__get_node_epochs(
+      my_address, 
+      start_epoch=start_epoch, end_epoch=end_epoch
+    )
+    self.P("Started {} plugin in epoch {}. Local node info:\n{}".format(
+      self.__class__.__name__, current_epoch, self.json_dumps(my_node_info, indent=2))
     )
     return
-  
+
+
   def __sign(self, data):
     """
     Sign the given data using the blockchain engine.
@@ -54,6 +66,7 @@ class EpochManager01Plugin(BasePlugin):
     """
     signature = self.bc.sign(data, add_data=True, use_digest=True)
     return signature
+
 
   def __get_response(self, dct_data: dict):
     """
@@ -207,6 +220,7 @@ class EpochManager01Plugin(BasePlugin):
         'error': error_msg,
       }
     else:
+      self.P(f"Getting epochs for node {node_addr} from {start_epoch} to {end_epoch}")
       epochs_vals = self.netmon.epoch_manager.get_node_epochs(
         node_addr, 
         autocomplete=True,
@@ -221,6 +235,10 @@ class EpochManager01Plugin(BasePlugin):
         epochs = list(range(start_epoch, end_epoch + 1)) 
         epochs_vals_selected = [epochs_vals[x] for x in epochs]
         data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
+        # now add the certainty for each requested epoch
+        certainty = self.netmon.epoch_manager.get_self_supervisor_capacity()
+        data["certainty"] = {k : certainty.get(k, False) for k in epochs}
+        
     #endif
     return data
 
@@ -231,7 +249,7 @@ class EpochManager01Plugin(BasePlugin):
   # /nodes_list
   def nodes_list(self):
     """
-    Returns the list of known nodes in the network.
+    Returns the list of all known nodes in the network - both online and offline.
     The known nodes are nodes that sent at least one heartbeat while the current node was running.
 
     Returns
@@ -253,13 +271,14 @@ class EpochManager01Plugin(BasePlugin):
         - server_uptime: str
             The time that the responding node has been running.
     """
-    nodes = self.netmon.epoch_manager.get_node_list()
-    nodes = {
-      x : {
-        "alias" :  self.netmon.network_node_eeid(addr=x),
-        "eth_address" : self.bc.node_address_to_eth_address(x),
-      } for x in nodes 
-    }    
+    # nodes = self.netmon.epoch_manager.get_node_list()
+    # nodes = {
+    #   x : {
+    #     "alias" :  self.netmon.network_node_eeid(addr=x),
+    #     "eth_address" : self.bc.node_address_to_eth_address(x),
+    #   } for x in nodes 
+    # }    
+    nodes = self.netmon.epoch_manager.get_stats(display=True, online_only=False)
     response = self.__get_response({
       'nodes': nodes,
     })
@@ -292,14 +311,15 @@ class EpochManager01Plugin(BasePlugin):
         - server_uptime: str
             The time that the responding node has been running.
     """
-    nodes = self.netmon.epoch_manager.get_node_list()
-    nodes = {
-      x : {
-        "alias" :  self.netmon.network_node_eeid(addr=x),
-        "eth_address" : self.bc.node_address_to_eth_address(x),        
-      } for x in nodes 
-      if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
-    }
+    # nodes = self.netmon.epoch_manager.get_node_list()
+    # nodes = {
+    #   x : {
+    #     "alias" :  self.netmon.network_node_eeid(addr=x),
+    #     "eth_address" : self.bc.node_address_to_eth_address(x),        
+    #   } for x in nodes 
+    #   if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
+    # }
+    nodes = self.netmon.epoch_manager.get_stats(display=True, online_only=True)
     response = self.__get_response({
       'nodes': nodes,
     })
