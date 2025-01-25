@@ -141,9 +141,11 @@ class EpochManager01Plugin(BasePlugin):
         signature_only=False,
       )    
       eth_signature = res["signature"]
+      inputs = res["eth_signed_data"]
     else:
       eth_signature = []
-    inputs = res["eth_signed_data"]
+      inputs = []
+    
     eth_signatures = [eth_signature]
     eth_addresses = [self.bc.eth_address]
     
