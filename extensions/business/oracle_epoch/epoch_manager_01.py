@@ -11,7 +11,7 @@ Each request will generate data as follows:
 
 """
 
-from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
+from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
 __VER__ = '0.3.2'
 
