@@ -119,7 +119,7 @@ class EpochManager01Plugin(BasePlugin):
     return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
   
   
-  def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list):
+  def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list, sign=True):
     """    
     Sign the given data using the blockchain engine.
     Returns the signature. 
@@ -133,18 +133,24 @@ class EpochManager01Plugin(BasePlugin):
     
     """
     node_addr_eth = self.bc.node_address_to_eth_address(node_addr)
-    res = self.bc.eth_sign_node_epochs(
-      node=node_addr_eth, 
-      epochs=epochs,
-      epochs_vals=epochs_vals, 
-      signature_only=False,
-    )
-    eth_signature = res["signature"]
+    if sign:
+      res = self.bc.eth_sign_node_epochs(
+        node=node_addr_eth, 
+        epochs=epochs,
+        epochs_vals=epochs_vals, 
+        signature_only=False,
+      )    
+      eth_signature = res["signature"]
+    else:
+      eth_signature = []
     inputs = res["eth_signed_data"]
     eth_signatures = [eth_signature]
     eth_addresses = [self.bc.eth_address]
+    
     # now add oracle peers signatures and addresses
-
+    # ... 
+    # end add the oracle signatures and addresses
+    
     data = {
       'node': node_addr,
       'node_eth_address': node_addr_eth,
@@ -234,9 +240,16 @@ class EpochManager01Plugin(BasePlugin):
       else:
         epochs = list(range(start_epoch, end_epoch + 1)) 
         epochs_vals_selected = [epochs_vals[x] for x in epochs]
-        data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
+        oracle_state = self.netmon.epoch_manager.get_oracle_state(
+          start_epoch=start_epoch, end_epoch=end_epoch
+        )
+        valid = oracle_state['manager']['valid']
+        if not valid:
+          data["error"] = "Oracle state is not valid. Please check [result.oracle.manager.certainty] and report to devs."
+        else:
+          data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
         # now add the certainty for each requested epoch
-        data["oracle"] = self.netmon.epoch_manager.get_oracle_state()
+        data["oracle"] = oracle_state
         
     #endif
     return data
