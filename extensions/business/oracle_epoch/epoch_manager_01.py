@@ -13,7 +13,7 @@ Each request will generate data as follows:
 
 from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.2.1'
+__VER__ = '0.3.2'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -238,6 +238,7 @@ class EpochManager01Plugin(BasePlugin):
         # now add the certainty for each requested epoch
         certainty = self.netmon.epoch_manager.get_self_supervisor_capacity()
         data["certainty"] = {k : certainty.get(k, False) for k in epochs}
+        data["current_node_era"] = self.netmon.epoch_manager.get_era_specs()
         
     #endif
     return data
