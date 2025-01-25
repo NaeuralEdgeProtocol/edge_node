@@ -73,7 +73,7 @@ class ChainStoreTestPlugin(BaseClass):
         value = f"V{self.__key_count}-{self.node_id}-{self.uuid(4)}" # some arbitrary value
         ok = self.chainstore_set(key, value, debug=True)
         if not ok:
-          self.P(f"Failed to set value: {key}:{value}. Chainstore:\n{self.json_dumps(self.chainstorage, indent=2)}", color="red")
+          self.P(f"Failed to set value: {key}:{value}.", color="red")
         else:
           self.P(f"Done setting value: {key}:{value}")
           
