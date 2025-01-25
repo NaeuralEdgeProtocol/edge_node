@@ -133,6 +133,7 @@ class EpochManager01Plugin(BasePlugin):
     
     """
     node_addr_eth = self.bc.node_address_to_eth_address(node_addr)
+    node_alias = self.netmon.network_node_eeid(addr=node_addr)
     if sign:
       res = self.bc.eth_sign_node_epochs(
         node=node_addr_eth, 
@@ -156,6 +157,7 @@ class EpochManager01Plugin(BasePlugin):
     data = {
       'node': node_addr,
       'node_eth_address': node_addr_eth,
+      'node_alias': node_alias,
       'epochs': epochs,
       'epochs_vals': epochs_vals,
       
@@ -221,10 +223,16 @@ class EpochManager01Plugin(BasePlugin):
       error_msg = "End epoch is less than 1"
     if end_epoch >= self.__get_current_epoch():
       error_msg = "End epoch is greater or equal than the current epoch"
-    
+      
+    try:
+      node_eth_address = self.bc.node_address_to_eth_address(node_addr)
+    except Exception as e:
+      error_msg = f"Error converting node address to eth address: {e}"
+    # end if checks
     if error_msg is not None:
       data = {
         'node': node_addr,
+        'node_eth_address': node_eth_address,
         'error': error_msg,
       }
     else:
@@ -237,7 +245,8 @@ class EpochManager01Plugin(BasePlugin):
       if epochs_vals is None:
         data = {
           'node': node_addr,
-          'error': "No epochs found for the node",
+          'node_eth_address': node_eth_address,
+          'error': "No epochs found for the given node",
         }
       else:
         epochs = list(range(start_epoch, end_epoch + 1)) 
@@ -246,13 +255,12 @@ class EpochManager01Plugin(BasePlugin):
           start_epoch=start_epoch, end_epoch=end_epoch
         )
         valid = oracle_state['manager']['valid']
+        data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected, sign=valid)
         if not valid:
-          data["error"] = "Oracle state is not valid. Please check [result.oracle.manager.certainty] and report to devs."
-        else:
-          data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
+          data["error"] = "Oracle state is not valid for some of the epochs. Please check [result.oracle.manager.certainty] and report to devs. For testing purposes try using valid/certain epochs."
         # now add the certainty for each requested epoch
         data["oracle"] = oracle_state
-        
+      # end if epochs_vals is None
     #endif
     return data
 

@@ -28,6 +28,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # ENV EE_DEVICE=cuda:0
 
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir --no-deps naeural-core
+RUN pip install --no-cache-dir --no-deps --upgrade naeural_core
 
 CMD ["python3","device.py"]
