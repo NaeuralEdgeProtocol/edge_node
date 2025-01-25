@@ -35,8 +35,11 @@ ENV EE_HB_CONTAINS_PIPELINES=0
 ENV EE_HB_CONTAINS_ACTIVE_PLUGINS=1
 
 
+#### TO BE REMOVED AND TESTED !!!
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+#### END TO BE REMOVED
+
 
 # also can use EE_DEVICE to define target such as cuda:0 or cuda:1 instead of cpu
 # althouh this is not recommended as it should be in .env file

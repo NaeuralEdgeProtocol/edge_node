@@ -18,9 +18,11 @@ WORKDIR /edge_node
 
 COPY  . /edge_node
 
-# Set a default value for the TZ environment variable
+#### TO BE REMOVED AND TESTED !!!
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+#### END TO BE REMOVED
+
 
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes
