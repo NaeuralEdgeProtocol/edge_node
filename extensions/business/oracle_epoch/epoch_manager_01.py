@@ -236,9 +236,7 @@ class EpochManager01Plugin(BasePlugin):
         epochs_vals_selected = [epochs_vals[x] for x in epochs]
         data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
         # now add the certainty for each requested epoch
-        certainty = self.netmon.epoch_manager.get_self_supervisor_capacity()
-        data["certainty"] = {k : certainty.get(k, False) for k in epochs}
-        data["current_node_era"] = self.netmon.epoch_manager.get_era_specs()
+        data["oracle"] = self.netmon.epoch_manager.get_oracle_state()
         
     #endif
     return data
