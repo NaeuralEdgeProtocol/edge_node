@@ -1,20 +1,11 @@
 FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cu121-tr4.43.3
 
-WORKDIR /
-COPY get_node_info /usr/local/bin/get_node_info
-RUN chmod +x /usr/local/bin/get_node_info
 
-COPY add_allowed /usr/local/bin/add_allowed
-RUN chmod +x /usr/local/bin/add_allowed
-
-COPY get_node_history /usr/local/bin/get_node_history
-RUN chmod +x /usr/local/bin/get_node_history
-
-
+COPY ./cmds /usr/local/bin/
 
 WORKDIR /edge_node
 
-COPY  . /edge_node
+COPY . .
 
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes

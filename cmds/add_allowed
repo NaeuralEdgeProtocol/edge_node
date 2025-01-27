@@ -1,4 +1,7 @@
 #!/bin/bash
+###
+### This script adds an address to the list of authorized addresses
+###
 FILE=/edge_node/_local_cache/authorized_addrs
 
 # Check if at least one argument is provided

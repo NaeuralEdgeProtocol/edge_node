@@ -1,0 +1,5 @@
+#!/bin/bash
+###
+### This script will dump the local info JSON of the edge node
+###
+cat /edge_node/_local_cache/_data/local_info.json
