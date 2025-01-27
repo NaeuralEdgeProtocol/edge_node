@@ -26,11 +26,18 @@ docker run -d --rm -name r1node --pull=always -v r1vol:/edge_node/_local_cache/ 
 
 This command initializes the Ratio1 Edge Node in development mode, automatically connecting it to the Ratio1 development network and preparing it to receive computation tasks while ensuring that all node data is stored in `r1vol`, preserving it between container restarts.
 
-If you have GPU(s) on your machine, you can enable GPU support by adding the `--gpus all` flag to the Docker command. This flag allows the Edge Node to utilize the GPU(s) for computation tasks.
+If for some reason you encounter issues when running the Edge Node, you can try to run the container with the `--platform linux/amd64` flag to ensure that the container runs on the correct platform.
+
+```bash
+docker run -d --rm --name r1node --platform linux/amd64 --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
+```
+Also, if you have GPU(s) on your machine, you can enable GPU support by adding the `--gpus all` flag to the Docker command. This flag allows the Edge Node to utilize the GPU(s) for computation tasks.
 
 ```bash
 docker run -d --rm --name r1node --gpus all --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
 ```
+
+This will ensure that your node will be able to utilize the GPU(s) for computation tasks and will accept training and inference jobs that require GPU acceleration.
 
 
 ## Inspecting the Edge Node
