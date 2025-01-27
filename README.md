@@ -8,6 +8,9 @@ The Ratio1 Edge Node is a meta Operating System designed to operate on edge devi
 
 ## Running the Edge Node
 
+> Note on requirements: the minimal hardware requirements to run a Ratio1 Edge Node are a 64-bit CPU, 6GB of RAM, 2 cores (vCores just fine) and 10GB of storage. The Edge Node is compatible with Linux, Windows, and macOS operating systems. Make sure you have Docker installed on your machine before proceeding so for Windows and Mac probably you will need to install Docker Desktop.
+
+
 Deploying a Ratio1 Edge Node within a development network is straightforward. Execute the following Docker command to launch the node making sure you mount a persistent volume to the container to preserve the node data between restarts:
 
 ```bash
@@ -22,6 +25,12 @@ docker run -d --rm -name r1node --pull=always -v r1vol:/edge_node/_local_cache/ 
 - `-v r1vol:/edge_node/_local_cache/`: Mounts the `r1vol` volume to the `/edge_node/_local_cache/` directory within the container.
 
 This command initializes the Ratio1 Edge Node in development mode, automatically connecting it to the Ratio1 development network and preparing it to receive computation tasks while ensuring that all node data is stored in `r1vol`, preserving it between container restarts.
+
+If you have GPU(s) on your machine, you can enable GPU support by adding the `--gpus all` flag to the Docker command. This flag allows the Edge Node to utilize the GPU(s) for computation tasks.
+
+```bash
+docker run -d --rm --name r1node --gpus all --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
+```
 
 
 ## Inspecting the Edge Node
