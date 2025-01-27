@@ -7,9 +7,11 @@ Documentation sections:
 - [Running the Edge Node](#running-the-edge-node)
 - [Inspecting the Edge Node](#inspecting-the-edge-node)
 - [Adding an Allowed Address](#adding-an-allowed-address)
-- [Inspecting the node performance / load history](#inspecting-the-node-performance--load-history)
+- [Inspecting the node performance](#inspecting-the-node-performance)
 - [Reset the Edge Node address](#reset-the-edge-node-address)
+- [Changing the alias of the node](#changing-the-alias-of-the-node)
 - [Stopping the Edge Node](#stopping-the-edge-node)
+- [Running multiple nodes on the same machine](#running-multiple-nodes-on-the-same-machine)
 
 
 ## Introduction
@@ -36,6 +38,8 @@ docker run -d --rm --name r1node --pull=always -v r1vol:/edge_node/_local_cache/
 
 This command initializes the Ratio1 Edge Node in development mode, automatically connecting it to the Ratio1 development network and preparing it to receive computation tasks while ensuring that all node data is stored in `r1vol`, preserving it between container restarts.
 
+> NOTE: currently we are using `naeural` DockerHub repository for the Edge Node image. In the future, we will move the image to the `ratio1` DockerHub repository.
+
 If for some reason you encounter issues when running the Edge Node, you can try to run the container with the `--platform linux/amd64` flag to ensure that the container runs on the correct platform.
 
 ```bash
@@ -59,6 +63,7 @@ docker run -d --rm --name r1node2 --pull=always -v r1vol2:/edge_node/_local_cach
 ```
 
 Now you can run multiple Edge Nodes on the same machine without any conflicts between them.
+>NOTE: If you are running multiple nodes on the same machine it is recommended to use docker-compose to manage the nodes. You can find an example of how to run multiple nodes on the same machine using docker-compose in the [Running multiple nodes on the same machine](#running-multiple-nodes-on-the-same-machine) section.
 
 
 ## Inspecting the Edge Node
@@ -126,7 +131,7 @@ will result in a result such as:
 }
 ```
 
-## Inspecting the node performance / load history
+## Inspecting the node performance
 
 To inspect the node's performance and load history, execute the following command:
 
@@ -222,6 +227,21 @@ docker exec r1node get_node_info
 }
 ```
 
+## Changing the alias of the node
+
+Although the alias is not really used most of the time some users might want to change it. To do so you can run the following command:
+
+```bash
+docker exec r1node change_alias <new_alias>
+```
+
+Then you have to restart your node for the changes to take effect:
+
+```bash
+docker restart r1node
+```
+
+
 ## Stopping the Edge Node
 
 To gracefully stop and remove the Ratio1 Edge Node container, use:
@@ -231,6 +251,78 @@ docker stop r1node
 ```
 
 This command halts the container and ensures it is removed from the system.
+
+
+## Running multiple nodes on the same machine
+
+If you want to run multiple nodes on the same machine the best option is to use docker-compose. You can create a `docker-compose.yml` file with the following content:
+
+```yaml
+services:
+  r1node1:
+    image: naeural/edge_node:develop
+    container_name: r1node1
+    restart: always
+    volumes:
+      - r1vol1:/edge_node/_local_cache
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"         
+      - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
+
+  r1node2:
+    image: naeural/edge_node:develop
+    container_name: r1node2
+    restart: always
+    volumes:
+      - r1vol2:/edge_node/_local_cache
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"         
+      - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
+
+  # r1node3:
+  #   image: naeural/edge_node:develop
+  #   container_name: r1node3
+  #   restart: always
+  #   volumes:
+  #     - r1vol3:/edge_node/_local_cache
+  #   labels:
+  #     - "com.centurylinklabs.watchtower.enable=true"         
+  #     - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
+
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
+      - WATCHTOWER_CHECK_NEW_IMAGES=true      
+      - WATCHTOWER_LABEL_ENABLE=true  
+```
+
+Then you can run the following command to start the nodes in the folder where the `docker-compose.yml` file is located:
+
+```bash
+docker-compose up -d
+```
+
+and you can stop the nodes by running in the same folder:
+
+```bash
+docker-compose down
+```
+
+
+Now, lets dissect the `docker-compose.yml` file:
+  - we have a variable number of nodes - in our case 2 nodes - `r1node1` and `r1node2` as services (we commented out the third node for simplicity)
+  - each node is using the `naeural/edge_node:develop` image
+  - each node has own unique volume mounted to it
+  - we have a watchtower service that will check for new images every 1 minute and will update the nodes if a new image is available
+
+>NOTE: Please note that running multiple nodes on same box is not advised for machine that do not have multiple GPUs and plenty of RAM. 
+
 
 ## License
 

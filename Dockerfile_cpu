@@ -6,8 +6,9 @@ RUN chmod +x /usr/local/bin/*
 
 
 WORKDIR /edge_node
-
 COPY . .
+RUN rm -rf /edge_node/cmds
+
 
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes
