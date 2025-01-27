@@ -1,0 +1,33 @@
+#!/bin/bash
+###
+### change_alias
+###   Usage: change_alias <new-alias>
+###   This script updates the "EE_ID" in /edge_node/_local_cache/config_startup.json
+###   Run via: docker exec <container-name> change_alias <new-alias>
+###
+
+# 1. Check if an alias argument was provided
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <new-alias>"
+  exit 1
+fi
+
+NEW_ALIAS="$1"
+
+# 2. Update "EE_ID" using jq
+CONFIG_FILE="/edge_node/_local_cache/config_startup.json"
+TMP_FILE="$(mktemp)"
+
+# Ensure the config file exists
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "Error: $CONFIG_FILE not found."
+  exit 1
+fi
+
+# Use jq to replace the "EE_ID" with NEW_ALIAS
+jq --arg alias "$NEW_ALIAS" '.EE_ID = $alias' "$CONFIG_FILE" > "$TMP_FILE" && \
+  mv "$TMP_FILE" "$CONFIG_FILE"
+
+# 3. Notify user
+echo "Alias has been changed to '$NEW_ALIAS'."
+echo "A node restart via 'docker restart r1node' is required for the change to take effect."

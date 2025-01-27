@@ -1,7 +1,7 @@
 #!/bin/bash
 ###
 ### reset_node_keys:
-###   This script will reset the keys of the edge node
+###   This script will reset the keys of the edge node - requires restart
 ###
 
 # Prompt for confirmation
@@ -11,7 +11,7 @@ read -r -p "Are you sure you want to reset the keys (private keys & node address
 if [[ "$answer" =~ ^[Yy]$ ]]; then
     # Proceed with removal
     rm -f /edge_node/_local_cache/_data/e2.pem
-    echo "Keys have been reset."
+    echo "Keys have been reset. Please restart your node via 'docker restart r1node' "
 else
     echo "Aborting key reset."
 fi
