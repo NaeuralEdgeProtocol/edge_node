@@ -1,5 +1,17 @@
 #!/bin/bash
 ###
-### This script will reset the keys of the edge node
+### reset_node_keys:
+###   This script will reset the keys of the edge node
 ###
-rm /edge_node/_local_cache/_data/e2.pem
+
+# Prompt for confirmation
+read -r -p "Are you sure you want to reset the keys (private keys & node address)? [y/N]: " answer
+
+# Compare the user’s answer (case-insensitive) to 'y'
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+    # Proceed with removal
+    rm -f /edge_node/_local_cache/_data/e2.pem
+    echo "Keys have been reset."
+else
+    echo "Aborting key reset."
+fi

@@ -49,6 +49,17 @@ docker run -d --rm --name r1node --gpus all --pull=always -v r1vol:/edge_node/_l
 
 This will ensure that your node will be able to utilize the GPU(s) for computation tasks and will accept training and inference jobs that require GPU acceleration.
 
+### Running multiple Edge Nodes on the same machine
+
+If you want to run multiple Edge Nodes on the same machine, you can do so by specifying different names for each container but more importantly, you need to specify different volumes for each container to avoid conflicts between the nodes. You can do this by creating a new volume for each node and mounting it to the container as follows:
+
+```bash
+docker run -d --rm -name r1node1 --pull=always -v r1vol1:/edge_node/_local_cache/ naeural/edge_node:develop
+docker run -d --rm -name r1node2 --pull=always -v r1vol2:/edge_node/_local_cache/ naeural/edge_node:develop
+```
+
+Now you can run multiple Edge Nodes on the same machine without any conflicts between them.
+
 
 ## Inspecting the Edge Node
 
@@ -71,6 +82,14 @@ This command retrieves comprehensive information about the node, including its c
   }
 }
 ```
+
+If you have multiple nodes running on the same machine, you can inspect the status of each node by specifying the node name in the command:
+
+```bash
+docker exec r1node1 get_node_info
+docker exec r1node2 get_node_info
+```
+
 
 ## Adding an Allowed Address
 
