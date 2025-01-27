@@ -4,35 +4,25 @@ Welcome to the **Ratio1 Edge Node** repository, formerly known as the **Naeural 
 
 ## Introduction
 
-The Ratio1 Edge Node is a robust software solution designed to operate on edge devices, providing the essential functionality required to join and thrive within the Ratio1 network. Each Edge Node manages the device’s resources, executes computation tasks efficiently, and communicates securely with other nodes in the network. Leveraging the powerful Naeural Edge Protocol libraries—`naeural_core` and `naeural_client`—the Ratio1 Edge Node offers out-of-the-box usability starting in 2025. Users can deploy the Edge Node and SDK (`naeural_client`) effortlessly without the need for intricate configurations, local subscriptions, tenants, user accounts, passwords, or broker setups.
+The Ratio1 Edge Node is a meta Operating System designed to operate on edge devices, providing them the essential functionality required to join and thrive within the Ratio1 network. Each Edge Node manages the device’s resources, executes computation tasks efficiently, and communicates securely with other nodes in the network. Leveraging the powerful Ratio1 core libraries (formely knwon as Naeural Edge Protocol libraries) `naeural_core` and `naeural_client`— the Ratio1 Edge Node offers out-of-the-box usability starting in 2025. Users can deploy the Edge Node and SDK (`naeural_client`) effortlessly without the need for intricate configurations, local subscriptions, tenants, user accounts, passwords, or broker setups.
 
 ## Running the Edge Node
 
-Deploying a Ratio1 Edge Node within a development network is straightforward. Execute the following Docker command to launch the node:
+Deploying a Ratio1 Edge Node within a development network is straightforward. Execute the following Docker command to launch the node making sure you mount a persistent volume to the container to preserve the node data between restarts:
 
 ```bash
-docker run -d --rm --name r1node --pull=always naeural/edge_node:develop
+docker run -d --rm -name r1node --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
 ```
-
-This command initializes the Ratio1 Edge Node in development mode, automatically connecting it to the Ratio1 development network and preparing it to receive computation tasks.
 
 - `-d`: Runs the container in the background.
 - `--rm`: Removes the container upon stopping.
 - `--name r1node`: Assigns the name `r1node` to the container.
 - `--pull=always`: Ensures the latest image version is always pulled.
 - `naeural/edge_node:develop`: Specifies the Docker image to run.
-
-### Preserving Node Data
-
-To maintain node data across restarts, mount a persistent volume to the container using the following command:
-
-```bash
-docker run -d --rm --name r1node --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
-```
-
 - `-v r1vol:/edge_node/_local_cache/`: Mounts the `r1vol` volume to the `/edge_node/_local_cache/` directory within the container.
 
-This setup ensures that all node data is stored in `r1vol`, preserving it between container restarts.
+This command initializes the Ratio1 Edge Node in development mode, automatically connecting it to the Ratio1 development network and preparing it to receive computation tasks while ensuring that all node data is stored in `r1vol`, preserving it between container restarts.
+
 
 ## Inspecting the Edge Node
 
@@ -142,6 +132,14 @@ This command will output a raw JSON that can be parsed for detailed information 
 ```
 
 In the above example we expanded the JSON into a human readable format for better understanding. 
+
+## Reset the Edge Node address
+
+If for any reason you need to reset the node address, you can do so by executing the following command:
+
+```bash
+docker exec r1node reset_node_keys
+```
 
 ## Stopping the Edge Node
 
