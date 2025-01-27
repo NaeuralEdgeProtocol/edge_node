@@ -2,6 +2,8 @@ FROM aidamian/base_edge_node_arm64_tegra:latest
 
 
 COPY ./cmds /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
+
 
 WORKDIR /edge_node
 
