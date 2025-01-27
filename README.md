@@ -24,7 +24,7 @@ The Ratio1 Edge Node is a meta Operating System designed to operate on edge devi
 Deploying a Ratio1 Edge Node within a development network is straightforward. Execute the following Docker command to launch the node making sure you mount a persistent volume to the container to preserve the node data between restarts:
 
 ```bash
-docker run -d --rm -name r1node --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
+docker run -d --rm --name r1node --pull=always -v r1vol:/edge_node/_local_cache/ naeural/edge_node:develop
 ```
 
 - `-d`: Runs the container in the background.
@@ -54,8 +54,8 @@ This will ensure that your node will be able to utilize the GPU(s) for computati
 If you want to run multiple Edge Nodes on the same machine, you can do so by specifying different names for each container but more importantly, you need to specify different volumes for each container to avoid conflicts between the nodes. You can do this by creating a new volume for each node and mounting it to the container as follows:
 
 ```bash
-docker run -d --rm -name r1node1 --pull=always -v r1vol1:/edge_node/_local_cache/ naeural/edge_node:develop
-docker run -d --rm -name r1node2 --pull=always -v r1vol2:/edge_node/_local_cache/ naeural/edge_node:develop
+docker run -d --rm --name r1node1 --pull=always -v r1vol1:/edge_node/_local_cache/ naeural/edge_node:develop
+docker run -d --rm --name r1node2 --pull=always -v r1vol2:/edge_node/_local_cache/ naeural/edge_node:develop
 ```
 
 Now you can run multiple Edge Nodes on the same machine without any conflicts between them.
