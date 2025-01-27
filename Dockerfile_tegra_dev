@@ -1,22 +1,11 @@
 FROM aidamian/base_edge_node_arm64_tegra:latest
 
-WORKDIR /
-COPY get_node_info /usr/local/bin/get_node_info
-RUN chmod +x /usr/local/bin/get_node_info
 
-COPY add_allowed /usr/local/bin/add_allowed
-RUN chmod +x /usr/local/bin/add_allowed
-
-COPY get_node_history /usr/local/bin/get_node_history
-RUN chmod +x /usr/local/bin/get_node_history
-
-
-
-
+COPY ./cmds /usr/local/bin/
 
 WORKDIR /edge_node
 
-COPY  . /edge_node
+COPY . .
 
 #### TO BE REMOVED AND TESTED !!!
 ENV TZ=Europe/Bucharest
