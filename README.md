@@ -2,6 +2,16 @@
 
 Welcome to the **Ratio1 Edge Node** repository, formerly known as the **Naeural Edge Protocol Edge Node**. As a pivotal component of the Ratio1 ecosystem, this Edge Node software empowers a decentralized, privacy-preserving, and secure edge computing network. By enabling a collaborative network of edge nodes, Ratio1 facilitates the secure sharing of resources and the seamless execution of computation tasks across diverse devices.
 
+Documentation sections:
+- [Introduction](#introduction)
+- [Running the Edge Node](#running-the-edge-node)
+- [Inspecting the Edge Node](#inspecting-the-edge-node)
+- [Adding an Allowed Address](#adding-an-allowed-address)
+- [Inspecting the node performance / load history](#inspecting-the-node-performance--load-history)
+- [Reset the Edge Node address](#reset-the-edge-node-address)
+- [Stopping the Edge Node](#stopping-the-edge-node)
+
+
 ## Introduction
 
 The Ratio1 Edge Node is a meta Operating System designed to operate on edge devices, providing them the essential functionality required to join and thrive within the Ratio1 network. Each Edge Node manages the device’s resources, executes computation tasks efficiently, and communicates securely with other nodes in the network. Leveraging the powerful Ratio1 core libraries (formely knwon as Naeural Edge Protocol libraries) `naeural_core` and `naeural_client`— the Ratio1 Edge Node offers out-of-the-box usability starting in 2025. Users can deploy the Edge Node and SDK (`naeural_client`) effortlessly without the need for intricate configurations, local subscriptions, tenants, user accounts, passwords, or broker setups.
@@ -151,10 +161,46 @@ In the above example we expanded the JSON into a human readable format for bette
 
 ## Reset the Edge Node address
 
+Lets suppose you have the following node data:
+
+```bash
+>docker exec r1node get_node_info
+
+{
+  "address": "0xai_A6sQdZKb_kqpE4yfFEpLrOwK3dRh-NL6qaWHUUY45LAp",
+  "alias": "sold-mile-70",
+  "eth_address": "0x2Be13d18ab1Dcdaf48bBC3477881E3695AEb95F3",
+  "version_long": "v2.6.19 | core v7.6.0 | SDK 2.6.23",
+  "version_short": "v2.6.19",
+  "info": {
+    "whitelist": [
+      "0xai_AthDPWc_k3BKJLLYTQMw--Rjhe3B6_7w76jlRpT6nDeX"
+    ]
+}
+```
+
 If for any reason you need to reset the node address, you can do so by executing the following command:
 
 ```bash
 docker exec r1node reset_node_keys
+docker restart r1node
+```
+
+following this you can check the node info again and you will see that the address has been reset.
+
+```bash
+docker exec r1node get_node_info
+{
+  "address": "0xai_ApM1AbzLq1VtsLIidmvzt1Nv4Cyl5Wed0fHNMoZv9u4X",
+  "alias": "sold-mile-70",
+  "eth_address": "0x417a73B7E4971BcefaAe46981ad177C417928371",
+  "version_long": "v2.6.19 | core v7.6.0 | SDK 2.6.23",
+  "version_short": "v2.6.19",
+  "info": {
+    "whitelist": [
+      "0xai_AthDPWc_k3BKJLLYTQMw--Rjhe3B6_7w76jlRpT6nDeX"
+    ]
+}
 ```
 
 ## Stopping the Edge Node
