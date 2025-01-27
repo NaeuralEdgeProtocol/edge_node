@@ -1,0 +1,5 @@
+#!/bin/bash
+###
+### This script will reset the keys of the edge node
+###
+rm /edge_node/_local_cache/_data/e2.pem
