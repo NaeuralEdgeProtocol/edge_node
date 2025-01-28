@@ -512,3 +512,33 @@ class EpochManager01Plugin(BasePlugin):
         **data
       })
     return response
+
+  @BasePlugin.endpoint
+  # /current_epoch
+  def current_epoch(self):
+    """
+    Returns the current epoch of the node.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following keys:
+        - current_epoch: int
+            The current epoch of the node.
+
+        - server_id: str
+            The address of the responding node.
+
+        - server_time: str
+            The current time in UTC of the responding node.
+
+        - server_current_epoch: int
+            The current epoch of the responding node.
+
+        - server_uptime: str
+            The time that the responding node has been running.
+    """
+    response = self.__get_response({
+      'current_epoch': self.__get_current_epoch(),
+    })
+    return response
