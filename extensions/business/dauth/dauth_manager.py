@@ -1,3 +1,15 @@
+"""
+
+EE_HB_CONTAINS_PIPELINES=0
+EE_HB_CONTAINS_ACTIVE_PLUGINS=1
+EE_EPOCH_MANAGER_DEBUG=1
+WHITELIST (oracles)
+
+
+
+
+"""
+
 from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
 __VER__ = '0.2.2'
