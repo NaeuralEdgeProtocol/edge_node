@@ -114,6 +114,19 @@ class OracleSync01Plugin(NetworkProcessorPlugin):
     )
     return
 
+  def add_payload_by_fields(self, **kwargs):
+    """
+    Add a payload to the message with the given fields.
+
+    Parameters
+    ----------
+    kwargs : dict
+        The fields to be added to the payload.
+    """
+    kwargs = self.deepcopy(kwargs)
+    super(OracleSync01Plugin, self).add_payload_by_fields(**kwargs)
+    return
+
   # State machine callbacks
   if True:
     def _prepare_job_state_transition_map(self):
