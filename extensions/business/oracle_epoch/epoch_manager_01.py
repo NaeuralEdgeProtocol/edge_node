@@ -116,7 +116,10 @@ class EpochManager01Plugin(BasePlugin):
   
   
   def __eth_to_internal(self, eth_node_address):
-    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+    result = self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+    if result is None:
+      result = f"<Unknown/Bad eth addr {eth_node_address}>"
+    return result
   
   
   def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list, sign=True):
