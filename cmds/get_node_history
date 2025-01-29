@@ -2,4 +2,5 @@
 ###
 ### This script will dump the local history JSON of the edge node
 ###
-cat /edge_node/_local_cache/_data/local_history.json
+# `cat` is called this way in order to have a newline after the file content
+echo "`cat /edge_node/_local_cache/_data/local_history.json`"
