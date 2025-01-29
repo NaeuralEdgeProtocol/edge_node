@@ -223,12 +223,15 @@ class EpochManager01Plugin(BasePlugin):
       error_msg = "End epoch is less than 1"
     if end_epoch >= self.__get_current_epoch():
       error_msg = "End epoch is greater or equal than the current epoch"
-      
+    # end if checks
+    
+    node_eth_address = None
     try:
       node_eth_address = self.bc.node_address_to_eth_address(node_addr)
-    except Exception as e:
-      error_msg = f"Error converting node address to eth address: {e}"
-    # end if checks
+    except Exception as e:            
+      str_except = f"Error converting node address <{node_addr}> to eth address: {e}"
+      error_msg = str_except if error_msg is None else f"{error_msg}. {str_except}"
+    # end try
     if error_msg is not None:
       data = {
         'node': node_addr,
