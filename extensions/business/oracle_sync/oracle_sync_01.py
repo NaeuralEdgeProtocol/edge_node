@@ -96,6 +96,10 @@ class OracleSync01Plugin(NetworkProcessorPlugin):
     S9_COMPUTE_REQUESTED_AGREED_MEDIAN_TABLE = 'COMPUTE_REQUESTED_AGREED_MEDIAN_TABLE'
 
   def on_init(self):
+    while self.netmon.epoch_manager is None:
+      self.P(f"Waiting for epoch manager to be initialized for {self.__name__} to start.")
+      self.sleep(1)
+    # endwhile
     self.__reset_to_initial_state()
 
     # All oracles start in the state S7_WAIT_FOR_ORACLE_SYNC
