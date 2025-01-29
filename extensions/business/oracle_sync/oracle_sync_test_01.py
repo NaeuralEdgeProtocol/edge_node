@@ -41,7 +41,7 @@ Pipeline config:
 }
 """
 
-from extensions.business.oracle_sync.oracle_sync_01 import OracleSyncTest01Plugin as BaseClass
+from extensions.business.oracle_sync.oracle_sync_01 import OracleSync01Plugin as BaseClass
 
 _CONFIG = {
   **BaseClass.CONFIG,

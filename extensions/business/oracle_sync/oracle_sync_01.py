@@ -51,10 +51,14 @@ To deploy for the first time:
 5. When they enter epoch X+1, the plugin will start the sync process
 """
 
-from naeural_core.business.base import BasePluginExecutor as BaseClass
+from naeural_core.business.base.network_processor import NetworkProcessorPlugin
+
+MAX_RECEIVED_MESSAGES_SIZE = 1000
 
 _CONFIG = {
-  **BaseClass.CONFIG,
+  **NetworkProcessorPlugin.CONFIG,
+  # Only the oracles should sync the availability tables
+  "RUNS_ONLY_ON_SUPERVISOR_NODE": True,
 
   # Jobs should have a bigger inputs queue size, because they have to process everything
   'MAX_INPUTS_QUEUE_SIZE': 500,
@@ -67,16 +71,17 @@ _CONFIG = {
   'SEND_INTERVAL': 5,  # seconds
 
   'EPOCH_START_SYNC': 0,
+  'DEBUG_SYNC': False,
 
   'VALIDATION_RULES': {
-    **BaseClass.CONFIG['VALIDATION_RULES'],
+    **NetworkProcessorPlugin.CONFIG['VALIDATION_RULES'],
   },
 }
 
 __VER__ = '0.1.0'
 
 
-class OracleSync01Plugin(BaseClass):
+class OracleSync01Plugin(NetworkProcessorPlugin):
 
   class STATES:
     S0_WAIT_FOR_EPOCH_CHANGE = 'WAIT_FOR_EPOCH_CHANGE'
@@ -96,6 +101,7 @@ class OracleSync01Plugin(BaseClass):
     # All oracles start in the state S7_WAIT_FOR_ORACLE_SYNC
     # because they have to wait to receive the agreed median table from the previous epoch
     self.state_machine_name = 'OracleSyncPlugin'
+    self.__received_messages_from_oracles = self.deque(maxlen=MAX_RECEIVED_MESSAGES_SIZE)
     self.state_machine_api_init(
       name=self.state_machine_name,
       state_machine_transitions=self._prepare_job_state_transition_map(),
@@ -110,17 +116,19 @@ class OracleSync01Plugin(BaseClass):
       job_state_transition_map = {
         self.STATES.S0_WAIT_FOR_EPOCH_CHANGE: {
           'STATE_CALLBACK': self.__receive_requests_from_oracles_and_send_responses,
-          'DESCRIPTION': "Wait for the epoch to change",
+          'DESCRIPTION': "Wait for the epoch to change during the day.",
           'TRANSITIONS': [
             {
               'NEXT_STATE': self.STATES.S1_COMPUTE_LOCAL_TABLE,
-              'TRANSITION_CONDITION': self.__epoch_finished,
+              'TRANSITION_CONDITION': self.__check_epoch_finished,
               'ON_TRANSITION_CALLBACK': self.state_machine_api_callback_do_nothing,
               'DESCRIPTION': "If the epoch has changed, compute the local table of availability",
             },
           ],
         },
         self.STATES.S1_COMPUTE_LOCAL_TABLE: {
+          # Because the transition conditions are mutually exclusive,
+          # we cannot remain in this state for more than one step.
           'STATE_CALLBACK': self.__compute_local_table,
           'DESCRIPTION': "Compute the local table of availability",
           'TRANSITIONS': [
@@ -306,7 +314,7 @@ class OracleSync01Plugin(BaseClass):
 
       return
 
-    def __epoch_finished(self):
+    def __check_epoch_finished(self):
       """
       Check if the epoch has changed.
 
@@ -321,7 +329,11 @@ class OracleSync01Plugin(BaseClass):
       """
       Compute the local table for the current node.
       If the node is not a supervisor, the local table will be empty.
+      This method is only called after the finishing of the previous epoch.
       """
+
+      self.netmon.epoch_manager.maybe_close_epoch()
+
       # if current node is not supervisor, just return
       if not self.__is_supervisor(self.node_addr):
         self.P("I am not a supervisor. I will not participate in the sync process")
@@ -376,6 +388,8 @@ class OracleSync01Plugin(BaseClass):
       send the local table to the oracles each `self.cfg_send_interval` seconds.
       """
       # Receive values from oracles
+      # Obs: there is no need for supervisor check on sender, since the messages
+      # are already filtered in handle_received_messages
       for dct_message in self.get_received_messages_from_oracles():
         sender = dct_message.get(self.ct.PAYLOAD_DATA.EE_SENDER)
         oracle_data = dct_message.get('ORACLE_DATA')
@@ -385,7 +399,11 @@ class OracleSync01Plugin(BaseClass):
         if not self.__check_received_local_table_ok(sender, oracle_data):
           continue
 
-        self.P(f"Received message from oracle {sender}: {stage = }, {local_table = }")
+        log_str = f"Received message from oracle {sender}: {stage = }"
+        if self.cfg_debug_sync:
+          log_str += f", local_table=\n{local_table}"
+        # endif debug_sync
+        self.P(log_str)
         self.dct_local_tables[sender] = local_table
       # end for
 
@@ -927,6 +945,23 @@ class OracleSync01Plugin(BaseClass):
       """
       return sum(self.should_expect_to_participate.values()) / 2
 
+    @NetworkProcessorPlugin.payload_handler()
+    def handle_received_payloads(self, payload: dict):
+      """
+      Handle the received payloads from this specific plugin signature.
+
+      Parameters
+      ----------
+      payload : dict
+          The received payloads
+      """
+      # TODO: review if more processing is needed!!
+      sender = payload.get(self.ct.PAYLOAD_DATA.EE_SENDER)
+      if not self.netmon.network_node_is_supervisor(sender):
+        return
+      self.__received_messages_from_oracles.append(payload)
+      return
+
     def get_received_messages_from_oracles(self):
       """
       Get the messages received from the oracles.
@@ -936,12 +971,14 @@ class OracleSync01Plugin(BaseClass):
       -------
       generator : The messages received from the oracles
       """
-      dct_messages = self.dataapi_struct_datas()
+      # dct_messages = self.dataapi_struct_datas()
+      # retrieve messages from self.__received_messages_from_oracles
+      dct_messages = list(self.__received_messages_from_oracles)
+      self.__received_messages_from_oracles.clear()
+      # This will return a generator that will be used in the next steps.
       received_messages = (dct_messages[i] for i in range(len(dct_messages)))
 
-      # we use a DCT that already filters the messages from the oracles
-      received_messages_from_oracles = received_messages
-      return received_messages_from_oracles
+      return received_messages
 
     def __check_received_local_table_ok(self, sender, oracle_data):
       """
