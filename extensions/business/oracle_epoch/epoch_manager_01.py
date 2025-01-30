@@ -262,7 +262,11 @@ class EpochManager01Plugin(BasePlugin):
         )
         valid = oracle_state['manager']['valid']
         data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected, sign=valid)
-        data['node_last_seen'] = self.netmon.network_node_last_seen(node_addr)
+        try:
+          last_seen = round(self.netmon.network_node_last_seen(node_addr),2)
+        except:
+          last_seen = -1
+        data['node_last_seen_sec'] = last_seen
         data['node_is_online'] = self.netmon.network_node_is_online(node_addr)
         if not valid:
           data["error"] = "Oracle state is not valid for some of the epochs. Please check [result.oracle.manager.certainty] and report to devs. For testing purposes try using valid/certain epochs."
