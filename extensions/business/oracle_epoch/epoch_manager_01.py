@@ -13,7 +13,7 @@ Each request will generate data as follows:
 
 from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.3.2'
+__VER__ = '0.3.3'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -262,6 +262,8 @@ class EpochManager01Plugin(BasePlugin):
         )
         valid = oracle_state['manager']['valid']
         data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected, sign=valid)
+        data['node_last_seen'] = self.netmon.network_node_last_seen(node_addr)
+        data['node_is_online'] = self.netmon.network_node_is_online(node_addr)
         if not valid:
           data["error"] = "Oracle state is not valid for some of the epochs. Please check [result.oracle.manager.certainty] and report to devs. For testing purposes try using valid/certain epochs."
         # now add the certainty for each requested epoch
