@@ -231,9 +231,10 @@ class DauthManagerPlugin(BasePlugin):
       error = 'Invalid request signature: {}'.format(verify_data.message)
 
     ###### basic version checks ######
-    version_check = self.version_check(body)
-    if version_check is None:
-      error = 'Version check failed: {}'.format(version_check)
+    version_check_error_message = self.version_check(body)
+    if version_check_error_message is not None:
+      # not None means we have a error message
+      error = 'Version check failed: {}'.format(version_check_error_message)
 
     ###### check if node_address is allowed ######   
     allowed_to_dauth = self.check_if_node_allowed(requester)   
