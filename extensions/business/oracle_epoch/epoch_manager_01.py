@@ -36,7 +36,7 @@ class EpochManager01Plugin(BasePlugin):
   def __init__(self, **kwargs):
     super(EpochManager01Plugin, self).__init__(**kwargs)
     return
-
+  
 
   def on_init(self):
     super(EpochManager01Plugin, self).on_init()
