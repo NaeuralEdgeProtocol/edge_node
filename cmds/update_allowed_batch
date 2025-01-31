@@ -1,0 +1,74 @@
+#!/bin/bash
+###
+### This script replaces the authorized addresses list with a batch of new addresses
+### Each input line should be in format: <address> [alias]
+### Input is read from stdin, one address per line
+### Validates that there are no duplicate addresses or aliases
+###
+### Example:
+### cat allowed_addresses.txt | docker exec -i <container> update_allowed_batch
+###
+### allowed_addresses.txt:
+### <node-address1> <alias1>
+### <node-address2> <alias2>
+### ...
+###
+
+
+
+FILE=/edge_node/_local_cache/authorized_addrs
+
+# Create a temporary file
+TEMP_FILE=$(mktemp)
+
+# Arrays to store addresses and aliases for duplicate checking
+declare -A addresses
+declare -A aliases
+
+# Read input line by line and check for duplicates
+while IFS= read -r line; do
+    # Skip empty lines
+    if [ -z "$line" ]; then
+        continue
+    fi
+
+    # Split line into address and alias
+    read -r address alias <<< "$line"
+
+    # Check for duplicate address
+    if [ -n "${addresses[$address]}" ]; then
+        echo "Error: Duplicate address found: $address" >&2
+        rm "$TEMP_FILE"
+        exit 1
+    fi
+
+    # Check for duplicate alias if one is provided
+    if [ -n "$alias" ] && [ -n "${aliases[$alias]}" ]; then
+        echo "Error: Duplicate alias found: $alias" >&2
+        rm "$TEMP_FILE"
+        exit 1
+    fi
+
+    # Store address and alias for duplicate checking
+    addresses[$address]=1
+    if [ -n "$alias" ]; then
+        aliases[$alias]=1
+    fi
+
+    # Write valid line to temp file
+    echo "$line" >> "$TEMP_FILE"
+done
+
+# Only replace the original file if we have at least one valid entry
+if [ -s "$TEMP_FILE" ]; then
+    mv "$TEMP_FILE" "$FILE"
+    
+    # sleep before calling get_node_info
+    sleep 3
+    # now call get_node_info
+    get_node_info
+else
+    echo "Error: No valid entries provided" >&2
+    rm "$TEMP_FILE"
+    exit 1
+fi
