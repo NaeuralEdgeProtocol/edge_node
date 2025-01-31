@@ -27,8 +27,14 @@ class VersionCheckData(_DotDict):
     self.message = message
     self.requester_type = None
     return
+  
+### START OF MIXIN ###
 
-class _DauthMixin:
+class _DauthMixin(object):
+
+  def __init__(self):
+    super(_DauthMixin, self).__init__()
+    return
 
   def Pd(self, *args, **kwargs):
     """
@@ -161,6 +167,12 @@ class _DauthMixin:
 
     lst_auth_env_keys = self.cfg_auth_env_keys
     dct_auth_predefined_keys = self.cfg_auth_predefined_keys
+    
+    if lst_auth_env_keys is None:
+      raise ValueError("No auth env keys defined (AUTH_ENV_KEYS==null). Please check the configuration!")
+    
+    if dct_auth_predefined_keys is None:
+      raise ValueError("No predefined keys defined (AUTH_PREDEFINED_KEYS==null). Please check the configuration")
     
     ### get the mandatory oracles whitelist and populate answer  ###      
     dauth_data[dAuthCt.DAUTH_WHITELIST] = self.get_mandatory_oracles()

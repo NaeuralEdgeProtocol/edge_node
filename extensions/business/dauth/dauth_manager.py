@@ -41,8 +41,8 @@ _CONFIG = {
 
 
 class DauthManagerPlugin(
-  _DauthMixin,
   BasePlugin,
+  _DauthMixin,
   ):
   """
   This plugin is the dAuth FastAPI web app that provides an endpoints for decentralized authentication.
