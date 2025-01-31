@@ -12,6 +12,7 @@ WHITELIST (oracles)
 
 from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 from naeural_client.bc import DefaultBlockEngine
+from extensions.business.dauth.dauth_mixin import _DauthMixin
 
 __VER__ = '0.2.2'
 
@@ -37,29 +38,12 @@ _CONFIG = {
   },
 }
 
-def version_to_int(version):
-  """
-  Convert a version string to an integer.
-  """
-  val = 0
-  try:
-    parts = version.strip().split('.')
-    for i, part in enumerate(reversed(parts)):
-      val += int(part) * (1000 ** i)
-  except:
-    pass
-  return val
 
-class VersionCheckData:
-  """
-  Data class for version check.
-  """
-  def __init__(self, result, message):
-    self.result = result
-    self.message = message
-    return
 
-class DauthManagerPlugin(BasePlugin):
+class DauthManagerPlugin(
+  _DauthMixin,
+  BasePlugin,
+  ):
   """
   This plugin is the dAuth FastAPI web app that provides an endpoints for decentralized authentication.
   """
@@ -70,13 +54,6 @@ class DauthManagerPlugin(BasePlugin):
     return
   
   
-  def Pd(self, *args, **kwargs):
-    """
-    Print a message to the console.
-    """
-    if self.cfg_dauth_verbose:
-      self.P(*args, **kwargs)
-    return  
 
   def on_init(self):
     super(DauthManagerPlugin, self).on_init()
@@ -89,7 +66,7 @@ class DauthManagerPlugin(BasePlugin):
     return
   
   @property
-  def __bc(self) -> DefaultBlockEngine:
+  def bc_direct(self) -> DefaultBlockEngine:
     return self.global_shmem[self.const.BLOCKCHAIN_MANAGER]
   
   
@@ -107,6 +84,7 @@ class DauthManagerPlugin(BasePlugin):
   
   def __eth_to_internal(self, eth_node_address):
     return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+  
   
   
   def __sign(self, data):
@@ -152,74 +130,7 @@ class DauthManagerPlugin(BasePlugin):
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
     self.__sign(dct_data) # add the signature over full data
     return dct_data
-  
-  def get_whitelist_data(self):
-    """
-    Get the whitelist data for the current node.
-    """
-    lst_data = None
-    try:
-      wl, names = self.__bc.whitelist_with_names
-      lst_data = [a + (f"  {b}" if len(b) > 0 else "") for a, b in zip(wl, names)]
-    except Exception as e:
-      self.P("Error getting whitelist data: {}".format(e), color='r')      
-    return lst_data
-
-  
-  
-  def version_check(self, data):
-    """
-    Check the version of the node that is sending the request.
-    Returns `None` if all ok and a message if there is a problem.
-    """
-    
-    dAuthCt = self.const.BASE_CT.dAuth
-    sender_app_version = data.get(dAuthCt.DAUTH_SENDER_APP_VER)
-    sender_core_version = data.get(dAuthCt.DAUTH_SENDER_CORE_VER)
-    sender_sdk_version = data.get(dAuthCt.DAUTH_SENDER_SDK_VER)
-    int_sender_app_version = version_to_int(sender_app_version)
-    int_sender_core_version = version_to_int(sender_core_version)
-    int_sender_sdk_version = version_to_int(sender_sdk_version)
-    int_server_version = version_to_int(self.ee_ver)
-    return None
-  
-  def check_if_node_allowed(self, node_address, version_check_data : VersionCheckData):
-    """
-    Check if the node address is allowed to request authentication data.
-    """
-    return True
-  
-  
-  def chainstore_store_dauth_request(self, requester, dauth_data):
-    """
-    Set the chainstore data for the requester.
-    """
-    return
-  
-  
-  def fill_dauth_data(self, dauth_data):
-    """
-    Fill the data with the authentication data.
-    """
-    dAuthCt = self.const.BASE_CT.dAuth
-
-    lst_auth_env_keys = self.cfg_auth_env_keys
-    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
-    
-    ### get the whitelist and populate answer  ###      
-    dauth_data[dAuthCt.DAUTH_WHITELIST] = self.get_whitelist_data()
-
-    #####  finally prepare the env auth data #####
-    for key in lst_auth_env_keys:
-      if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX):
-        dauth_data[key] = self.os_environ.get(key)
-    
-    # overwrite the predefined keys
-    for key in dct_auth_predefined_keys:
-      dauth_data[key] = dct_auth_predefined_keys[key]
-
-    return dauth_data
-  
+   
   
 
   @BasePlugin.endpoint(method="post")
@@ -240,50 +151,8 @@ class DauthManagerPlugin(BasePlugin):
       }      
     }    
     """
-        
-    DAUTH_SUBKEY = self.const.BASE_CT.DAUTH_SUBKEY
-    data = {
-      DAUTH_SUBKEY : {
-        'error' : None,
-      },
-    }
-    error = None
-    requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
-        
-    self.Pd("Received request from {} for auth:\n{}".format(
-      requester, self.json_dumps(body, indent=2))
-    )
     
-    ###### verify the request signature ######
-    verify_data = self.bc.verify(body, return_full_info=True)
-    if not verify_data.valid:
-      error = 'Invalid request signature: {}'.format(verify_data.message)
-
-    ###### basic version checks ######
-    version_check_data : VersionCheckData = self.version_check(body)
-    if not version_check_data.result:
-      # not None means we have a error message
-      error = 'Version check failed: {}'.format(version_check_data.message)
-
-    ###### check if node_address is allowed ######   
-    allowed_to_dauth = self.check_if_node_allowed(requester, version_check_data)   
-    if not allowed_to_dauth:
-      error = 'Node not allowed to request auth data.'      
-    
-    if error is not None:
-      data[DAUTH_SUBKEY]['error'] = error
-      self.Pd("Error on request from {}: {}".format(requester, error), color='r')
-    else:
-      self.fill_dauth_data(data[DAUTH_SUBKEY])
-              
-      # record the node_address and the auth data      
-      self.chainstore_store_dauth_request(
-        requester=requester, dauth_data=data
-      )
-    #end no errors
-    
-    if self.cfg_dauth_verbose:
-      data['request'] = body
+    data = self.process_dauth_request(body)
     
     response = self.__get_response({
       **data
