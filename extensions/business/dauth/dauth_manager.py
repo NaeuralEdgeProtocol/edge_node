@@ -50,6 +50,15 @@ def version_to_int(version):
     pass
   return val
 
+class VersionCheckData:
+  """
+  Data class for version check.
+  """
+  def __init__(self, result, message):
+    self.result = result
+    self.message = message
+    return
+
 class DauthManagerPlugin(BasePlugin):
   """
   This plugin is the dAuth FastAPI web app that provides an endpoints for decentralized authentication.
@@ -163,6 +172,7 @@ class DauthManagerPlugin(BasePlugin):
     Check the version of the node that is sending the request.
     Returns `None` if all ok and a message if there is a problem.
     """
+    
     dAuthCt = self.const.BASE_CT.dAuth
     sender_app_version = data.get(dAuthCt.DAUTH_SENDER_APP_VER)
     sender_core_version = data.get(dAuthCt.DAUTH_SENDER_CORE_VER)
@@ -173,7 +183,7 @@ class DauthManagerPlugin(BasePlugin):
     int_server_version = version_to_int(self.ee_ver)
     return None
   
-  def check_if_node_allowed(self, node_address):
+  def check_if_node_allowed(self, node_address, version_check_data : VersionCheckData):
     """
     Check if the node address is allowed to request authentication data.
     """
@@ -185,6 +195,30 @@ class DauthManagerPlugin(BasePlugin):
     Set the chainstore data for the requester.
     """
     return
+  
+  
+  def fill_dauth_data(self, dauth_data):
+    """
+    Fill the data with the authentication data.
+    """
+    dAuthCt = self.const.BASE_CT.dAuth
+
+    lst_auth_env_keys = self.cfg_auth_env_keys
+    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
+    
+    ### get the whitelist and populate answer  ###      
+    dauth_data[dAuthCt.DAUTH_WHITELIST] = self.get_whitelist_data()
+
+    #####  finally prepare the env auth data #####
+    for key in lst_auth_env_keys:
+      if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX):
+        dauth_data[key] = self.os_environ.get(key)
+    
+    # overwrite the predefined keys
+    for key in dct_auth_predefined_keys:
+      dauth_data[key] = dct_auth_predefined_keys[key]
+
+    return dauth_data
   
   
 
@@ -204,15 +238,10 @@ class DauthManagerPlugin(BasePlugin):
         "nonce" : "some-nonce"
         ... other data
       }      
-    }
-    
+    }    
     """
-    
-    lst_auth_env_keys = self.cfg_auth_env_keys
-    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
-    
+        
     DAUTH_SUBKEY = self.const.BASE_CT.DAUTH_SUBKEY
-    dAuthCt = self.const.BASE_CT.dAuth
     data = {
       DAUTH_SUBKEY : {
         'error' : None,
@@ -231,13 +260,13 @@ class DauthManagerPlugin(BasePlugin):
       error = 'Invalid request signature: {}'.format(verify_data.message)
 
     ###### basic version checks ######
-    version_check_error_message = self.version_check(body)
-    if version_check_error_message is not None:
+    version_check_data : VersionCheckData = self.version_check(body)
+    if not version_check_data.result:
       # not None means we have a error message
-      error = 'Version check failed: {}'.format(version_check_error_message)
+      error = 'Version check failed: {}'.format(version_check_data.message)
 
     ###### check if node_address is allowed ######   
-    allowed_to_dauth = self.check_if_node_allowed(requester)   
+    allowed_to_dauth = self.check_if_node_allowed(requester, version_check_data)   
     if not allowed_to_dauth:
       error = 'Node not allowed to request auth data.'      
     
@@ -245,17 +274,7 @@ class DauthManagerPlugin(BasePlugin):
       data[DAUTH_SUBKEY]['error'] = error
       self.Pd("Error on request from {}: {}".format(requester, error), color='r')
     else:
-      ### get the whitelist and populate answer  ###      
-      data[DAUTH_SUBKEY][dAuthCt.DAUTH_WHITELIST] = self.get_whitelist_data()
-
-      #####  finally prepare the env auth data #####
-      for key in lst_auth_env_keys:
-        if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX):
-          data[DAUTH_SUBKEY][key] = self.os_environ.get(key)
-      
-      # overwrite the predefined keys
-      for key in dct_auth_predefined_keys:
-        data[DAUTH_SUBKEY][key] = dct_auth_predefined_keys[key]
+      self.fill_dauth_data(data[DAUTH_SUBKEY])
               
       # record the node_address and the auth data      
       self.chainstore_store_dauth_request(
