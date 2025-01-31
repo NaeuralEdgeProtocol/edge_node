@@ -39,8 +39,16 @@ class _DauthMixin:
       self.P(*args, **kwargs)
     return  
 
+  def __eth_to_internal(self, eth_node_address):
+    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+  
+
   def __internal_to_eth(self, internal_node_address):
     return self.bc_direct.node_address_to_eth_address(internal_node_address)
+  
+  
+  def _eth_list_to_internal(self, lst_eth):
+    return [self.__eth_to_internal(eth) for eth in lst_eth]
 
  
   def get_whitelist_data(self):
