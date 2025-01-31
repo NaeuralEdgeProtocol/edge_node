@@ -80,12 +80,7 @@ class DauthManagerPlugin(
         The current epoch of the node.
     """
     return self.netmon.epoch_manager.get_current_epoch()
-  
-  
-  def __eth_to_internal(self, eth_node_address):
-    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
-  
-  
+    
   
   def __sign(self, data):
     """
