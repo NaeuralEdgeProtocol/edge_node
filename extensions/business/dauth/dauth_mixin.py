@@ -12,7 +12,13 @@ def version_to_int(version):
       pass
   return val
 
-class VersionCheckData:
+class _DotDict(dict):
+  __getattr__ = dict.__getitem__
+  __setattr__ = dict.__setitem__
+  __delattr__ = dict.__delitem__
+  
+  
+class VersionCheckData(_DotDict):
   """
   Data class for version check.
   """
@@ -65,7 +71,7 @@ class _DauthMixin:
 
   
   
-  def version_check(self, data):
+  def version_check(self, data : dict):
     """
     Check the version of the node that is sending the request.
     Returns `None` if all ok and a message if there is a problem.
@@ -101,10 +107,10 @@ class _DauthMixin:
       output.message += f" Sender app version {sender_app_version} is lower than server app version {self.ee_ver}."
       # maybe we should block below a certain level
     if int_sender_core_version > 0 and int_sender_core_version < int_server_core_version:
-      output.message += f" Sender core version {sender_core_version} is lower than server core version {core_ver}."
+      output.message += f" Sender core version {sender_core_version} is lower than server core version {self.ee_core_ver}."
       # maybe we should block below a certain level
     if int_sender_sdk_version > 0 and int_sender_sdk_version < int_server_sdk_version:
-      output.message += f" Sender sdk version {sender_sdk_version} is lower than server sdk version {sdk_version}."
+      output.message += f" Sender sdk version {sender_sdk_version} is lower than server sdk version {self.ee_sdk_ver}."
       # maybe we should block below a certain level
     return output
   
@@ -136,6 +142,7 @@ class _DauthMixin:
     
     
     """
+    self.Pd("CSTORE dAuth data for node {} ({})".format(node_address, node_address_eth))
     return
   
   
@@ -176,13 +183,15 @@ class _DauthMixin:
     dAuthConst = self.const.BASE_CT.dAuth
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
 
-    if self.cfg_dauth_verbose:
-      data[dAuthConst.DAUTH_REQUEST] = body
       
     data[dAuthConst.DAUTH_SERVER_INFO] = {
       dAuthConst.DAUTH_SENDER_ETH : sender_eth_address,
       dAuthConst.DAUTH_SENDER_TYPE : version_check_data.requester_type,
+      # "info" : str(version_check_data), 
     }
+
+    if self.cfg_dauth_verbose:
+      data[dAuthConst.DAUTH_REQUEST] = body
 
     return data
   
@@ -219,7 +228,9 @@ class _DauthMixin:
       _non_critical_error = version_check_data.message
 
     ###### check if node_address is allowed ######   
-    allowed_to_dauth = self.check_if_node_allowed(requester, version_check_data)   
+    allowed_to_dauth = self.check_if_node_allowed(
+      node_address=requester, node_address_eth=requester_eth, version_check_data=version_check_data
+    )
     if not allowed_to_dauth:
       error = 'Node not allowed to request auth data.'      
     
@@ -234,17 +245,26 @@ class _DauthMixin:
               
       # record the node_address and the auth data      
       self.chainstore_store_dauth_request(
-        requester=requester, dauth_data=data
+        node_address=requester, node_address_eth=requester_eth, 
+        dauth_data=data
       )
     #end no errors
     
-    self.fill_extra_info(data=data, body=body, version_check_data=version_check_data)
+    self.fill_extra_info(
+      data=data, body=body, sender_eth_address=requester_eth,
+      version_check_data=version_check_data
+    )
+    return data
       
   
 if __name__ == '__main__':
   import json
+  import os
 
   import naeural_core.constants as ct
+  from naeural_client._ver import __VER__ as sdk_ver
+  from naeural_core.main.ver import __VER__ as core_ver
+  from constants import ADMIN_PIPELINE
     
   from naeural_client.bc import DefaultBlockEngine
   from naeural_client import Logger
@@ -260,6 +280,12 @@ if __name__ == '__main__':
   eng.P = l.P
   eng.json_dumps = json.dumps
   eng.ee_ver = ee_ver
+  eng.ee_core_ver = core_ver
+  eng.ee_sdk_ver = sdk_ver
+  eng.os_environ = os.environ
+  eng.cfg_auth_env_keys = ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_ENV_KEYS"]
+  eng.cfg_auth_predefined_keys = ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_PREDEFINED_KEYS"]
+  
   
   
   request = {
@@ -276,4 +302,5 @@ if __name__ == '__main__':
   }
   
   res = eng.process_dauth_request(request)
-  print(json.dumps(res, indent=2))
+  l.P(f"Result:\n{json.dumps(res, indent=2)}")
+      
