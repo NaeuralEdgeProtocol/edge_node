@@ -11,9 +11,9 @@ Each request will generate data as follows:
 
 """
 
-from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
+from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
 
-__VER__ = '0.2.1'
+__VER__ = '0.3.3'
 
 _CONFIG = {
   **BasePlugin.CONFIG,
@@ -36,7 +36,7 @@ class EpochManager01Plugin(BasePlugin):
   def __init__(self, **kwargs):
     super(EpochManager01Plugin, self).__init__(**kwargs)
     return
-
+  
 
   def on_init(self):
     super(EpochManager01Plugin, self).on_init()
@@ -116,10 +116,13 @@ class EpochManager01Plugin(BasePlugin):
   
   
   def __eth_to_internal(self, eth_node_address):
-    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+    result = self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+    if result is None:
+      result = f"<Unknown/Bad eth addr {eth_node_address}>"
+    return result
   
   
-  def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list):
+  def __get_signed_data(self, node_addr : str, epochs : list, epochs_vals : list, sign=True):
     """    
     Sign the given data using the blockchain engine.
     Returns the signature. 
@@ -133,21 +136,31 @@ class EpochManager01Plugin(BasePlugin):
     
     """
     node_addr_eth = self.bc.node_address_to_eth_address(node_addr)
-    res = self.bc.eth_sign_node_epochs(
-      node=node_addr_eth, 
-      epochs=epochs,
-      epochs_vals=epochs_vals, 
-      signature_only=False,
-    )
-    eth_signature = res["signature"]
-    inputs = res["eth_signed_data"]
+    node_alias = self.netmon.network_node_eeid(addr=node_addr)
+    if sign:
+      res = self.bc.eth_sign_node_epochs(
+        node=node_addr_eth, 
+        epochs=epochs,
+        epochs_vals=epochs_vals, 
+        signature_only=False,
+      )    
+      eth_signature = res["signature"]
+      inputs = res["eth_signed_data"]
+    else:
+      eth_signature = []
+      inputs = []
+    
     eth_signatures = [eth_signature]
     eth_addresses = [self.bc.eth_address]
+    
     # now add oracle peers signatures and addresses
-
+    # ... 
+    # end add the oracle signatures and addresses
+    
     data = {
       'node': node_addr,
       'node_eth_address': node_addr_eth,
+      'node_alias': node_alias,
       'epochs': epochs,
       'epochs_vals': epochs_vals,
       
@@ -213,10 +226,19 @@ class EpochManager01Plugin(BasePlugin):
       error_msg = "End epoch is less than 1"
     if end_epoch >= self.__get_current_epoch():
       error_msg = "End epoch is greater or equal than the current epoch"
+    # end if checks
     
+    node_eth_address = None
+    try:
+      node_eth_address = self.bc.node_address_to_eth_address(node_addr)
+    except Exception as e:            
+      str_except = f"Error converting node address <{node_addr}> to eth address: {e}"
+      error_msg = str_except if error_msg is None else f"{error_msg}. {str_except}"
+    # end try
     if error_msg is not None:
       data = {
         'node': node_addr,
+        'node_eth_address': node_eth_address,
         'error': error_msg,
       }
     else:
@@ -229,16 +251,28 @@ class EpochManager01Plugin(BasePlugin):
       if epochs_vals is None:
         data = {
           'node': node_addr,
-          'error': "No epochs found for the node",
+          'node_eth_address': node_eth_address,
+          'error': "No epochs found for the given node",
         }
       else:
         epochs = list(range(start_epoch, end_epoch + 1)) 
         epochs_vals_selected = [epochs_vals[x] for x in epochs]
-        data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected)
+        oracle_state = self.netmon.epoch_manager.get_oracle_state(
+          start_epoch=start_epoch, end_epoch=end_epoch
+        )
+        valid = oracle_state['manager']['valid']
+        data = self.__get_signed_data(node_addr, epochs, epochs_vals_selected, sign=valid)
+        try:
+          last_seen = round(self.netmon.network_node_last_seen(node_addr),2)
+        except:
+          last_seen = -1
+        data['node_last_seen_sec'] = last_seen
+        data['node_is_online'] = self.netmon.network_node_is_online(node_addr)
+        if not valid:
+          data["error"] = "Oracle state is not valid for some of the epochs. Please check [result.oracle.manager.certainty] and report to devs. For testing purposes try using valid/certain epochs."
         # now add the certainty for each requested epoch
-        certainty = self.netmon.epoch_manager.get_self_supervisor_capacity()
-        data["certainty"] = {k : certainty.get(k, False) for k in epochs}
-        
+        data["oracle"] = oracle_state
+      # end if epochs_vals is None
     #endif
     return data
 
@@ -489,4 +523,34 @@ class EpochManager01Plugin(BasePlugin):
       response = self.__get_response({
         **data
       })
+    return response
+
+  @BasePlugin.endpoint
+  # /current_epoch
+  def current_epoch(self):
+    """
+    Returns the current epoch of the node.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following keys:
+        - current_epoch: int
+            The current epoch of the node.
+
+        - server_id: str
+            The address of the responding node.
+
+        - server_time: str
+            The current time in UTC of the responding node.
+
+        - server_current_epoch: int
+            The current epoch of the responding node.
+
+        - server_uptime: str
+            The time that the responding node has been running.
+    """
+    response = self.__get_response({
+      'current_epoch': self.__get_current_epoch(),
+    })
     return response

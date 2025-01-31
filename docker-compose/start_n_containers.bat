@@ -2,10 +2,11 @@
 setlocal enabledelayedexpansion
 
 REM Hardcoded number of containers
-set NUM_CONTAINERS=2
-set NUM_SUPERVISORS=1
+set NUM_CONTAINERS=1
+set NUM_SUPERVISORS=0
 set CONTAINER_IMAGE=naeural/edge_node:develop
 @REM set CONTAINER_IMAGE=local_edge_node
+set ENV_FILE=.env_cluster
 REM Use command parameter to set if the containers will be repeered at start.
 REM The default is false.
 set PEER=false
@@ -27,9 +28,10 @@ if /i "%PEER%" neq "true" if /i "%PEER%" neq "false" (
 
 
 REM Generic names for containers and edge nodes
-set GENERIC_EDGE_NODE_ID=cluster_nen_
+set GENERIC_EDGE_NODE_ID=cnen_
 set GENERIC_CONTAINER_ID=naeural_0
 set GENERIC_CONTAINER_VOLUME=00cluster/naeural_0
+set GENERIC_WINDOW_TITLE=Cluster_Container
 
 REM Watchtower service for automatic updates
 set WATCHTOWER_IMAGE=containrrr/watchtower
@@ -66,12 +68,12 @@ for /l %%i in (1,1,%NUM_CONTAINERS%) do (
     echo     container_name: !CONTAINER_ID! >> docker-compose.yaml
     echo     restart: always >> docker-compose.yaml
     echo     environment: >> docker-compose.yaml
-    REM The line below will use the EE_ID_0%%i from the .env_cluster file.
+    REM The line below will use the EE_ID_0%%i from the !ENV_FILE! file.
     REM This can be done in case there need to be custom IDs for each container.
 @REM     echo       EE_ID: ^${EE_ID_0%%i?You must set the EE_ID_0%%i environment variable^} >> docker-compose.yaml
     echo       EE_ID: !EDGE_NODE_ID! >> docker-compose.yaml
     echo       EE_SUPERVISOR: !CONTAINER_IS_SUPERVISOR[%%i]! >> docker-compose.yaml
-    echo     env_file: .env_cluster >> docker-compose.yaml
+    echo     env_file: !ENV_FILE! >> docker-compose.yaml
     echo     volumes: >> docker-compose.yaml
     echo       - ./!CONTAINER_VOLUME!:/edge_node/_local_cache >> docker-compose.yaml
     REM Empty line for readability
@@ -117,7 +119,8 @@ timeout /t 5 /nobreak >nul
 
 REM Open logs for each container in a separate PowerShell window
 for /l %%i in (1,1,%NUM_CONTAINERS%) do (
-    start powershell -NoExit -Command "docker-compose logs -f -n 1000 !CONTAINER_IDS[%%i]!"
+    set TITLE_SET_COMMAND=$host.ui.RawUI.WindowTitle = '!GENERIC_WINDOW_TITLE! !CONTAINER_IDS[%%i]!'
+    start powershell -NoExit -Command "!TITLE_SET_COMMAND!; docker-compose logs -f -n 1000 !CONTAINER_IDS[%%i]!"
 )
 
 echo Containers are starting, and logs are being followed...

@@ -1,9 +1,24 @@
-from naeural_core.constants import ADMIN_PIPELINE
-import os
+from naeural_core.constants import ADMIN_PIPELINE, ADMIN_PIPELINE_FILTER
+
+
+ADMIN_PIPELINE_FILTER = [
+  *ADMIN_PIPELINE_FILTER,
+  "ORACLE_SYNC_01",
+]
+
+#############    Era information    ###############
+DEFAULT_GENESYS_EPOCH_DATE = "2025-01-28 20:00:00"      # "2025-02-03 17:00:00" for mainnet
+DEFAULT_EPOCH_INTERVALS =  1                            # 24 mainnet, 1 for devnet
+DEFAULT_EPOCH_INTERVAL_SECONDS = 3600                   # 3600
+SUPERVISOR_MIN_AVAIL_PRC = 0.50                         # 0.98 for mainnet, 60% for testnet
+###################################################
 
 
 ADMIN_PIPELINE = {
   **ADMIN_PIPELINE,
+  'ORACLE_SYNC_01': {
+  },
+
   'EPOCH_MANAGER_01': {
     "NGROK_EDGE_LABEL": "$EE_NGROK_EDGE_LABEL_EPOCH_MANAGER",
     "PROCESS_DELAY": 0,

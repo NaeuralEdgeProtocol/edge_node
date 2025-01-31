@@ -8,4 +8,8 @@ Dockerfile_tegra_dev
 config_startup.json
 .env
 
-_local_cache/
+*/_local_cache/*
+*/_data/*
+*/_logs/*
+*/_models/*
+*/_output/*

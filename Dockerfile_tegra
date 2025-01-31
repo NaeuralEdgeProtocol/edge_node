@@ -1,22 +1,13 @@
 FROM aidamian/base_edge_node_arm64_tegra:latest
 
-WORKDIR /
-COPY get_node_info /usr/local/bin/get_node_info
-RUN chmod +x /usr/local/bin/get_node_info
 
-COPY add_allowed /usr/local/bin/add_allowed
-RUN chmod +x /usr/local/bin/add_allowed
-
-COPY get_node_history /usr/local/bin/get_node_history
-RUN chmod +x /usr/local/bin/get_node_history
-
-
-
+COPY ./cmds /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
 
 
 WORKDIR /edge_node
-
-COPY  . /edge_node
+COPY . .
+RUN rm -rf /edge_node/cmds
 
 #### TO BE REMOVED AND TESTED !!!
 ENV TZ=Europe/Bucharest
@@ -42,6 +33,7 @@ ENV EE_DEVICE=cuda:0
 ENV EE_ETH_ENABLED=true
 ENV EE_HB_CONTAINS_PIPELINES=0
 ENV EE_HB_CONTAINS_ACTIVE_PLUGINS=1
+ENV EE_EPOCH_MANAGER_DEBUG=1
 
 
 # configure default config_startup file

@@ -1,5 +1,18 @@
+"""
 
-from extensions.business.fastapi.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
+EE_HB_CONTAINS_PIPELINES=0
+EE_HB_CONTAINS_ACTIVE_PLUGINS=1
+EE_EPOCH_MANAGER_DEBUG=1
+WHITELIST (oracles)
+
+
+
+
+"""
+
+from naeural_core.business.default.web_app.supervisor_fast_api_web_app import SupervisorFastApiWebApp as BasePlugin
+from naeural_client.bc import DefaultBlockEngine
+from extensions.business.dauth.dauth_mixin import _DauthMixin
 
 __VER__ = '0.2.2'
 
@@ -26,7 +39,11 @@ _CONFIG = {
 }
 
 
-class DauthManagerPlugin(BasePlugin):
+
+class DauthManagerPlugin(
+  _DauthMixin,
+  BasePlugin,
+  ):
   """
   This plugin is the dAuth FastAPI web app that provides an endpoints for decentralized authentication.
   """
@@ -35,6 +52,8 @@ class DauthManagerPlugin(BasePlugin):
   def __init__(self, **kwargs):
     super(DauthManagerPlugin, self).__init__(**kwargs)
     return
+  
+  
 
   def on_init(self):
     super(DauthManagerPlugin, self).on_init()
@@ -45,6 +64,11 @@ class DauthManagerPlugin(BasePlugin):
       self.cfg_auth_env_keys, self.cfg_auth_predefined_keys)
     )
     return
+  
+  @property
+  def bc_direct(self) -> DefaultBlockEngine:
+    return self.global_shmem[self.const.BLOCKCHAIN_MANAGER]
+  
   
   def __get_current_epoch(self):
     """
@@ -60,6 +84,7 @@ class DauthManagerPlugin(BasePlugin):
   
   def __eth_to_internal(self, eth_node_address):
     return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+  
   
   
   def __sign(self, data):
@@ -105,7 +130,8 @@ class DauthManagerPlugin(BasePlugin):
     dct_data['server_uptime'] = str(self.timedelta(seconds=int(self.time_alive)))
     self.__sign(dct_data) # add the signature over full data
     return dct_data
-
+   
+  
 
   @BasePlugin.endpoint(method="post")
   # /get_auth_data
@@ -123,47 +149,10 @@ class DauthManagerPlugin(BasePlugin):
         "nonce" : "some-nonce"
         ... other data
       }      
-    }
-    
+    }    
     """
     
-    lst_auth_env_keys = self.cfg_auth_env_keys
-    dct_auth_predefined_keys = self.cfg_auth_predefined_keys
-    
-    DAUTH_SUBKEY = self.const.BASE_CT.DAUTH_SUBKEY
-    data = {
-      DAUTH_SUBKEY : {
-        'error' : None,
-      },
-    }
-    
-    if self.cfg_dauth_verbose:
-      self.P("Received request for auth:\n{}".format(self.json_dumps(body, indent=2)))
-    
-    verify_data = self.bc.verify(body, return_full_info=True)
-    
-    if not verify_data.valid:
-      data[DAUTH_SUBKEY]['error'] = 'Invalid signature: {}'.format(verify_data.message)
-      if self.cfg_dauth_verbose:
-        self.P("Verification failed: {}".format(verify_data), color='r')
-    else:    
-      if self.cfg_dauth_verbose:
-        self.P("Verification passed: {}".format(verify_data))
-      # check if node_address is allowed
-      
-      # prepare the env auth data
-      for key in lst_auth_env_keys:
-        if key.startswith('EE_'):
-          data[DAUTH_SUBKEY][key] = self.os_environ.get(key)
-      
-      # overwrite the predefined keys
-      for key in dct_auth_predefined_keys:
-        data[DAUTH_SUBKEY][key] = dct_auth_predefined_keys[key]
-      
-      # self.chainstore_set()
-      # record the node_address and the auth data
-      
-      # return the auth data
+    data = self.process_dauth_request(body)
     
     response = self.__get_response({
       **data

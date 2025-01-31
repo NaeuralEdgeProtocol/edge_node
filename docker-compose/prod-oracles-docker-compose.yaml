@@ -2,30 +2,39 @@
 services:
   naeural_01:
     image: naeural/edge_node:develop
-    container_name: r1node1
+    container_name: naeural_01
     restart: always
+    environment:
+      EE_ID: ${EE_ID_01?You must set the EE_ID_01 environment variable}
+    env_file: .env
     volumes:
-      - r1vol1:/edge_node/_local_cache
+      - naeural_01:/edge_node/_local_cache
     labels:
       - "com.centurylinklabs.watchtower.enable=true"         
       - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
   naeural_02:
     image: naeural/edge_node:develop
-    container_name: r1node2
+    container_name: naeural_02
     restart: always
+    environment:
+      EE_ID: ${EE_ID_02?You must set the EE_ID_02 environment variable}
+    env_file: .env
     volumes:
-      - r1vol2:/edge_node/_local_cache
+      - naeural_02:/edge_node/_local_cache
     labels:
       - "com.centurylinklabs.watchtower.enable=true"         
       - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
   naeural_03:
     image: naeural/edge_node:develop
-    container_name: r1node3
+    container_name: naeural_03
     restart: always
+    environment:
+      EE_ID: ${EE_ID_03?You must set the EE_ID_03 environment variable3}
+    env_file: .env
     volumes:
-      - r1vol3:/edge_node/_local_cache
+      - naeural_03:/edge_node/_local_cache
     labels:
       - "com.centurylinklabs.watchtower.enable=true"         
       - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
@@ -41,3 +50,8 @@ services:
       - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
       - WATCHTOWER_CHECK_NEW_IMAGES=true      
       - WATCHTOWER_LABEL_ENABLE=true        
+
+volumes:
+  naeural_01:
+  naeural_02:
+  naeural_03:
