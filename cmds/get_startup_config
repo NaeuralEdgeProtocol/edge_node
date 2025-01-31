@@ -1,0 +1,7 @@
+#!/bin/bash
+###
+### This script gets the startup config of the edge node
+###
+FILE=/edge_node/_local_cache/config_startup.json
+
+cat $FILE
