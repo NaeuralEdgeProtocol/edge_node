@@ -22,10 +22,10 @@ class VersionCheckData(_DotDict):
   """
   Data class for version check.
   """
-  def __init__(self, result, message):
+  def __init__(self, result=False, message="", requester_type=None):
     self.result = result
     self.message = message
-    self.requester_type = None
+    self.requester_type = requester_type
     return
   
 ### START OF MIXIN ###
@@ -109,6 +109,7 @@ class _DauthMixin(object):
     elif int_sender_app_version == 0 and int_sender_core_version >0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_CORE
       output.result = False # we should block this
+      output.message = "Invalid sender version data - core and sdk only not allowed for dAuth"
     elif int_sender_app_version > 0 and int_sender_core_version > 0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_NODE
     else:
@@ -136,12 +137,18 @@ class _DauthMixin(object):
     """
     Check if the node address is allowed to request authentication data.
     """
+    msg = ""
     result = True
     if not version_check_data.result:
       result = False
+      msg = "Version check failed: {}".format(version_check_data.message)
     else:
-      pass
-    return result
+      try:
+        pass
+      except Exception as e:
+        result = False
+        msg = "Error checking if node is allowed: {}".format(e)
+    return result, msg
   
   
   def chainstore_store_dauth_request(
@@ -217,6 +224,13 @@ class _DauthMixin(object):
   
   
   def process_dauth_request(self, body):
+    """
+    This is the main method that processes the request for authentication.
+    """
+    error = None
+    _non_critical_error = None
+    requester_eth = None
+    version_check_data = VersionCheckData(result=False, message="", requester_type=None)
         
     dAuthConst = self.const.BASE_CT.dAuth
     data = {
@@ -225,37 +239,46 @@ class _DauthMixin(object):
       },
     }
     dct_dauth = data[dAuthConst.DAUTH_SUBKEY]
-    error = None
-    _non_critical_error = None
+    
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
-    requester_eth = self.__internal_to_eth(requester)    
-    self.Pd("Received request from {} for auth:\n{}".format(
-      requester, self.json_dumps(body, indent=2))
-    )
+    if requester is None:
+      error = 'No sender address in request.'
+      
+    if error is None:
+      try:
+        requester_eth = self.__internal_to_eth(requester)    
+        self.Pd("Received request from {} for auth:\n{}".format(
+          requester, self.json_dumps(body, indent=2))
+        )
+      except Exception as e:
+        error = 'Error converting node address to eth address: {}'.format(e)
     
     ###### verify the request signature ######
-    verify_data = self.bc_direct.verify(body, return_full_info=True)
-    if not verify_data.valid:
-      error = 'Invalid request signature: {}'.format(verify_data.message)
+    if error is None:
+      verify_data = self.bc_direct.verify(body, return_full_info=True)
+      if not verify_data.valid:
+        error = 'Invalid request signature: {}'.format(verify_data.message)
 
     ###### basic version checks ######
-    version_check_data : VersionCheckData = self.version_check(body)
-    if not version_check_data.result:
-      # not None means we have a error message
-      error = 'Version check failed: {}'.format(version_check_data.message)
-    elif version_check_data.message not in [None, '']:
-      _non_critical_error = version_check_data.message
+    if error is None:
+      version_check_data : VersionCheckData = self.version_check(body)
+      if not version_check_data.result:
+        # not None means we have a error message
+        error = 'Version check failed: {}'.format(version_check_data.message)
+      elif version_check_data.message not in [None, '']:
+        _non_critical_error = version_check_data.message
 
     ###### check if node_address is allowed ######   
-    allowed_to_dauth = self.check_if_node_allowed(
-      node_address=requester, node_address_eth=requester_eth, version_check_data=version_check_data
-    )
-    if not allowed_to_dauth:
-      error = 'Node not allowed to request auth data.'      
+    if error is None:
+      allowed_to_dauth, message = self.check_if_node_allowed(
+        node_address=requester, node_address_eth=requester_eth, version_check_data=version_check_data
+      )
+      if not allowed_to_dauth:
+        error = 'Node not allowed to request auth data. ' + message
     
     if error is not None:
       dct_dauth['error'] = error
-      self.Pd("Error on request from {}: {}".format(requester, error), color='r')
+      self.Pd("Error on request from <{}>: {}".format(requester, error), color='r')
     else:
       if _non_critical_error is not None:
         dct_dauth['error'] = _non_critical_error
@@ -320,6 +343,26 @@ if __name__ == '__main__':
       "EE_HASH": "e6a3f87d035b632c119cf1cacf02fcda79887fa24b3fa6355f6ec26b6c6cae70"
   }
   
-  res = eng.process_dauth_request(request)
+  request_bad = {
+      "sender_alias": "test1",
+      "app_version": "2.2.2",
+      "nonce": "9ad471a3",
+      "sender_app_ver": "2.2.2",
+      "sender_sdk_ver": "2.6.32",
+      "sender_core_ver": None,
+      "EE_SIGN": "MEYCIQDcWlOMvq3vqm2Qo0j-poSb9ex01s4LK3LvAeczHKzF5QIhAP7YWZy0JIO2vky-byzUuzjlwLklWqQ7JmJH_6OIN9hY",
+      "EE_SENDER": "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
+      "EE_ETH_SENDER": "0x13Dc6Ee23D45D1e4bF0BDBDf58BFdF24bB077e69",
+      "EE_ETH_SIGN": "0xBEEF",
+      "EE_HASH": "edd7ea2e22c544e112628dd8bf1722b82ad1e8b46ce07e68d6cb65c0fb032179"    
+  }
+  
+  request_faulty = {
+    "EE_SENDER" : "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
+  }
+  
+  # res = eng.process_dauth_request(request_faulty)
+  # res = eng.process_dauth_request(request)
+  res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       
