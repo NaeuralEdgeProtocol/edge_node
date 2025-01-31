@@ -29,7 +29,6 @@ class VersionCheckData(_DotDict):
     return
 
 class _DauthMixin:
-  const = None
 
   def Pd(self, *args, **kwargs):
     """
