@@ -293,6 +293,11 @@ services:
       - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
       - WATCHTOWER_CHECK_NEW_IMAGES=true      
       - WATCHTOWER_LABEL_ENABLE=true  
+
+volumes:
+  r1vol1:
+  r1vol2:
+  # you can add other volumes here ...      
 ```
 
 Then you can run the following command to start the nodes in the folder where the `docker-compose.yml` file is located:

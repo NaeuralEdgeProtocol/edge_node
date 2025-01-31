@@ -41,3 +41,9 @@ services:
       - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
       - WATCHTOWER_CHECK_NEW_IMAGES=true      
       - WATCHTOWER_LABEL_ENABLE=true        
+
+
+volumes:
+  r1vol1:
+  r1vol2:
+  r1vol3:
