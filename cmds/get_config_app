@@ -1,0 +1,7 @@
+#!/bin/bash
+###
+### This script gets config app
+###
+FILE=/edge_node/_local_cache/_data/box_configuration/config_app.txt
+
+cat $FILE
