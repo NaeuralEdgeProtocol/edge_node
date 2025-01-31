@@ -172,8 +172,15 @@ class _DauthMixin(object):
     """
     dAuthCt = self.const.BASE_CT.dAuth
 
+    ## TODO: review this section:
+    ##         maybe we should NOT use the default values or maybe we should just use the default values
     lst_auth_env_keys = self.cfg_auth_env_keys
     dct_auth_predefined_keys = self.cfg_auth_predefined_keys
+    
+    default_env_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_ENV_KEYS"]
+    default_predefined_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_PREDEFINED_KEYS"]
+    lst_auth_env_keys = list(set(lst_auth_env_keys + default_env_keys))
+    dct_auth_predefined_keys = {**dct_auth_predefined_keys, **default_predefined_keys}
     
     if lst_auth_env_keys is None:
       raise ValueError("No auth env keys defined (AUTH_ENV_KEYS==null). Please check the configuration!")
