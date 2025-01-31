@@ -262,6 +262,7 @@ services:
   r1node1:
     image: naeural/edge_node:develop
     container_name: r1node1
+    platform: linux/amd64
     restart: always
     volumes:
       - r1vol1:/edge_node/_local_cache
@@ -272,6 +273,7 @@ services:
   r1node2:
     image: naeural/edge_node:develop
     container_name: r1node2
+    platform: linux/amd64
     restart: always
     volumes:
       - r1vol2:/edge_node/_local_cache
@@ -279,16 +281,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"         
       - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
-  # r1node3:
-  #   image: naeural/edge_node:develop
-  #   container_name: r1node3
-  #   restart: always
-  #   volumes:
-  #     - r1vol3:/edge_node/_local_cache
-  #   labels:
-  #     - "com.centurylinklabs.watchtower.enable=true"         
-  #     - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
-
+  #  you can add other nodes here ...
 
   watchtower:
     image: containrrr/watchtower
