@@ -50,6 +50,8 @@ ADMIN_PIPELINE = {
       
       "EE_MINIO_MODEL_BUCKET",
       "EE_MINIO_UPLOAD_BUCKET",
+      
+      "EE_NGROK_AUTH_TOKEN",
     ],
     
     "AUTH_PREDEFINED_KEYS" : {
