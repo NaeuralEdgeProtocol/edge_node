@@ -1,3 +1,4 @@
+
 def version_to_int(version):
   """
   Convert a version string to an integer.
@@ -56,33 +57,27 @@ class _DauthMixin(object):
     return [self.__eth_to_internal(eth) for eth in lst_eth]
 
  
-  def get_whitelist_data(self):
+  def _get_oracles_information(self):
     """
     Get the whitelist data for the current node.
+    
+    Returns
+    -------    
+    list, list : oracles, oracles_names
+    
+    TODO: modify this to Web3 approach
+      - get the oracles eth addresses from SC
+      - convert each in internal address
+      - try to obtain aliases if available
+      - return both
     """
-    lst_data = None
+    wl, names = [], []
     try:
       wl, names = self.bc_direct.whitelist_with_names
-      lst_data = [a + (f"  {b}" if len(b) > 0 else "") for a, b in zip(wl, names)]
     except Exception as e:
       self.P("Error getting whitelist data: {}".format(e), color='r')      
-    return lst_data
-  
-  
-  def get_mandatory_oracles(self):
-    """
-    Get the list of oracles that must be allowed.
-    """
-    mandatory_oracles = []
-    try:
-      # TODO: modify this to Web3 approach
-      mandatory_oracles = self.get_whitelist_data()
-    except Exception as e:
-      self.P("Error getting mandatory oracles: {}".format(e), color='r')
-    return mandatory_oracles
-      
+    return wl, names
 
-  
   
   def version_check(self, data : dict):
     """
@@ -166,7 +161,7 @@ class _DauthMixin(object):
     return
   
   
-  def fill_dauth_data(self, dauth_data):
+  def fill_dauth_data(self, dauth_data, requester_node_address):
     """
     Fill the data with the authentication data.
     """
@@ -188,8 +183,13 @@ class _DauthMixin(object):
     if dct_auth_predefined_keys is None:
       raise ValueError("No predefined keys defined (AUTH_PREDEFINED_KEYS==null). Please check the configuration")
     
-    ### get the mandatory oracles whitelist and populate answer  ###      
-    dauth_data[dAuthCt.DAUTH_WHITELIST] = self.get_mandatory_oracles()
+    ### get the mandatory oracles whitelist and populate answer  ###  
+    oracles, oracles_names = self._get_oracles_information()    
+    full_whitelist = [
+      a + (f"  {b}" if len(b) > 0 else "") 
+      for a, b in zip(oracles, oracles_names)
+    ]
+    dauth_data[dAuthCt.DAUTH_WHITELIST] = full_whitelist
 
     #####  finally prepare the env auth data #####
     for key in lst_auth_env_keys:
@@ -199,6 +199,11 @@ class _DauthMixin(object):
     # overwrite the predefined keys
     for key in dct_auth_predefined_keys:
       dauth_data[key] = dct_auth_predefined_keys[key]
+    
+    # set the supervisor flag if this is identified as an oracle
+    if requester_node_address in oracles:
+      dauth_data["EE_SUPERVISOR"] = True
+    # end set supervisor flag
 
     return dauth_data
   
@@ -283,6 +288,7 @@ class _DauthMixin(object):
       if not allowed_to_dauth:
         error = 'Node not allowed to request auth data. ' + message
     
+    ####### now we prepare env variables ########
     if error is not None:
       dct_dauth['error'] = error
       self.Pd("Error on request from <{}>: {}".format(requester, error), color='r')
@@ -290,7 +296,9 @@ class _DauthMixin(object):
       if _non_critical_error is not None:
         dct_dauth['error'] = _non_critical_error
         self.Pd("Non-critical error on request from {}: {}".format(requester, _non_critical_error))
-      self.fill_dauth_data(dct_dauth)
+      ### Finally we fill the data with the authentication data
+      self.fill_dauth_data(dct_dauth, requester_node_address=requester)
+      ### end fill data
               
       # record the node_address and the auth data      
       self.chainstore_store_dauth_request(
@@ -299,6 +307,7 @@ class _DauthMixin(object):
       )
     #end no errors
     
+    ####### add some extra info to payloads ########
     self.fill_extra_info(
       data=data, body=body, sender_eth_address=requester_eth,
       version_check_data=version_check_data
@@ -369,7 +378,7 @@ if __name__ == '__main__':
   }
   
   # res = eng.process_dauth_request(request_faulty)
-  # res = eng.process_dauth_request(request)
-  res = eng.process_dauth_request(request_bad)
+  res = eng.process_dauth_request(request)
+  # res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       
