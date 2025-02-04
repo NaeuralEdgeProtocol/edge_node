@@ -307,6 +307,12 @@ Then you can run the following command to start the nodes in the folder where th
 docker-compose up -d
 ```
 
+If you want to always pull the latest image you can add the `--pull=always` flag to the `docker-compose up` command.
+
+```bash
+docker-compose up -d --pull=always
+```
+
 and you can stop the nodes by running in the same folder:
 
 ```bash
