@@ -301,6 +301,8 @@ volumes:
   # you can add other volumes here ...      
 ```
 
+If you are using MacOS (M1 or better) we recommend to use the arm64 image for the watchtower service. You can do so by changing the image to `containrrr/watchtower:arm64v8-latest` in the `docker-compose.yml` file.
+
 Then you can run the following command to start the nodes in the folder where the `docker-compose.yml` file is located:
 
 ```bash
