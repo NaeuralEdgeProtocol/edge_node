@@ -203,6 +203,11 @@ class _DauthMixin(object):
     # set the supervisor flag if this is identified as an oracle
     if requester_node_address in oracles:
       dauth_data["EE_SUPERVISOR"] = True
+      for k in self.cfg_supervisor_keys:
+        if isinstance(k, str) and len(k) > 0:
+          dauth_data[k] = self.os_environ.get(key)
+        # end if
+      # end for
     # end set supervisor flag
 
     return dauth_data
@@ -283,7 +288,8 @@ class _DauthMixin(object):
     ###### check if node_address is allowed ######   
     if error is None:
       allowed_to_dauth, message = self.check_if_node_allowed(
-        node_address=requester, node_address_eth=requester_eth, version_check_data=version_check_data
+        node_address=requester, node_address_eth=requester_eth, 
+        version_check_data=version_check_data
       )
       if not allowed_to_dauth:
         error = 'Node not allowed to request auth data. ' + message
