@@ -51,10 +51,12 @@ class _DauthMixin(object):
 
   def __internal_to_eth(self, internal_node_address):
     return self.bc_direct.node_address_to_eth_address(internal_node_address)
-  
-  
+
+
   def _eth_list_to_internal(self, lst_eth):
     return [self.__eth_to_internal(eth) for eth in lst_eth]
+  
+  
 
  
   def _get_oracles_information(self):
@@ -73,7 +75,12 @@ class _DauthMixin(object):
     """
     wl, names = [], []
     try:
-      wl, names = self.bc_direct.whitelist_with_names
+      eth_oracles = self.bc_direct.web3_get_oracles()
+      for eth_addr in eth_oracles:
+        internal_addr = self.__eth_to_internal(eth_addr)
+        wl.append(internal_addr)
+        alias = self.netmon.network_node_eeid(internal_addr)
+        names.append(alias)
     except Exception as e:
       self.P("Error getting whitelist data: {}".format(e), color='r')      
     return wl, names
@@ -139,7 +146,7 @@ class _DauthMixin(object):
       msg = "Version check failed: {}".format(version_check_data.message)
     else:
       try:
-        pass
+        result = self.bc_direct.web3_is_node_licensed(node_address_eth)
       except Exception as e:
         result = False
         msg = "Error checking if node is allowed: {}".format(e)
@@ -211,8 +218,8 @@ class _DauthMixin(object):
     # end set supervisor flag
 
     return dauth_data
-  
-  
+
+
   def fill_extra_info(
     self, 
     data : dict, 
