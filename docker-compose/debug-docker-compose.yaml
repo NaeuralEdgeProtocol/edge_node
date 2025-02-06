@@ -1,8 +1,6 @@
 ##
 ## No need for Watchtower in this case, as we are using the (local) local_edge_node image
 ##
-
-
 services:
   naeural_01:
     image: local_edge_node

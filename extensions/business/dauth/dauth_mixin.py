@@ -1,3 +1,4 @@
+
 def version_to_int(version):
   """
   Convert a version string to an integer.
@@ -22,14 +23,19 @@ class VersionCheckData(_DotDict):
   """
   Data class for version check.
   """
-  def __init__(self, result, message):
+  def __init__(self, result=False, message="", requester_type=None):
     self.result = result
     self.message = message
-    self.requester_type = None
+    self.requester_type = requester_type
     return
+  
+### START OF MIXIN ###
 
-class _DauthMixin:
-  const = None
+class _DauthMixin(object):
+
+  def __init__(self):
+    super(_DauthMixin, self).__init__()
+    return
 
   def Pd(self, *args, **kwargs):
     """
@@ -39,37 +45,46 @@ class _DauthMixin:
       self.P(*args, **kwargs)
     return  
 
+  def __eth_to_internal(self, eth_node_address):
+    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
+  
+
   def __internal_to_eth(self, internal_node_address):
     return self.bc_direct.node_address_to_eth_address(internal_node_address)
 
+
+  def _eth_list_to_internal(self, lst_eth):
+    return [self.__eth_to_internal(eth) for eth in lst_eth]
+  
+  
+
  
-  def get_whitelist_data(self):
+  def _get_oracles_information(self):
     """
     Get the whitelist data for the current node.
+    
+    Returns
+    -------    
+    list, list : oracles, oracles_names
+    
+    TODO: modify this to Web3 approach
+      - get the oracles eth addresses from SC
+      - convert each in internal address
+      - try to obtain aliases if available
+      - return both
     """
-    lst_data = None
+    wl, names = [], []
     try:
-      wl, names = self.bc_direct.whitelist_with_names
-      lst_data = [a + (f"  {b}" if len(b) > 0 else "") for a, b in zip(wl, names)]
+      eth_oracles = self.bc_direct.web3_get_oracles()
+      for eth_addr in eth_oracles:
+        internal_addr = self.__eth_to_internal(eth_addr)
+        wl.append(internal_addr)
+        alias = self.netmon.network_node_eeid(internal_addr)
+        names.append(alias)
     except Exception as e:
       self.P("Error getting whitelist data: {}".format(e), color='r')      
-    return lst_data
-  
-  
-  def get_mandatory_oracles(self):
-    """
-    Get the list of oracles that must be allowed.
-    """
-    mandatory_oracles = []
-    try:
-      # TODO: modify this to Web3 approach
-      mandatory_oracles = self.get_whitelist_data()
-    except Exception as e:
-      self.P("Error getting mandatory oracles: {}".format(e), color='r')
-    return mandatory_oracles
-      
+    return wl, names
 
-  
   
   def version_check(self, data : dict):
     """
@@ -96,6 +111,7 @@ class _DauthMixin:
     elif int_sender_app_version == 0 and int_sender_core_version >0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_CORE
       output.result = False # we should block this
+      output.message = "Invalid sender version data - core and sdk only not allowed for dAuth"
     elif int_sender_app_version > 0 and int_sender_core_version > 0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_NODE
     else:
@@ -123,12 +139,19 @@ class _DauthMixin:
     """
     Check if the node address is allowed to request authentication data.
     """
+    msg = ""
     result = True
     if not version_check_data.result:
       result = False
+      msg = "Version check failed: {}".format(version_check_data.message)
     else:
-      pass
-    return result
+      try:
+        if version_check_data.requester_type != self.const.BASE_CT.dAuth.DAUTH_SENDER_TYPE_SDK:
+          result = self.bc_direct.web3_is_node_licensed(node_address_eth)
+      except Exception as e:
+        result = False
+        msg = "Error checking if node is allowed: {}".format(e)
+    return result, msg
   
   
   def chainstore_store_dauth_request(
@@ -146,17 +169,35 @@ class _DauthMixin:
     return
   
   
-  def fill_dauth_data(self, dauth_data):
+  def fill_dauth_data(self, dauth_data, requester_node_address):
     """
     Fill the data with the authentication data.
     """
     dAuthCt = self.const.BASE_CT.dAuth
 
+    ## TODO: review this section:
+    ##         maybe we should NOT use the default values or maybe we should just use the default values
     lst_auth_env_keys = self.cfg_auth_env_keys
     dct_auth_predefined_keys = self.cfg_auth_predefined_keys
     
-    ### get the mandatory oracles whitelist and populate answer  ###      
-    dauth_data[dAuthCt.DAUTH_WHITELIST] = self.get_mandatory_oracles()
+    default_env_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_ENV_KEYS"]
+    default_predefined_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_PREDEFINED_KEYS"]
+    lst_auth_env_keys = list(set(lst_auth_env_keys + default_env_keys))
+    dct_auth_predefined_keys = {**dct_auth_predefined_keys, **default_predefined_keys}
+    
+    if lst_auth_env_keys is None:
+      raise ValueError("No auth env keys defined (AUTH_ENV_KEYS==null). Please check the configuration!")
+    
+    if dct_auth_predefined_keys is None:
+      raise ValueError("No predefined keys defined (AUTH_PREDEFINED_KEYS==null). Please check the configuration")
+    
+    ### get the mandatory oracles whitelist and populate answer  ###  
+    oracles, oracles_names = self._get_oracles_information()    
+    full_whitelist = [
+      a + (f"  {b}" if len(b) > 0 else "") 
+      for a, b in zip(oracles, oracles_names)
+    ]
+    dauth_data[dAuthCt.DAUTH_WHITELIST] = full_whitelist
 
     #####  finally prepare the env auth data #####
     for key in lst_auth_env_keys:
@@ -166,10 +207,20 @@ class _DauthMixin:
     # overwrite the predefined keys
     for key in dct_auth_predefined_keys:
       dauth_data[key] = dct_auth_predefined_keys[key]
+    
+    # set the supervisor flag if this is identified as an oracle
+    if requester_node_address in oracles:
+      dauth_data["EE_SUPERVISOR"] = True
+      for key in self.cfg_supervisor_keys:
+        if isinstance(key, str) and len(key) > 0:
+          dauth_data[key] = self.os_environ.get(key)
+        # end if
+      # end for
+    # end set supervisor flag
 
     return dauth_data
-  
-  
+
+
   def fill_extra_info(
     self, 
     data : dict, 
@@ -198,6 +249,13 @@ class _DauthMixin:
   
   
   def process_dauth_request(self, body):
+    """
+    This is the main method that processes the request for authentication.
+    """
+    error = None
+    _non_critical_error = None
+    requester_eth = None
+    version_check_data = VersionCheckData(result=False, message="", requester_type=None)
         
     dAuthConst = self.const.BASE_CT.dAuth
     data = {
@@ -206,42 +264,55 @@ class _DauthMixin:
       },
     }
     dct_dauth = data[dAuthConst.DAUTH_SUBKEY]
-    error = None
-    _non_critical_error = None
+    
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
-    requester_eth = self.__internal_to_eth(requester)    
-    self.Pd("Received request from {} for auth:\n{}".format(
-      requester, self.json_dumps(body, indent=2))
-    )
+    if requester is None:
+      error = 'No sender address in request.'
+      
+    if error is None:
+      try:
+        requester_eth = self.__internal_to_eth(requester)    
+        self.Pd("Received request from {} for auth:\n{}".format(
+          requester, self.json_dumps(body, indent=2))
+        )
+      except Exception as e:
+        error = 'Error converting node address to eth address: {}'.format(e)
     
     ###### verify the request signature ######
-    verify_data = self.bc_direct.verify(body, return_full_info=True)
-    if not verify_data.valid:
-      error = 'Invalid request signature: {}'.format(verify_data.message)
+    if error is None:
+      verify_data = self.bc_direct.verify(body, return_full_info=True)
+      if not verify_data.valid:
+        error = 'Invalid request signature: {}'.format(verify_data.message)
 
     ###### basic version checks ######
-    version_check_data : VersionCheckData = self.version_check(body)
-    if not version_check_data.result:
-      # not None means we have a error message
-      error = 'Version check failed: {}'.format(version_check_data.message)
-    elif version_check_data.message not in [None, '']:
-      _non_critical_error = version_check_data.message
+    if error is None:
+      version_check_data : VersionCheckData = self.version_check(body)
+      if not version_check_data.result:
+        # not None means we have a error message
+        error = 'Version check failed: {}'.format(version_check_data.message)
+      elif version_check_data.message not in [None, '']:
+        _non_critical_error = version_check_data.message
 
     ###### check if node_address is allowed ######   
-    allowed_to_dauth = self.check_if_node_allowed(
-      node_address=requester, node_address_eth=requester_eth, version_check_data=version_check_data
-    )
-    if not allowed_to_dauth:
-      error = 'Node not allowed to request auth data.'      
+    if error is None:
+      allowed_to_dauth, message = self.check_if_node_allowed(
+        node_address=requester, node_address_eth=requester_eth, 
+        version_check_data=version_check_data
+      )
+      if not allowed_to_dauth:
+        error = 'Node not allowed to request auth data. ' + message
     
+    ####### now we prepare env variables ########
     if error is not None:
       dct_dauth['error'] = error
-      self.Pd("Error on request from {}: {}".format(requester, error), color='r')
+      self.Pd("Error on request from <{}>: {}".format(requester, error), color='r')
     else:
       if _non_critical_error is not None:
         dct_dauth['error'] = _non_critical_error
         self.Pd("Non-critical error on request from {}: {}".format(requester, _non_critical_error))
-      self.fill_dauth_data(dct_dauth)
+      ### Finally we fill the data with the authentication data
+      self.fill_dauth_data(dct_dauth, requester_node_address=requester)
+      ### end fill data
               
       # record the node_address and the auth data      
       self.chainstore_store_dauth_request(
@@ -250,6 +321,7 @@ class _DauthMixin:
       )
     #end no errors
     
+    ####### add some extra info to payloads ########
     self.fill_extra_info(
       data=data, body=body, sender_eth_address=requester_eth,
       version_check_data=version_check_data
@@ -301,6 +373,26 @@ if __name__ == '__main__':
       "EE_HASH": "e6a3f87d035b632c119cf1cacf02fcda79887fa24b3fa6355f6ec26b6c6cae70"
   }
   
+  request_bad = {
+      "sender_alias": "test1",
+      "app_version": "2.2.2",
+      "nonce": "9ad471a3",
+      "sender_app_ver": "2.2.2",
+      "sender_sdk_ver": "2.6.32",
+      "sender_core_ver": None,
+      "EE_SIGN": "MEYCIQDcWlOMvq3vqm2Qo0j-poSb9ex01s4LK3LvAeczHKzF5QIhAP7YWZy0JIO2vky-byzUuzjlwLklWqQ7JmJH_6OIN9hY",
+      "EE_SENDER": "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
+      "EE_ETH_SENDER": "0x13Dc6Ee23D45D1e4bF0BDBDf58BFdF24bB077e69",
+      "EE_ETH_SIGN": "0xBEEF",
+      "EE_HASH": "edd7ea2e22c544e112628dd8bf1722b82ad1e8b46ce07e68d6cb65c0fb032179"    
+  }
+  
+  request_faulty = {
+    "EE_SENDER" : "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
+  }
+  
+  # res = eng.process_dauth_request(request_faulty)
   res = eng.process_dauth_request(request)
+  # res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       

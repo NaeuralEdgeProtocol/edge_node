@@ -34,6 +34,10 @@ ENV EE_HB_CONTAINS_PIPELINES=0
 ENV EE_HB_CONTAINS_ACTIVE_PLUGINS=1
 ENV EE_EPOCH_MANAGER_DEBUG=1
 
+ENV EE_DAUTH_URL=https://dauth-main.ratio1.ai/get_auth_data
+ENV EE_EVM_NET=mainnet
+
+
 #### TO BE REMOVED AND TESTED !!!
 ENV TZ=Europe/Bucharest
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

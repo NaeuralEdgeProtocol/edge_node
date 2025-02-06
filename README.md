@@ -262,6 +262,7 @@ services:
   r1node1:
     image: naeural/edge_node:develop
     container_name: r1node1
+    platform: linux/amd64
     restart: always
     volumes:
       - r1vol1:/edge_node/_local_cache
@@ -272,6 +273,7 @@ services:
   r1node2:
     image: naeural/edge_node:develop
     container_name: r1node2
+    platform: linux/amd64
     restart: always
     volumes:
       - r1vol2:/edge_node/_local_cache
@@ -279,19 +281,11 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"         
       - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
 
-  # r1node3:
-  #   image: naeural/edge_node:develop
-  #   container_name: r1node3
-  #   restart: always
-  #   volumes:
-  #     - r1vol3:/edge_node/_local_cache
-  #   labels:
-  #     - "com.centurylinklabs.watchtower.enable=true"         
-  #     - "com.centurylinklabs.watchtower.stop-signal=SIGINT"          
-
+  #  you can add other nodes here ...
 
   watchtower:
     image: containrrr/watchtower
+    platform: linux/amd64
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -300,12 +294,25 @@ services:
       - WATCHTOWER_POLL_INTERVAL=60 # Check every 1 minute
       - WATCHTOWER_CHECK_NEW_IMAGES=true      
       - WATCHTOWER_LABEL_ENABLE=true  
+
+volumes:
+  r1vol1:
+  r1vol2:
+  # you can add other volumes here ...      
 ```
+
+If you are using MacOS (M1 or better) we recommend to use the arm64 image for the watchtower service. You can do so by changing the image to `containrrr/watchtower:arm64v8-latest` in the `docker-compose.yml` file.
 
 Then you can run the following command to start the nodes in the folder where the `docker-compose.yml` file is located:
 
 ```bash
 docker-compose up -d
+```
+
+If you want to always pull the latest image you can add the `--pull=always` flag to the `docker-compose up` command.
+
+```bash
+docker-compose up -d --pull=always
 ```
 
 and you can stop the nodes by running in the same folder:

@@ -7,10 +7,10 @@ ADMIN_PIPELINE_FILTER = [
 ]
 
 #############    Era information    ###############
-DEFAULT_GENESYS_EPOCH_DATE = "2025-01-28 20:00:00"      # "2025-02-03 17:00:00" for mainnet
-DEFAULT_EPOCH_INTERVALS =  1                            # 24 mainnet, 1 for devnet
+DEFAULT_GENESYS_EPOCH_DATE = "2025-02-05 16:00:00"      # "2025-02-06 16:00:00" for mainnet
+DEFAULT_EPOCH_INTERVALS =  24                           # 24 mainnet, 1 for devnet
 DEFAULT_EPOCH_INTERVAL_SECONDS = 3600                   # 3600
-SUPERVISOR_MIN_AVAIL_PRC = 0.50                         # 0.98 for mainnet, 60% for testnet
+SUPERVISOR_MIN_AVAIL_PRC = 0.98                         # 0.98 for mainnet, 60% for testnet
 ###################################################
 
 
@@ -29,7 +29,7 @@ ADMIN_PIPELINE = {
     "PROCESS_DELAY": 0,
   },
   
-  'DAUTH_MANAGER': {
+  "DAUTH_MANAGER" : {
     "NGROK_EDGE_LABEL": "$EE_NGROK_EDGE_LABEL_DAUTH_MANAGER",
     "PROCESS_DELAY": 0,
     
@@ -50,6 +50,8 @@ ADMIN_PIPELINE = {
       
       "EE_MINIO_MODEL_BUCKET",
       "EE_MINIO_UPLOAD_BUCKET",
+      
+      "EE_NGROK_AUTH_TOKEN",
     ],
     
     "AUTH_PREDEFINED_KEYS" : {
