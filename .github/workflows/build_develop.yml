@@ -77,5 +77,7 @@ jobs:
           context: .
           file: ./Dockerfile_dev
           push: true
-          tags: "naeural/edge_node:develop"
-
+          # tags: "naeural/edge_node:develop"
+          tags: |
+                naeural/edge_node:develop
+                naeural/edge_node:testnet
