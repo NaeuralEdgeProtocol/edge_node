@@ -146,7 +146,8 @@ class _DauthMixin(object):
       msg = "Version check failed: {}".format(version_check_data.message)
     else:
       try:
-        result = self.bc_direct.web3_is_node_licensed(node_address_eth)
+        if version_check_data.requester_type != self.const.BASE_CT.dAuth.DAUTH_SENDER_TYPE_SDK:
+          result = self.bc_direct.web3_is_node_licensed(node_address_eth)
       except Exception as e:
         result = False
         msg = "Error checking if node is allowed: {}".format(e)
