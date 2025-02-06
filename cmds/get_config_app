@@ -4,4 +4,9 @@
 ###
 FILE=/edge_node/_local_cache/_data/box_configuration/config_app.txt
 
+if [ ! -f "$FILE" ]; then
+    echo "Error: $FILE does not exist"
+    exit 1
+fi
+
 cat $FILE
