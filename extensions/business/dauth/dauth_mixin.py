@@ -150,7 +150,7 @@ class _DauthMixin(object):
           result = self.bc_direct.web3_is_node_licensed(node_address_eth)
       except Exception as e:
         result = False
-        msg = "Error checking if node is allowed ({} on {}): {} ".format(node_address_eth, self._network , e)
+        msg = "Error checking if node is allowed ({} on {}): {} ".format(node_address_eth, self.evm_network , e)
     return result, msg
   
   
@@ -258,7 +258,6 @@ class _DauthMixin(object):
     version_check_data = VersionCheckData(result=False, message="", requester_type=None)
         
     dAuthConst = self.const.BASE_CT.dAuth
-    self._network = self.os_environ.get(dAuthConst.DAUTH_NET_ENV_KEY, dAuthConst.DAUTH_SDK_NET_DEFAULT)
     
     data = {
       dAuthConst.DAUTH_SUBKEY : {
