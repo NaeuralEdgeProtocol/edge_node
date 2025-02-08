@@ -271,9 +271,9 @@ class _DauthMixin(object):
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
     requester_alias = body.get("sender_alias")
     
-    sender_app_version = data.get(dAuthConst.DAUTH_SENDER_APP_VER)
-    sender_core_version = data.get(dAuthConst.DAUTH_SENDER_CORE_VER)
-    sender_sdk_version = data.get(dAuthConst.DAUTH_SENDER_SDK_VER)            
+    sender_app_version = body.get(dAuthConst.DAUTH_SENDER_APP_VER)
+    sender_core_version = body.get(dAuthConst.DAUTH_SENDER_CORE_VER)
+    sender_sdk_version = body.get(dAuthConst.DAUTH_SENDER_SDK_VER)            
                 
     if requester is None:
       error = 'No sender address in request.'
