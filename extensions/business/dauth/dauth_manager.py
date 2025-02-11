@@ -25,6 +25,8 @@ _CONFIG = {
   
   'DAUTH_VERBOSE' : True,
   
+  'SUPRESS_LOGS_AFTER_INTERVAL' : 300,
+  
   # required ENV keys are defined in plugin template and should be added here
   
   "AUTH_ENV_KEYS" : [

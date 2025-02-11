@@ -1,15 +1,15 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Build main branchimage and tag commit/image with version number
+name: Build develop image
 
 on:
   push:
     branches:
-      - "main"
+      - "develop"
   workflow_dispatch:
 
 jobs:
-  tag-and-build-push:
+  build-and-push-testnet:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,7 +22,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-
 
       ## version getting and debugging
 
@@ -47,32 +46,6 @@ jobs:
           LATEST_NAEURAL_CORE_VERSION: ${{ env.LATEST_NAEURAL_CORE_VERSION }}
 
       ## End of version getting and debugging
-  
-      - name: Create image tag
-        id: create_image_tag
-        run: |
-          VERSION=${VERSION//\'/}
-          echo "IMAGE_TAG=naeural/edge_node:$VERSION" >> $GITHUB_ENV
-        env:
-          VERSION: ${{ env.VERSION }}
-
-      - name: Debug version
-        run: |
-          VERSION=${VERSION//\'/}
-          echo "Version to tag: '$VERSION'"
-          echo "Image tag: '$IMAGE_TAG'"
-        env:
-          VERSION: ${{ env.VERSION }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-
-      - name: Tag main commit
-        run: |
-          VERSION=${VERSION//\'/}
-          git tag -a $VERSION -m "Version $VERSION"
-          git push origin $VERSION
-        env:
-          VERSION: ${{ env.VERSION }}
-
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -98,13 +71,22 @@ jobs:
               echo "========================================"
     
 
-      - name: Build and push Amd64
+      - name: Build and push Amd64 TESTNET image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile_testnet
+          push: true
+          # tags: "naeural/edge_node:develop"
+          tags: |
+                naeural/edge_node:develop
+                naeural/edge_node:testnet
+
+      - name: Build and push Amd64 DEVNET image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile_devnet
           push: true
           tags: |
-              ${{ env.IMAGE_TAG }}
-              naeural/edge_node:latest
-              naeural/edge_node:mainnet
+                naeural/edge_node:devnet

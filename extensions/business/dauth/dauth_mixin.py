@@ -86,7 +86,12 @@ class _DauthMixin(object):
     return wl, names
 
   
-  def version_check(self, data : dict):
+  def version_check(
+    self, 
+    sender_app_version : str,
+    sender_core_version : str,
+    sender_sdk_version : str
+  ):
     """
     Check the version of the node that is sending the request.
     Returns `None` if all ok and a message if there is a problem.
@@ -96,9 +101,6 @@ class _DauthMixin(object):
     #
     output = VersionCheckData(result=True, message="")
     dAuthCt = self.const.BASE_CT.dAuth
-    sender_app_version = data.get(dAuthCt.DAUTH_SENDER_APP_VER)
-    sender_core_version = data.get(dAuthCt.DAUTH_SENDER_CORE_VER)
-    sender_sdk_version = data.get(dAuthCt.DAUTH_SENDER_SDK_VER)
     int_sender_app_version = version_to_int(sender_app_version)
     int_sender_core_version = version_to_int(sender_core_version)
     int_sender_sdk_version = version_to_int(sender_sdk_version)
@@ -267,15 +269,21 @@ class _DauthMixin(object):
     dct_dauth = data[dAuthConst.DAUTH_SUBKEY]
     
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
+    requester_alias = body.get("sender_alias")
+    
+    sender_app_version = body.get(dAuthConst.DAUTH_SENDER_APP_VER)
+    sender_core_version = body.get(dAuthConst.DAUTH_SENDER_CORE_VER)
+    sender_sdk_version = body.get(dAuthConst.DAUTH_SENDER_SDK_VER)            
+                
     if requester is None:
       error = 'No sender address in request.'
       
     if error is None:
       try:
         requester_eth = self.__internal_to_eth(requester)    
-        self.Pd("Received request from {} for auth:\n{}".format(
-          requester, self.json_dumps(body, indent=2))
-        )
+        self.Pd("dAuth req from '{}' <{}> app:{}, core:{}, sdk:{}".format(
+          requester_alias, requester, sender_app_version, sender_core_version, sender_sdk_version
+        ))
       except Exception as e:
         error = 'Error converting node address to eth address: {}'.format(e)
     
@@ -287,7 +295,11 @@ class _DauthMixin(object):
 
     ###### basic version checks ######
     if error is None:
-      version_check_data : VersionCheckData = self.version_check(body)
+      version_check_data : VersionCheckData = self.version_check(
+        sender_app_version=sender_app_version,
+        sender_core_version=sender_core_version,
+        sender_sdk_version=sender_sdk_version
+      )
       if not version_check_data.result:
         # not None means we have a error message
         error = 'Version check failed: {}'.format(version_check_data.message)
