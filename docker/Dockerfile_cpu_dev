@@ -1,0 +1,26 @@
+FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cpu-tr4.43.3
+
+
+COPY ./cmds /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
+
+
+WORKDIR /edge_node
+COPY . .
+RUN rm -rf /edge_node/cmds
+
+################################################################
+############### SET NODE ENVIRONMENT VARIABLES #################
+################################################################
+# ENV ...
+
+
+################################################################
+############## END SET NODE ENVIRONMENT VARIABLES ##############
+################################################################
+
+
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --no-deps naeural-core
+
+CMD ["python3","device.py"]
