@@ -98,11 +98,11 @@ jobs:
               echo "========================================"
     
 
-      - name: Build and push Amd64
+      - name: Build and push the Amd64 Mainnet image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile_mainnet
           push: true
           tags: |
               ${{ env.IMAGE_TAG }}
