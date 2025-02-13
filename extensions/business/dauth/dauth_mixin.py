@@ -110,16 +110,18 @@ class _DauthMixin(object):
     
     if int_sender_app_version == 0 and int_sender_core_version == 0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_SDK
+      output.message += f"SDK v{sender_sdk_version} accepted for dAuth request."
     elif int_sender_app_version == 0 and int_sender_core_version >0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_CORE
       output.result = False # we should block this
-      output.message = "Invalid sender version data - core and sdk only not allowed for dAuth"
+      output.message += "Invalid sender version data - core and sdk only not allowed for dAuth"
     elif int_sender_app_version > 0 and int_sender_core_version > 0 and int_sender_sdk_version > 0:
       output.requester_type = dAuthCt.DAUTH_SENDER_TYPE_NODE
+      output.message += f"Edge Node v{sender_app_version} pre-accepted for dAuth request."
     else:
       output.requester_type = "unknown"
       output.result = False
-      output.message = "Invalid sender version data."
+      output.message += "Invalid sender version data."
     
     if int_sender_app_version > 0 and int_sender_app_version < int_server_app_version:
       output.message += f" Sender app version {sender_app_version} is lower than server app version {self.ee_ver}."
@@ -129,6 +131,8 @@ class _DauthMixin(object):
       # maybe we should block below a certain level
     if int_sender_sdk_version > 0 and int_sender_sdk_version < int_server_sdk_version:
       output.message += f" Sender sdk version {sender_sdk_version} is lower than server sdk version {self.ee_sdk_ver}."
+    elif int_sender_sdk_version != int_server_sdk_version:
+      output.message += f" Sender sdk version {sender_sdk_version} is different from server sdk version {self.ee_sdk_ver}."
       # maybe we should block below a certain level
     return output
   
