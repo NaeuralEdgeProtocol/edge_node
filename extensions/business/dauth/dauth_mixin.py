@@ -45,46 +45,6 @@ class _DauthMixin(object):
       self.P(*args, **kwargs)
     return  
 
-  def __eth_to_internal(self, eth_node_address):
-    return self.netmon.epoch_manager.eth_to_internal(eth_node_address)
-  
-
-  def __internal_to_eth(self, internal_node_address):
-    return self.bc_direct.node_address_to_eth_address(internal_node_address)
-
-
-  def _eth_list_to_internal(self, lst_eth):
-    return [self.__eth_to_internal(eth) for eth in lst_eth]
-  
-  
-
- 
-  def _get_oracles_information(self):
-    """
-    Get the whitelist data for the current node.
-    
-    Returns
-    -------    
-    list, list : oracles, oracles_names
-    
-    TODO: modify this to Web3 approach
-      - get the oracles eth addresses from SC
-      - convert each in internal address
-      - try to obtain aliases if available
-      - return both
-    """
-    wl, names = [], []
-    try:
-      eth_oracles = self.bc_direct.web3_get_oracles()
-      for eth_addr in eth_oracles:
-        internal_addr = self.__eth_to_internal(eth_addr)
-        wl.append(internal_addr)
-        alias = self.netmon.network_node_eeid(internal_addr)
-        names.append(alias)
-    except Exception as e:
-      self.P("Error getting whitelist data: {}".format(e), color='r')      
-    return wl, names
-
   
   def version_check(
     self, 
@@ -153,7 +113,7 @@ class _DauthMixin(object):
     else:
       try:
         if version_check_data.requester_type != self.const.BASE_CT.dAuth.DAUTH_SENDER_TYPE_SDK:
-          result = self.bc_direct.web3_is_node_licensed(node_address_eth)
+          result = self.bc.is_node_licensed(node_address_eth)
       except Exception as e:
         result = False
         msg = "Error checking if node is allowed ({} on {}): {} ".format(node_address_eth, self.evm_network , e)
@@ -198,7 +158,8 @@ class _DauthMixin(object):
       raise ValueError("No predefined keys defined (AUTH_PREDEFINED_KEYS==null). Please check the configuration")
     
     ### get the mandatory oracles whitelist and populate answer  ###  
-    oracles, oracles_names = self._get_oracles_information()    
+    oracles, oracles_names, oracles_eth = self.bc.get_oracles(include_eth_addrs=True)   
+    self.Pd("Oracles: {}".format(oracles_eth))
     full_whitelist = [
       a + (f"  {b}" if len(b) > 0 else "") 
       for a, b in zip(oracles, oracles_names)
@@ -284,16 +245,17 @@ class _DauthMixin(object):
       
     if error is None:
       try:
-        requester_eth = self.__internal_to_eth(requester)    
-        self.Pd("dAuth req from '{}' <{}> app:{}, core:{}, sdk:{}".format(
-          requester_alias, requester, sender_app_version, sender_core_version, sender_sdk_version
+        requester_eth = self.bc.node_address_to_eth_address(requester)    
+        self.Pd("dAuth req from '{}' <{}> | <{}>, app:{}, core:{}, sdk:{}".format(
+          requester_alias, requester, requester_eth,
+          sender_app_version, sender_core_version, sender_sdk_version
         ))
       except Exception as e:
         error = 'Error converting node address to eth address: {}'.format(e)
     
     ###### verify the request signature ######
     if error is None:
-      verify_data = self.bc_direct.verify(body, return_full_info=True)
+      verify_data = self.bc.verify(body, return_full_info=True)
       if not verify_data.valid:
         error = 'Invalid request signature: {}'.format(verify_data.message)
 
@@ -354,17 +316,22 @@ if __name__ == '__main__':
   from naeural_client._ver import __VER__ as sdk_ver
   from naeural_core.main.ver import __VER__ as core_ver
   from constants import ADMIN_PIPELINE
+  from naeural_core.utils.plugins_base.bc_wrapper import BCWrapper
+  
     
   from naeural_client.bc import DefaultBlockEngine
   from naeural_client import Logger
   from ver import __VER__ as ee_ver
   
   l = Logger("DAUTH", base_folder=".", app_folder="_local_cache")
-  bc = DefaultBlockEngine(log=l, name="default")
+  bc_eng = DefaultBlockEngine(log=l, name="default")
+  
+  bc = BCWrapper(bc_eng, owner=l)
   
   eng = _DauthMixin()
+  eng._DEBUG_DAUTH_MIXIN = True
   eng.const = ct
-  eng.bc_direct = bc
+  eng.bc = bc
   eng.cfg_dauth_verbose = True
   eng.P = l.P
   eng.json_dumps = json.dumps

@@ -71,13 +71,9 @@ class DauthManagerPlugin(
     self.P("Started {} plugin on {} / {}\n - Auth keys: {}\n - Predefined keys: {}".format(
       self.__class__.__name__, my_address, my_eth_address,
       self.cfg_auth_env_keys, self.cfg_auth_predefined_keys)
-    )
+    )        
     return
-  
-  @property
-  def bc_direct(self) -> DefaultBlockEngine:
-    return self.global_shmem[self.const.BLOCKCHAIN_MANAGER]
-  
+    
   
   def __get_current_epoch(self):
     """
