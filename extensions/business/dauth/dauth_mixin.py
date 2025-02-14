@@ -297,10 +297,12 @@ class _DauthMixin(object):
         error = 'Node not allowed to request auth data. ' + message
     
     ####### now we prepare env variables ########
+    short_requester = requester[:8] + '...' + requester[-4:]
+    short_eth = requester_eth[:6] + '...' + requester_eth[-4:]
     if error is not None:
       dct_dauth['error'] = error
-      self.P("dAuth request '{}' failed for <{}> (ETH: {}): {}".format(
-        sender_nonce, requester, requester_eth, error), color='r'
+      self.P("dAuth request '{}' failed for <{}>  '{}' (ETH: {}): {}".format(
+        sender_nonce, short_requester, requester_alias, short_eth, error), color='r'
       )
     else:
       if _non_critical_error is not None:
@@ -308,8 +310,8 @@ class _DauthMixin(object):
         self.Pd("Non-critical error on request from {}: {}".format(requester, _non_critical_error))
       ### Finally we fill the data with the authentication data
       self.fill_dauth_data(dct_dauth, requester_node_address=requester)
-      self.P("dAuth req '{}' success for <{}> (ETH: {})".format(
-        sender_nonce, requester, requester_eth)
+      self.P("dAuth req '{}' success for <{}> '{}' (ETH: {})".format(
+        sender_nonce, short_eth, requester_alias, short_eth)
       )
       ### end fill data
               
