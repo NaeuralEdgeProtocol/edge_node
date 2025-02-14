@@ -23,7 +23,7 @@ _CONFIG = {
   
   'ASSETS' : 'nothing', # TODO: this should not be required in future
   
-  'DAUTH_VERBOSE' : True,
+  'DAUTH_VERBOSE' : False,
   
   'SUPRESS_LOGS_AFTER_INTERVAL' : 300,
   

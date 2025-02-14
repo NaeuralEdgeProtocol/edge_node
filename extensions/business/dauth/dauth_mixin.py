@@ -34,15 +34,16 @@ class VersionCheckData(_DotDict):
 class _DauthMixin(object):
 
   def __init__(self):
-    super(_DauthMixin, self).__init__()
+    super(_DauthMixin, self).__init__()    
     return
 
-  def Pd(self, *args, **kwargs):
+  def Pd(self, s, *args, **kwargs):
     """
     Print a message to the console.
     """
     if self.cfg_dauth_verbose:
-      self.P(*args, **kwargs)
+      s = "[DDBG] " + s
+      self.P(s, *args, **kwargs)
     return  
 
   
@@ -105,18 +106,23 @@ class _DauthMixin(object):
     """
     Check if the node address is allowed to request authentication data.
     """
+    self.Pd(f"Checking if node {node_address} (ETH: {node_address_eth}) is allowed")
     msg = ""
-    result = True
+    result = True    
     if not version_check_data.result:
       result = False
       msg = "Version check failed: {}".format(version_check_data.message)
     else:
       try:
         if version_check_data.requester_type != self.const.BASE_CT.dAuth.DAUTH_SENDER_TYPE_SDK:
-          result = self.bc.is_node_licensed(node_address_eth)
+          result = self.bc.is_node_licensed(node_address_eth=node_address_eth)
+          str_allowed = "allowed" if result else "not allowed"
+          msg = f"node {node_address_eth} {str_allowed} on {self.evm_network}"
       except Exception as e:
         result = False
-        msg = "Error checking if node is allowed ({} on {}): {} ".format(node_address_eth, self.evm_network , e)
+        msg = "Error checking if node is allowed ({} on {}): {} ".format(
+          node_address_eth, self.evm_network, e
+        )
     return result, msg
   
   
@@ -124,14 +130,17 @@ class _DauthMixin(object):
     self, 
     node_address : str, 
     node_address_eth : str, 
-    dauth_data : dict
+    dauth_data : dict,
+    sender_nonce : str,
   ):
     """
     Set the chainstore data for the requester.
     
     
     """
-    self.Pd("CSTORE dAuth data for node {} ({})".format(node_address, node_address_eth))
+    self.Pd("CSTORE dAuth request '{}' data for node {} ({})".format(
+      sender_nonce, node_address, node_address_eth)
+    )
     return
   
   
@@ -159,7 +168,7 @@ class _DauthMixin(object):
     
     ### get the mandatory oracles whitelist and populate answer  ###  
     oracles, oracles_names, oracles_eth = self.bc.get_oracles(include_eth_addrs=True)   
-    self.Pd("Oracles: {}".format(oracles_eth))
+    self.Pd(f"Oracles on {self.evm_network}: {oracles_eth}")
     full_whitelist = [
       a + (f"  {b}" if len(b) > 0 else "") 
       for a, b in zip(oracles, oracles_names)
@@ -233,7 +242,10 @@ class _DauthMixin(object):
     }
     dct_dauth = data[dAuthConst.DAUTH_SUBKEY]
     
+    sender_nonce = body.get(dAuthConst.DAUTH_NONCE)
+    
     requester = body.get(self.const.BASE_CT.BCctbase.SENDER)
+    requester_send_eth = body.get(self.const.BASE_CT.BCctbase.ETH_SENDER)
     requester_alias = body.get("sender_alias")
     
     sender_app_version = body.get(dAuthConst.DAUTH_SENDER_APP_VER)
@@ -245,11 +257,14 @@ class _DauthMixin(object):
       
     if error is None:
       try:
-        requester_eth = self.bc.node_address_to_eth_address(requester)    
-        self.Pd("dAuth req from '{}' <{}> | <{}>, app:{}, core:{}, sdk:{}".format(
-          requester_alias, requester, requester_eth,
-          sender_app_version, sender_core_version, sender_sdk_version
-        ))
+        requester_eth = self.bc.node_address_to_eth_address(requester)
+        if requester_eth != requester_send_eth:
+          error = 'Sender eth address and recovered eth address do not match.'  
+        else:
+          self.Pd("dAuth req from '{}' <{}> | <{}>, app:{}, core:{}, sdk:{}".format(
+            requester_alias, requester, requester_eth,
+            sender_app_version, sender_core_version, sender_sdk_version
+          ))
       except Exception as e:
         error = 'Error converting node address to eth address: {}'.format(e)
     
@@ -284,19 +299,24 @@ class _DauthMixin(object):
     ####### now we prepare env variables ########
     if error is not None:
       dct_dauth['error'] = error
-      self.Pd("Error on request from <{}>: {}".format(requester, error), color='r')
+      self.P("dAuth request '{}' failed for <{}> (ETH: {}): {}".format(
+        sender_nonce, requester, requester_eth, error), color='r'
+      )
     else:
       if _non_critical_error is not None:
         dct_dauth['error'] = _non_critical_error
         self.Pd("Non-critical error on request from {}: {}".format(requester, _non_critical_error))
       ### Finally we fill the data with the authentication data
       self.fill_dauth_data(dct_dauth, requester_node_address=requester)
+      self.P("dAuth req '{}' success for <{}> (ETH: {})".format(
+        sender_nonce, requester, requester_eth)
+      )
       ### end fill data
               
       # record the node_address and the auth data      
       self.chainstore_store_dauth_request(
         node_address=requester, node_address_eth=requester_eth, 
-        dauth_data=data
+        dauth_data=data, sender_nonce=sender_nonce
       )
     #end no errors
     
@@ -328,10 +348,12 @@ if __name__ == '__main__':
   
   bc = BCWrapper(bc_eng, owner=l)
   
+  
+  os.environ['EE_EVM_NET'] = 'testnet'
   eng = _DauthMixin()
-  eng._DEBUG_DAUTH_MIXIN = True
   eng.const = ct
   eng.bc = bc
+  eng.evm_network = bc.get_evm_network()
   eng.cfg_dauth_verbose = True
   eng.P = l.P
   eng.json_dumps = json.dumps
@@ -344,7 +366,7 @@ if __name__ == '__main__':
   
   
   
-  request = {
+  request_sdk = {
       "sender_alias": "test1",
       "nonce": "a14473a1",
       "sender_app_ver": None,
@@ -357,26 +379,26 @@ if __name__ == '__main__':
       "EE_HASH": "e6a3f87d035b632c119cf1cacf02fcda79887fa24b3fa6355f6ec26b6c6cae70"
   }
   
-  request_bad = {
+  request_bad_node = {
+      "nonce": "74c4629f",
+      "sender_app_ver": "2.7.27",
+      "sender_sdk_ver": "2.7.27",
+      "sender_core_ver": "7.6.61",
       "sender_alias": "test1",
-      "app_version": "2.2.2",
-      "nonce": "9ad471a3",
-      "sender_app_ver": "2.2.2",
-      "sender_sdk_ver": "2.6.32",
-      "sender_core_ver": None,
-      "EE_SIGN": "MEYCIQDcWlOMvq3vqm2Qo0j-poSb9ex01s4LK3LvAeczHKzF5QIhAP7YWZy0JIO2vky-byzUuzjlwLklWqQ7JmJH_6OIN9hY",
-      "EE_SENDER": "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
-      "EE_ETH_SENDER": "0x13Dc6Ee23D45D1e4bF0BDBDf58BFdF24bB077e69",
+      "EE_SIGN": "MEUCIEmnPjCNwsSAlGANkT16IWMV4clYY4RoistByxIBIqJaAiEAsVSFSa3gip4TtiV-35PAjYZLVAdcIjJOJIT7_L4BxUI=",
+      "EE_SENDER": "0xai_AlgFNEkQMDvLLKW4EzxPN038XCH3vAC8ClO73LbG7N8K",
+      "EE_ETH_SENDER": "0x2f7B47edF44a1eD1ED04099F1beaf1aCb8176498",
       "EE_ETH_SIGN": "0xBEEF",
-      "EE_HASH": "edd7ea2e22c544e112628dd8bf1722b82ad1e8b46ce07e68d6cb65c0fb032179"    
-  }
+      "EE_HASH": "6e8b5267f163d7bdb476cbb75d305c755bfb9534be7aee9083c142d9d371de9c"
+    }
+  
   
   request_faulty = {
     "EE_SENDER" : "0xai_AjcIThkOqrPlp35-S8czHUOV-y4mnhksnLs8NGjTbmty",
   }
   
   # res = eng.process_dauth_request(request_faulty)
-  res = eng.process_dauth_request(request)
+  res = eng.process_dauth_request(request_sdk)
   # res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       
