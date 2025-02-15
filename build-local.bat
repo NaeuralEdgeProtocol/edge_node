@@ -1,1 +1,1 @@
-docker build -t local_edge_node -f Dockerfile_dev .
+docker build -t local_edge_node -f Dockerfile_devnet .
