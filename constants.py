@@ -45,6 +45,9 @@ ADMIN_PIPELINE = {
       "EE_MINIO_UPLOAD_BUCKET",
       
       "EE_NGROK_AUTH_TOKEN",
+      
+      "EE_IPFS_RELAY",
+      "EE_SWARM_KEY_CONTENT_BASE64"
     ],
     
     "AUTH_PREDEFINED_KEYS" : {
