@@ -170,13 +170,15 @@ class _DauthMixin(object):
     if dct_auth_predefined_keys is None:
       raise ValueError("No predefined keys defined (AUTH_PREDEFINED_KEYS==null). Please check the configuration")
     
-    ### get the mandatory oracles whitelist and populate answer  ###  
-    oracles, oracles_names, oracles_eth = self.bc.get_oracles(include_eth_addrs=True)   
-    self.Pd(f"Oracles on {self.evm_network}: {oracles_eth}")
-    full_whitelist = [
-      a + (f"  {b}" if len(b) > 0 else "") 
-      for a, b in zip(oracles, oracles_names)
-    ]
+    full_whitelist = []
+    if is_node:
+      ### get the mandatory oracles whitelist and populate answer  ###  
+      oracles, oracles_names, oracles_eth = self.bc.get_oracles(include_eth_addrs=True)   
+      self.Pd(f"Oracles on {self.evm_network}: {oracles_eth}")
+      full_whitelist = [
+        a + (f"  {b}" if len(b) > 0 else "") 
+        for a, b in zip(oracles, oracles_names)
+      ]
     dauth_data[dAuthCt.DAUTH_WHITELIST] = full_whitelist
 
     #####  finally prepare the env auth data #####
@@ -198,7 +200,7 @@ class _DauthMixin(object):
       dauth_data[key] = dct_auth_predefined_keys[key]
     
     # set the supervisor flag if this is identified as an oracle
-    if requester_node_address in oracles:
+    if is_node and requester_node_address in oracles:
       dauth_data["EE_SUPERVISOR"] = True
       for key in self.cfg_supervisor_keys:
         if isinstance(key, str) and len(key) > 0:
@@ -429,7 +431,7 @@ if __name__ == '__main__':
   }
   
   # res = eng.process_dauth_request(request_faulty)
-  res = eng.process_dauth_request(request_bad_node)
+  res = eng.process_dauth_request(request_sdk)
   # res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       
