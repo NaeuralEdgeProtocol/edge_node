@@ -48,10 +48,10 @@ class R1fsDemoPlugin(BasePlugin):
   def __save_some_data(self):
     self.P("Saving some data...")
     uuid1 = self.uuid()
-    uuid1 = self.uuid()
+    uuid2 = self.uuid()
     data = {
       'key1': uuid1,
-      'key2': uuid1,
+      'key2': uuid2,
       'owner' : self.str_unique_identification
     }
     # TODO: r1fs.add_json or yaml
