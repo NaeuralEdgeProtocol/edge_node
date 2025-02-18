@@ -24,9 +24,7 @@ Stream configuration:
 """
 
 from naeural_core.business.base import BasePluginExecutor as BaseClass
-from time import time
-from naeural_core import constants as ct
-import numpy as np
+
 
 _CONFIG = {
   **BaseClass.CONFIG,
@@ -74,7 +72,7 @@ class ADummyJobMapReducePlugin(BaseClass):
   @property
   def avg_progress(self):
     lst = [self._gathered_progress.get(x, {}).get('PROGRESS', 0) for x in self._lst_workers]
-    avg_progress = np.mean(lst)
+    avg_progress = self.np.mean(lst)
     return avg_progress
 
   def _phase_map(self):
@@ -83,7 +81,9 @@ class ADummyJobMapReducePlugin(BaseClass):
     lst_chunks = struct_data['chunks']
     self._lst_workers = metadata['workers']
     if len(lst_chunks) != len(self._lst_workers):
-      payload = self._create_payload(stage=ct.STAGE_SEARCH_WORKERS, started_jobs=self._started_jobs)
+      payload = self._create_payload(
+        stage=self.const.STAGE_SEARCH_WORKERS, started_jobs=self._started_jobs
+      )
       return payload
     #endif
 
@@ -184,7 +184,7 @@ class ADummyJobMapReducePlugin(BaseClass):
         # it means that progress is 100, so the stream finished the acquisition
         if self.cfg_resend_golden:
           payload = self._golden_payload
-        elif time() - self.last_payload_time >= 20:
+        elif self.time() - self.last_payload_time >= 20:
           payload = self._create_payload(ping=True)
       return payload
     #endif
