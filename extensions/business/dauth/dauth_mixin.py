@@ -144,7 +144,7 @@ class _DauthMixin(object):
     return
   
   
-  def fill_dauth_data(self, dauth_data, requester_node_address):
+  def fill_dauth_data(self, dauth_data, requester_node_address, is_node=False):
     """
     Fill the data with the authentication data.
     """
@@ -153,11 +153,15 @@ class _DauthMixin(object):
     ## TODO: review this section:
     ##         maybe we should NOT use the default values or maybe we should just use the default values
     lst_auth_env_keys = self.cfg_auth_env_keys
+    lst_auth_node_only_keys = self.cfg_auth_node_env_keys
     dct_auth_predefined_keys = self.cfg_auth_predefined_keys
     
     default_env_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_ENV_KEYS"]
+    default_node_only_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_NODE_ENV_KEYS"]
     default_predefined_keys = self.const.ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_PREDEFINED_KEYS"]
+
     lst_auth_env_keys = list(set(lst_auth_env_keys + default_env_keys))
+    lst_auth_node_only_keys = list(set(lst_auth_node_only_keys + default_node_only_keys))
     dct_auth_predefined_keys = {**dct_auth_predefined_keys, **default_predefined_keys}
     
     if lst_auth_env_keys is None:
@@ -176,9 +180,18 @@ class _DauthMixin(object):
     dauth_data[dAuthCt.DAUTH_WHITELIST] = full_whitelist
 
     #####  finally prepare the env auth data #####
+    
+    # first set is the universal (node, sdk, core) keys
     for key in lst_auth_env_keys:
-      if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX):
+      if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX) and key not in lst_auth_node_only_keys:
         dauth_data[key] = self.os_environ.get(key)
+        
+    if is_node:
+      # then set the node-only keys
+      for key in lst_auth_node_only_keys:
+        if key.startswith(dAuthCt.DAUTH_ENV_KEYS_PREFIX):
+          dauth_data[key] = self.os_environ.get(key)
+      # end for
     
     # overwrite the predefined keys
     for key in dct_auth_predefined_keys:
@@ -287,6 +300,8 @@ class _DauthMixin(object):
       elif version_check_data.message not in [None, '']:
         _non_critical_error = version_check_data.message
 
+    is_requester_a_node = version_check_data.requester_type == dAuthConst.DAUTH_SENDER_TYPE_NODE
+    
     ###### check if node_address is allowed ######   
     if error is None:
       allowed_to_dauth, message = self.check_if_node_allowed(
@@ -295,6 +310,16 @@ class _DauthMixin(object):
       )
       if not allowed_to_dauth:
         error = 'Node not allowed to request auth data. ' + message
+    
+    if False and hasattr(self, "DEBUG_BYPASS") and self.DEBUG_BYPASS:
+      # this is a debug flag that allows us to bypass the node check
+      # this is useful for testing
+      if not allowed_to_dauth:
+        self.Pd("DEBUG: Bypassing node check")
+        allowed_to_dauth = True
+        _non_critical_error = error + " (DEBUG: Bypassing node check)"
+        error = None
+    # end if DEBUG_BYPASS
     
     ####### now we prepare env variables ########
     short_requester = requester[:8] + '...' + requester[-4:]
@@ -309,7 +334,9 @@ class _DauthMixin(object):
         dct_dauth['error'] = _non_critical_error
         self.Pd("Non-critical error on request from {}: {}".format(requester, _non_critical_error))
       ### Finally we fill the data with the authentication data
-      self.fill_dauth_data(dct_dauth, requester_node_address=requester)
+      self.fill_dauth_data(
+        dauth_data=dct_dauth, requester_node_address=requester, is_node=is_requester_a_node
+      )
       self.P("dAuth req '{}' success for <{}> '{}' (ETH: {})".format(
         sender_nonce, short_eth, requester_alias, short_eth)
       )
@@ -351,8 +378,9 @@ if __name__ == '__main__':
   bc = BCWrapper(bc_eng, owner=l)
   
   
-  os.environ['EE_EVM_NET'] = 'testnet'
+  # os.environ['EE_EVM_NET'] = 'testnet'
   eng = _DauthMixin()
+  eng.DEBUG_BYPASS = True
   eng.const = ct
   eng.bc = bc
   eng.evm_network = bc.get_evm_network()
@@ -365,6 +393,7 @@ if __name__ == '__main__':
   eng.os_environ = os.environ
   eng.cfg_auth_env_keys = ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_ENV_KEYS"]
   eng.cfg_auth_predefined_keys = ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_PREDEFINED_KEYS"]
+  eng.cfg_auth_node_env_keys = ADMIN_PIPELINE["DAUTH_MANAGER"]["AUTH_NODE_ENV_KEYS"]
   
   
   
@@ -400,7 +429,7 @@ if __name__ == '__main__':
   }
   
   # res = eng.process_dauth_request(request_faulty)
-  res = eng.process_dauth_request(request_sdk)
+  res = eng.process_dauth_request(request_bad_node)
   # res = eng.process_dauth_request(request_bad)
   l.P(f"Result:\n{json.dumps(res, indent=2)}")
       

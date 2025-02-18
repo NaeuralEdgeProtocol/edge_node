@@ -27,13 +27,19 @@ _CONFIG = {
   
   'SUPRESS_LOGS_AFTER_INTERVAL' : 300,
   
-  # required ENV keys are defined in plugin template and should be added here
-  
+  # required ENV keys are defined in plugin template and should be added here  
   "AUTH_ENV_KEYS" : [
   ],
+
+  # node-only ENV keys should be added in this list - these are keys that should
+  # not get to the non-nodes
+  "AUTH_NODE_ENV_KEYS" : [
+  ],
+
   
   "AUTH_PREDEFINED_KEYS" : {
   },
+  
   
   "SUPERVISOR_KEYS" : [
     "EE_NGROK_EDGE_LABEL_EPOCH_MANAGER",
