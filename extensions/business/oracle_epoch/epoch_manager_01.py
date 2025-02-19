@@ -379,7 +379,13 @@ class EpochManager01Plugin(BasePlugin):
   
   
   @BasePlugin.endpoint
-  def node_epochs_range(self, eth_node_addr : str, node_addr: str, start_epoch : int, end_epoch : int):
+  def node_epochs_range(
+    self, 
+    start_epoch : int, 
+    end_epoch : int, 
+    eth_node_addr : str = None, 
+    node_addr: str = None
+  ):
     """
     Returns the list of epochs availabilities for a given node in a given range of epochs.
 
@@ -429,9 +435,10 @@ class EpochManager01Plugin(BasePlugin):
     ))
     return response
 
+
   @BasePlugin.endpoint
   # /node_epochs
-  def node_epochs(self, eth_node_addr: str):
+  def node_epochs(self, eth_node_addr: str = None, node_addr: str = None):
     """
     Returns the list of epochs availabilities for a given node.
 
@@ -439,13 +446,21 @@ class EpochManager01Plugin(BasePlugin):
     ----------
     eth_node_addr : str
         The EVM address of a node.
+        
+    node_addr : str
+        The internal address of a node.
 
     Returns
     -------
     dict
 
     """
-    node_addr = self.__eth_to_internal(eth_node_addr)    
+    if eth_node_addr is not None:
+      node_addr = self.__eth_to_internal(eth_node_addr)
+    elif node_addr is None:
+      raise ValueError("Please provide either `eth_node_addr` or `node_addr`")
+    
+    
     if node_addr is None:
       return None
     if not isinstance(node_addr, str):
@@ -456,7 +471,7 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_epoch
-  def node_epoch(self, eth_node_addr: str, node_addr: str, epoch: int):
+  def node_epoch(self, epoch: int, eth_node_addr: str = None, node_addr: str = None):
     """
     Returns the availability of a given node in a given epoch.
 
@@ -511,7 +526,7 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_last_epoch
-  def node_last_epoch(self, eth_node_addr: str, node_addr: str):
+  def node_last_epoch(self, eth_node_addr: str = None, node_addr: str = None):
     """
     Returns the availability of a given node in the last epoch.
 
@@ -564,6 +579,7 @@ class EpochManager01Plugin(BasePlugin):
         **data
       })
     return response
+
 
   @BasePlugin.endpoint
   # /current_epoch
