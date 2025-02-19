@@ -48,6 +48,8 @@ class R1fsDemoPlugin(BasePlugin):
   def on_init(self):
     # we store a unique ID for this instance 
     self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
+    self.__file_send_time = 0
+    self.__known_cids = []
     self.P(f'R1fsDemoPlugin v{__VER__} with ID: {self.my_id}')
     return
   
@@ -72,20 +74,34 @@ class R1fsDemoPlugin(BasePlugin):
   
   def __announce_cid(self, cid):
     self.P(f'Announcing CID: {cid}')
-    self.chainstore_set(key='r1fs.demo.announce_cid', value=cid)
-    # TODO: use CSTORE hash "r1fs.announce_cid" to announce the CID
+    self.chainstore_hset(hkey='r1fs-demo', key=self.my_id, value=cid)
     return    
   
   def __get_announced_cids(self):
     cids = []
     self.P("Checking for any announced CIDs...")
-    # TODO: use CSTORE hash "r1fs.announce_cid" to get any external CIDs
+    # get full dictionary of all announced CIDs under the key 'r1fs-demo'
+    # we assume all demo instances are using the same hkey and their own key
+    dct_data = self.chainstore_hgetall('r1fs-demo')
+    if dct_data:
+      # extract all the CIDs except our own
+      cids = [
+        v for k, v in dct_data.items() if k != self.my_id
+      ]
+      # now we filter based on already known CIDs
+      cids = [
+        cid for cid in cids if cid not in self.__known_cids
+      ]
+    if len(cids) > 0:
+      self.P(f"Found {len(cids)} CIDs ")
+      self.__known_cids.extend(cids)
     return cids
   
   def share_local_data(self):
-    self.P("Sharing data...")
-    cid = self.__save_some_data()
-    self.__announce_cid(cid)
+    if self.time() - self.__file_send_time > 3600:
+      self.P("Sharing data...")
+      cid = self.__save_some_data()
+      self.__announce_cid(cid)
     return cid
   
   def show_remote_shared_data(self):
