@@ -268,6 +268,8 @@ class EpochManager01Plugin(BasePlugin):
           last_seen = -1
         data['node_last_seen_sec'] = last_seen
         data['node_is_online'] = self.netmon.network_node_is_online(node_addr)
+        data['node_version'] = self.netmon.network_node_version(node_addr)
+        data['node_is_oracle'] = self.netmon.network_node_is_supervisor(node_addr)
         if not valid:
           data["error"] = "Oracle state is not valid for some of the epochs. Please check [result.oracle.manager.certainty] and report to devs. For testing purposes try using valid/certain epochs."
         # now add the certainty for each requested epoch
@@ -321,7 +323,7 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /active_nodes_list
-  def active_nodes_list(self):
+  def active_nodes_list(self, items_per_page: int = 10, page: int = 1):
     """
     Returns the list of known and currently active nodes in the network.
     For all the nodes use the `nodes_list` endpoint.
@@ -354,14 +356,30 @@ class EpochManager01Plugin(BasePlugin):
     #   if self.netmon.network_node_simple_status(addr=x) == self.const.DEVICE_STATUS_ONLINE
     # }
     nodes = self.netmon.epoch_manager.get_stats(display=True, online_only=True)
+    error = nodes.pop("error", None)
+    keys = sorted(list(nodes.keys()))
+    total_items = len(keys)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+    if page < 1:
+      page = 1
+    if page > total_pages:
+      page = total_pages
+    start = (page - 1) * items_per_page
+    end = start + items_per_page
+    nodes = {k: nodes[k] for k in keys[start:end]}
     response = self.__get_response({
-      'nodes': nodes,
+      'error' : error,
+      'nodes_total_items': total_items,
+      'nodes_total_pages': total_pages,
+      'nodes_items_per_page': items_per_page,
+      'nodes_page': page,
+      'nodes': nodes,      
     })
     return response
   
   
   @BasePlugin.endpoint
-  def node_epochs_range(self, eth_node_addr : str, start_epoch : int, end_epoch : int):
+  def node_epochs_range(self, eth_node_addr : str, node_addr: str, start_epoch : int, end_epoch : int):
     """
     Returns the list of epochs availabilities for a given node in a given range of epochs.
 
@@ -369,6 +387,9 @@ class EpochManager01Plugin(BasePlugin):
     ----------
     eth_node_addr : str
         The address of a node.
+        
+    node_addr : str
+        The internal address of a node.
         
     start_epoch : int
         The first epoch of the range.
@@ -398,7 +419,10 @@ class EpochManager01Plugin(BasePlugin):
         - server_uptime: str
             The time that the responding node has been running.
     """  
-    node_addr = self.__eth_to_internal(eth_node_addr)    
+    if eth_node_addr is not None:
+      node_addr = self.__eth_to_internal(eth_node_addr)
+    elif node_addr is None:
+      raise ValueError("Please provide either `eth_node_addr` or `node_addr`")
     
     response = self.__get_response(self.__get_node_epochs(
       node_addr, start_epoch=start_epoch, end_epoch=end_epoch
@@ -432,7 +456,7 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_epoch
-  def node_epoch(self, eth_node_addr: str, epoch: int):
+  def node_epoch(self, eth_node_addr: str, node_addr: str, epoch: int):
     """
     Returns the availability of a given node in a given epoch.
 
@@ -440,6 +464,9 @@ class EpochManager01Plugin(BasePlugin):
     ----------
     eth_node_addr : str
         The EVM address of a node.
+        
+    node_addr : str
+        The internal address of a node.
         
     epoch : int
         The target epoch.
@@ -460,7 +487,11 @@ class EpochManager01Plugin(BasePlugin):
         - epoch_prc: float
             The availability score of the node in the epoch as a percentage (between 0 and 1).
     """
-    node_addr = self.__eth_to_internal(eth_node_addr)    
+    if eth_node_addr is not None:
+      node_addr = self.__eth_to_internal(eth_node_addr)
+    elif node_addr is None:
+      raise ValueError("Please provide either `eth_node_addr` or `node_addr`")
+
     data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
     if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
       epoch_val = data['epochs_vals'][0]
@@ -480,7 +511,7 @@ class EpochManager01Plugin(BasePlugin):
 
   @BasePlugin.endpoint
   # /node_last_epoch
-  def node_last_epoch(self, eth_node_addr: str):
+  def node_last_epoch(self, eth_node_addr: str, node_addr: str):
     """
     Returns the availability of a given node in the last epoch.
 
@@ -488,6 +519,11 @@ class EpochManager01Plugin(BasePlugin):
     ----------
     eth_node_addr : str
         The EVM address of a node.
+        
+    node_addr : str
+        The internal address of a node.
+        
+    Note: Please provide either `eth_node_addr` or `node_addr`.
 
     Returns
     -------
@@ -506,7 +542,11 @@ class EpochManager01Plugin(BasePlugin):
             The availability score of the node in the last epoch as a percentage (between 0 and 1).
 
     """
-    node_addr = self.__eth_to_internal(eth_node_addr)
+    if eth_node_addr is not None:
+      node_addr = self.__eth_to_internal(eth_node_addr)
+    elif node_addr is None:
+      raise ValueError("Please provide either `eth_node_addr` or `node_addr`")
+    
     epoch = self.__get_current_epoch() - 1
     data = self.__get_node_epochs(node_addr, start_epoch=epoch, end_epoch=epoch)
     if isinstance(data.get('epochs_vals'), list) and len(data['epochs_vals']) > 0:
