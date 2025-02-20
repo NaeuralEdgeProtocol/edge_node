@@ -1,8 +1,6 @@
 """
 {
-    "CAP_RESOLUTION": 1,
-    "LIVE_FEED": true,
-    "NAME": "R1FS_DEMO",
+    "NAME": "R1FS_DEMO_PIPELINE",
     "PLUGINS": [
 
         {
@@ -33,7 +31,9 @@ _CONFIG = {
   **BasePlugin.CONFIG,
 
   # our overwritten props
-  'PROCESS_DELAY' : 30,
+  'PROCESS_DELAY' : 15,
+  
+  'INITIAL_WAIT'  : 15,
 
   'LOG_MESSAGE'   : '',
 
@@ -50,7 +50,9 @@ class R1fsDemoPlugin(BasePlugin):
     self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
     self.__file_send_time = 0
     self.__known_cids = []
+    self.__start_time = self.time()
     self.P(f'R1fsDemoPlugin v{__VER__} with ID: {self.my_id}')
+    self.P(f"Plugin instance will now wait for {self.cfg_initial_wait} sec")
     return
   
   def __save_some_data(self):
@@ -124,6 +126,9 @@ class R1fsDemoPlugin(BasePlugin):
 
 
   def process(self):
+    if self.time() - self.__start_time < self.cfg_initial_wait:
+      self.P(f"Waiting for {self.cfg_initial_wait} sec to start processing...")
+      return
     self.log('R1fsDemoPlugin is processing...')
     self.share_local_data()
     self.show_remote_shared_data()
