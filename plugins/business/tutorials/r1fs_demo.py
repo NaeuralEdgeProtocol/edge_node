@@ -2,7 +2,7 @@
 
 ```json
 {
-    "NAME": "R1FS_DEMO_PIPELINE",
+    "NAME": "r1fs_demo_pipeline",
     "PLUGINS": [
 
         {
@@ -69,16 +69,15 @@ _CONFIG = {
   # mandatory area
   **BasePlugin.CONFIG,
   # our overwritten props
-  'PROCESS_DELAY' : 15,
-  
+  'PROCESS_DELAY' : 15,  
   'INITIAL_WAIT'  : 15,
-
-  'LOG_MESSAGE'   : '',
-
+  # due to the fact that we are using a "void" pipeline, 
+  # we need to allow empty inputs as we are not getting any 
+  # data from the pipeline
+  'ALLOW_EMPTY_INPUTS': True, 
   'VALIDATION_RULES' : {
     **BasePlugin.CONFIG['VALIDATION_RULES'],    
   },  
-
 }
 
 class R1fsDemoPlugin(BasePlugin):
@@ -86,21 +85,15 @@ class R1fsDemoPlugin(BasePlugin):
   def on_init(self):
     # we store a unique ID for this instance 
     self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
-    self.__file_send_time = 0
-    self.__known_cids = []
-    self.__start_time = self.time()
-    self.__r1fs_demo_iter = 0
-    self.P(f'R1fsDemoPlugin v{__VER__} with ID: {self.my_id}')
-    self.P(f"Plugin instance will now wait for {self.cfg_initial_wait} sec")
+    self.__file_send_time = 0 # last time we sent a file
+    self.__known_cids = [] # keep track of known CIDs
+    self.__start_time = self.time() # start time of the plugin
+    self.__r1fs_demo_iter = 0 # iteration counter
+    self.P(f"Starting R1fsDemoPlugin v{__VER__} with ID: {self.my_id}. Plugin instance will now wait for {self.cfg_initial_wait} sec")
     return
   
   def __save_some_data(self):
-    """
-    The purpose of this method is to save some data to the R1FS and return the CID
-    of the saved data. The data is a simple dictionary with some arbitrary values 
-    just for demonstration purposes.
-    
-    """
+    """ Save some data to the R1FS """
     self.P("Saving some data...")
     uuid = self.uuid() # generate some random data
     value = self.np.random.randint(1, 100) # even more random data
@@ -114,11 +107,13 @@ class R1fsDemoPlugin(BasePlugin):
     return cid
   
   def __announce_cid(self, cid):
+    """ Announce the CID to the network via ChainStore hsets"""
     self.P(f'Announcing CID: {cid}')
     self.chainstore_hset(hkey='r1fs-demo', key=self.my_id, value=cid)
     return    
   
   def __get_announced_cids(self):
+    """ Get all announced CIDs except our own from ChainStore hsets"""
     cids = []
     self.P("Checking for any announced CIDs...")
     # get full dictionary of all announced CIDs under the key 'r1fs-demo'
@@ -139,6 +134,7 @@ class R1fsDemoPlugin(BasePlugin):
     return cids
   
   def share_local_data(self):
+    """ Share some data with the network """
     if self.time() - self.__file_send_time > 3600:
       self.P("Sharing data...")
       cid = self.__save_some_data()
@@ -146,6 +142,7 @@ class R1fsDemoPlugin(BasePlugin):
     return cid
   
   def show_remote_shared_data(self):
+    """ Retrieve and process shared data """
     cids = self.__get_announced_cids()
     self.P(f"Found {len(cids)} shared data...")
     for cid in cids:
@@ -154,8 +151,12 @@ class R1fsDemoPlugin(BasePlugin):
       self.P(f"Retrieved: {fn}")
       if fn.endswith('.yaml') or fn.endswith('.yml'):
         self.P(f"Processing YAML file: {fn}")
-        data = self.diskapi_load_yaml(fn)
+        data = self.diskapi_load_yaml(fn)        
         self.P(f"Loaded:\n {self.json_dumps(data, indent=2)}")
+        self.P("Delivering the data to potential consumers...")
+        self.add_payload_by_fields(
+          r1fs_data=data,
+        )
       else:
         self.P(f"Received unsupported file: {fn}", color='r')
     # end for each CID
