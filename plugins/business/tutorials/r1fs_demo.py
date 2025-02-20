@@ -1,8 +1,8 @@
 """
+
+```json
 {
-    "CAP_RESOLUTION": 1,
-    "LIVE_FEED": true,
-    "NAME": "R1FS_DEMO",
+    "NAME": "R1FS_DEMO_PIPELINE",
     "PLUGINS": [
 
         {
@@ -17,6 +17,46 @@
     ],
     "TYPE": "Void"
 }  
+```
+
+
+```python
+
+from naeural_client import Instance, Payload, Pipeline, Session
+
+if __name__ == '__main__':
+
+  session: Session = Session()
+  
+  # this code assumes the node have "allowed" the SDK to deploy the pipeline
+  nodes = [
+    '0xai_A2LfyeItL5oEp7nHONlczGgwS3SV8Ims9ujJ0soJ6Anx',
+    '0xai_AqgKnJMNvUvq5n1wIin_GD2i1FbZ4FBTUJaCI6cWf7i4',
+  ]
+
+  for node in nodes:
+    session.wait_for_node(node=node) # we wait for the node to be ready
+    pipeline: Pipeline = session.create_pipeline(
+      node=node,
+      name='r1fs_demo_pipeline',
+      data_source='Void',
+    )
+
+    instance: Instance = pipeline.create_plugin_instance(
+      signature='R1FS_DEMO',
+      instance_id='inst01',
+    )
+
+    pipeline.deploy()
+
+  session.wait(
+    seconds=300,            # we wait the session for 60 seconds
+    close_pipelines=True,   # we close the pipelines after the session
+    close_session=True,     # we close the session after the session
+  )
+  session.P("Main thread exiting...")
+
+```
   
 """
 
@@ -33,7 +73,9 @@ _CONFIG = {
   **BasePlugin.CONFIG,
 
   # our overwritten props
-  'PROCESS_DELAY' : 30,
+  'PROCESS_DELAY' : 15,
+  
+  'INITIAL_WAIT'  : 15,
 
   'LOG_MESSAGE'   : '',
 
@@ -50,7 +92,10 @@ class R1fsDemoPlugin(BasePlugin):
     self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
     self.__file_send_time = 0
     self.__known_cids = []
+    self.__start_time = self.time()
+    self.__r1fs_demo_iter = 0
     self.P(f'R1fsDemoPlugin v{__VER__} with ID: {self.my_id}')
+    self.P(f"Plugin instance will now wait for {self.cfg_initial_wait} sec")
     return
   
   def __save_some_data(self):
@@ -124,7 +169,11 @@ class R1fsDemoPlugin(BasePlugin):
 
 
   def process(self):
-    self.log('R1fsDemoPlugin is processing...')
+    if self.time() - self.__start_time < self.cfg_initial_wait:
+      self.P(f"Waiting for {self.cfg_initial_wait} sec to start processing...")
+      return
+    self.__r1fs_demo_iter += 1
+    self.log(f'R1fsDemoPlugin is processing iter #{self.__r1fs_demo_iter}')
     self.share_local_data()
     self.show_remote_shared_data()
     self.log('R1fsDemoPlugin is done.')
