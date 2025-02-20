@@ -47,7 +47,7 @@
   
   "CAPTURE_ENVIRONMENT" : {
     "FORCE_CAP_RESOLUTION" : -1,
-    "DEFAULT_PLUGIN" : true,
+    "DEFAULT_PLUGIN" : false,
     "DISALLOWED_URL_DUPLICATES" : ["VideoStream"]
   },
   
