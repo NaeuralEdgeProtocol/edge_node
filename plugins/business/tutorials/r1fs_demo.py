@@ -63,15 +63,11 @@ if __name__ == '__main__':
 
 from naeural_core.business.base import BasePluginExecutor as BasePlugin
 
-
-
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-
   # mandatory area
   **BasePlugin.CONFIG,
-
   # our overwritten props
   'PROCESS_DELAY' : 15,
   
@@ -158,8 +154,7 @@ class R1fsDemoPlugin(BasePlugin):
       self.P(f"Retrieved: {fn}")
       if fn.endswith('.yaml') or fn.endswith('.yml'):
         self.P(f"Processing YAML file: {fn}")
-        with open(fn, 'r') as fh:
-          data = self.yaml.load(fh)
+        data = self.diskapi_load_yaml(fn)
         self.P(f"Loaded:\n {self.json_dumps(data, indent=2)}")
       else:
         self.P(f"Received unsupported file: {fn}", color='r')
@@ -173,8 +168,8 @@ class R1fsDemoPlugin(BasePlugin):
       self.P(f"Waiting for {self.cfg_initial_wait} sec to start processing...")
       return
     self.__r1fs_demo_iter += 1
-    self.log(f'R1fsDemoPlugin is processing iter #{self.__r1fs_demo_iter}')
+    self.P(f'R1fsDemoPlugin is processing iter #{self.__r1fs_demo_iter}')
     self.share_local_data()
     self.show_remote_shared_data()
-    self.log('R1fsDemoPlugin is done.')
+    self.P('R1fsDemoPlugin is done.')
     return
