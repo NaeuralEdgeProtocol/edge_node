@@ -207,6 +207,8 @@ class _DauthMixin(object):
           dauth_data[key] = self.os_environ.get(key)
         # end if
       # end for
+    else:
+      dauth_data["EE_SUPERVISOR"] = False
     # end set supervisor flag
 
     return dauth_data
