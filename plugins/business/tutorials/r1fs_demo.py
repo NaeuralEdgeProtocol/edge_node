@@ -1,4 +1,6 @@
 """
+
+```json
 {
     "NAME": "R1FS_DEMO_PIPELINE",
     "PLUGINS": [
@@ -15,6 +17,44 @@
     ],
     "TYPE": "Void"
 }  
+```
+
+
+```python
+
+from naeural_client import Instance, Payload, Pipeline, Session
+
+if __name__ == '__main__':
+
+  session: Session = Session()
+  
+  nodes = [
+    '0xai_A2LfyeItL5oEp7nHONlczGgwS3SV8Ims9ujJ0soJ6Anx',
+    '0xai_AqgKnJMNvUvq5n1wIin_GD2i1FbZ4FBTUJaCI6cWf7i4',
+  ]
+
+  for node in nodes:
+    pipeline: Pipeline = session.create_pipeline(
+      node=node,
+      name='r1fs_demo_pipeline',
+      data_source='Void',
+    )
+
+    instance: Instance = pipeline.create_plugin_instance(
+      signature='R1FS_DEMO',
+      instance_id='inst01',
+    )
+
+    pipeline.deploy()
+
+  session.wait(
+    seconds=300,            # we wait the session for 60 seconds
+    close_pipelines=True,   # we close the pipelines after the session
+    close_session=True,     # we close the session after the session
+  )
+  session.P("Main thread exiting...")
+
+```
   
 """
 
