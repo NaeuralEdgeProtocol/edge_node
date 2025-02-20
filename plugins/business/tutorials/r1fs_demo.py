@@ -2,7 +2,7 @@
 
 ```json
 {
-    "NAME": "R1FS_DEMO_PIPELINE",
+    "NAME": "r1fs_demo_pipeline",
     "PLUGINS": [
 
         {
@@ -63,71 +63,65 @@ if __name__ == '__main__':
 
 from naeural_core.business.base import BasePluginExecutor as BasePlugin
 
-
-
 __VER__ = '0.1.0.0'
 
 _CONFIG = {
-
   # mandatory area
   **BasePlugin.CONFIG,
-
   # our overwritten props
-  'PROCESS_DELAY' : 15,
-  
+  'PROCESS_DELAY' : 15,  
   'INITIAL_WAIT'  : 15,
-
-  'LOG_MESSAGE'   : '',
-
+  # due to the fact that we are using a "void" pipeline, 
+  # we need to allow empty inputs as we are not getting any 
+  # data from the pipeline
+  'ALLOW_EMPTY_INPUTS': True, 
   'VALIDATION_RULES' : {
     **BasePlugin.CONFIG['VALIDATION_RULES'],    
   },  
-
 }
 
 class R1fsDemoPlugin(BasePlugin):
   
   def on_init(self):
-    # we store a unique ID for this instance 
-    self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
-    self.__file_send_time = 0
-    self.__known_cids = []
-    self.__start_time = self.time()
-    self.__r1fs_demo_iter = 0
-    self.P(f'R1fsDemoPlugin v{__VER__} with ID: {self.my_id}')
-    self.P(f"Plugin instance will now wait for {self.cfg_initial_wait} sec")
+    # we store a unique ID for this worker (instance) asuming it is unique
+    self.my_id = f'r1:{self.ee_id}' # node alias is just a naive approach
+    self.__file_send_time = 0 # last time we sent a file
+    self.__known_cids = [] # keep track of known CIDs
+    self.__start_time = self.time() # start time of the plugin
+    self.__r1fs_demo_iter = 0 # iteration counter
+    self.P(f"Starting R1fsDemoPlugin v{__VER__} with ID: {self.my_id}. Plugin instance will now wait for {self.cfg_initial_wait} sec")
     return
   
   def __save_some_data(self):
-    """
-    The purpose of this method is to save some data to the R1FS and return the CID
-    of the saved data. The data is a simple dictionary with some arbitrary values 
-    just for demonstration purposes.
-    
-    """
+    """ Save some data to the R1FS """
     self.P("Saving some data...")
     uuid = self.uuid() # generate some random data
     value = self.np.random.randint(1, 100) # even more random data
     data = {
       'some_key': uuid,
       'other_key': value,
-      'some_owner_key' : self.full_id
+      'owner_id' : self.my_id,
+      'owner_key' : self.full_id
     }
-    cid = self.r1fs.add_yaml(data)
+    filename = f"{self.ee_id}_{self.__r1fs_demo_iter}"
+    cid = self.r1fs.add_yaml(data, fn=filename)
     self.P(f"Data saved with CID: {cid}")
     return cid
   
   def __announce_cid(self, cid):
-    self.P(f'Announcing CID: {cid}')
+    """ Announce the CID to the network via ChainStore hsets"""
+    self.P(f'Announcing CID: {cid} for {self.my_id}')
     self.chainstore_hset(hkey='r1fs-demo', key=self.my_id, value=cid)
     return    
   
   def __get_announced_cids(self):
+    """ Get all announced CIDs except our own from ChainStore hsets"""
     cids = []
     self.P("Checking for any announced CIDs...")
     # get full dictionary of all announced CIDs under the key 'r1fs-demo'
     # we assume all demo instances are using the same hkey and their own key
     dct_data = self.chainstore_hgetall('r1fs-demo')
+    self.P(f"Extracted hset data (I am {self.my_id}):\n {self.json_dumps(dct_data, indent=2)}")
     if dct_data:
       # extract all the CIDs except our own
       cids = [
@@ -143,6 +137,7 @@ class R1fsDemoPlugin(BasePlugin):
     return cids
   
   def share_local_data(self):
+    """ Share some data with the network """
     if self.time() - self.__file_send_time > 3600:
       self.P("Sharing data...")
       cid = self.__save_some_data()
@@ -150,6 +145,7 @@ class R1fsDemoPlugin(BasePlugin):
     return cid
   
   def show_remote_shared_data(self):
+    """ Retrieve and process shared data """
     cids = self.__get_announced_cids()
     self.P(f"Found {len(cids)} shared data...")
     for cid in cids:
@@ -157,10 +153,12 @@ class R1fsDemoPlugin(BasePlugin):
       fn = self.r1fs.get_file(cid)
       self.P(f"Retrieved: {fn}")
       if fn.endswith('.yaml') or fn.endswith('.yml'):
-        self.P(f"Processing YAML file: {fn}")
-        with open(fn, 'r') as fh:
-          data = self.yaml.load(fh)
+        data = self.diskapi_load_yaml(fn, verbose=False)        
         self.P(f"Loaded:\n {self.json_dumps(data, indent=2)}")
+        self.P("Delivering the data to potential consumers...")
+        self.add_payload_by_fields(
+          r1fs_data=data,
+        )
       else:
         self.P(f"Received unsupported file: {fn}", color='r')
     # end for each CID
@@ -173,8 +171,8 @@ class R1fsDemoPlugin(BasePlugin):
       self.P(f"Waiting for {self.cfg_initial_wait} sec to start processing...")
       return
     self.__r1fs_demo_iter += 1
-    self.log(f'R1fsDemoPlugin is processing iter #{self.__r1fs_demo_iter}')
+    self.P(f'R1fsDemoPlugin is processing iter #{self.__r1fs_demo_iter}')
     self.share_local_data()
     self.show_remote_shared_data()
-    self.log('R1fsDemoPlugin is done.')
+    self.P('R1fsDemoPlugin is done.')
     return

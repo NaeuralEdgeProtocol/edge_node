@@ -1,9 +1,21 @@
 FROM aidamian/base_edge_node:x86_64-py3.10.12-th2.3.1.cu121-tr4.43.3
 
+# Install IPFS
+RUN apt-get update && apt-get install -y wget && apt-get install -y tar
+         
+RUN wget https://dist.ipfs.tech/kubo/v0.32.1/kubo_v0.32.1_linux-amd64.tar.gz && \
+  tar -xvzf kubo_v0.32.1_linux-amd64.tar.gz && \
+  cd kubo && \
+  bash install.sh
+# End Install IPFS
+
+# COPY ./cmds /usr/local/bin/
+# RUN chmod +x /usr/local/bin/*
+
 
 WORKDIR /edge_node
-
-COPY  . /edge_node
+COPY . .
+# RUN rm -rf /edge_node/cmds
 
 # set a generic env variable 
 ENV AINODE_DOCKER=Yes
