@@ -83,8 +83,8 @@ _CONFIG = {
 class R1fsDemoPlugin(BasePlugin):
   
   def on_init(self):
-    # we store a unique ID for this instance 
-    self.my_id = f'{self.ee_id}_{self.uuid(size=2)}'
+    # we store a unique ID for this worker (instance) asuming it is unique
+    self.my_id = f'r1:{self.ee_id}' # node alias is just a naive approach
     self.__file_send_time = 0 # last time we sent a file
     self.__known_cids = [] # keep track of known CIDs
     self.__start_time = self.time() # start time of the plugin
@@ -100,15 +100,17 @@ class R1fsDemoPlugin(BasePlugin):
     data = {
       'some_key': uuid,
       'other_key': value,
-      'some_owner_key' : self.full_id
+      'owner_id' : self.my_id,
+      'owner_key' : self.full_id
     }
-    cid = self.r1fs.add_yaml(data)
+    filename = f"{self.ee_id}_{self.__r1fs_demo_iter}"
+    cid = self.r1fs.add_yaml(data, fn=filename)
     self.P(f"Data saved with CID: {cid}")
     return cid
   
   def __announce_cid(self, cid):
     """ Announce the CID to the network via ChainStore hsets"""
-    self.P(f'Announcing CID: {cid}')
+    self.P(f'Announcing CID: {cid} for {self.my_id}')
     self.chainstore_hset(hkey='r1fs-demo', key=self.my_id, value=cid)
     return    
   
@@ -119,6 +121,7 @@ class R1fsDemoPlugin(BasePlugin):
     # get full dictionary of all announced CIDs under the key 'r1fs-demo'
     # we assume all demo instances are using the same hkey and their own key
     dct_data = self.chainstore_hgetall('r1fs-demo')
+    self.P(f"Extracted hset data (I am {self.my_id}):\n {self.json_dumps(dct_data, indent=2)}")
     if dct_data:
       # extract all the CIDs except our own
       cids = [
@@ -150,8 +153,7 @@ class R1fsDemoPlugin(BasePlugin):
       fn = self.r1fs.get_file(cid)
       self.P(f"Retrieved: {fn}")
       if fn.endswith('.yaml') or fn.endswith('.yml'):
-        self.P(f"Processing YAML file: {fn}")
-        data = self.diskapi_load_yaml(fn)        
+        data = self.diskapi_load_yaml(fn, verbose=False)        
         self.P(f"Loaded:\n {self.json_dumps(data, indent=2)}")
         self.P("Delivering the data to potential consumers...")
         self.add_payload_by_fields(
