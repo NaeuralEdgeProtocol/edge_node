@@ -121,7 +121,7 @@ class R1fsDemoPlugin(BasePlugin):
     # get full dictionary of all announced CIDs under the key 'r1fs-demo'
     # we assume all demo instances are using the same hkey and their own key
     dct_data = self.chainstore_hgetall('r1fs-demo')
-    self.P(f"Extracted hset data (I am {self.my_id}):\n {self.json_dumps(dct_data, indent=2)}")
+    self.P(f"Extracted hset data ({self.my_id=}):\n {self.json_dumps(dct_data, indent=2)}")
     if dct_data:
       # extract all the CIDs except our own
       cids = [
