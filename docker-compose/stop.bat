@@ -12,12 +12,13 @@ echo Containers have been stopped and removed.
 set GENERIC_WINDOW_TITLE=Cluster_Container
 
 echo Stopping all PowerShell processes with the window title: %GENERIC_WINDOW_TITLE%*
-
+REM Check also "Select GENERIC_WINDOW_TITLE" for closing
 for /F "tokens=*" %%A in ('tasklist /FI "IMAGENAME eq powershell.exe" /V /FO LIST ^| findstr /I "!GENERIC_WINDOW_TITLE!"') do (
     echo Task %%A
 )
 
 echo Terminating all PowerShell processes with the window title: %GENERIC_WINDOW_TITLE%*
 taskkill /FI "WINDOWTITLE eq !GENERIC_WINDOW_TITLE!*" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq Select !GENERIC_WINDOW_TITLE!*" /T /F >nul 2>&1
 
 echo Done.
