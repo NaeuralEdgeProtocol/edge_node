@@ -1,15 +1,41 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM DEPLOY DEBUG FLAGS
+set DEPLOY_DEBUG=false
+set USE_LOCAL_IMAGE=true
+
+
 REM Hardcoded number of containers
-set NUM_CONTAINERS=1
-set NUM_SUPERVISORS=0
-set CONTAINER_IMAGE=naeural/edge_node:develop
-@REM set CONTAINER_IMAGE=local_edge_node
-set ENV_FILE=.env_cluster
+set NUM_CONTAINERS=4
+set NUM_SUPERVISORS=4
+
+
+if !USE_LOCAL_IMAGE! == true (
+    set CONTAINER_IMAGE=local_edge_node
+) else (
+    set CONTAINER_IMAGE=naeural/edge_node:develop
+)
+
+if !DEPLOY_DEBUG! == true (
+    set ENV_FILE=.env_deploy
+    set CONFIG_FILE=.config_startup.json
+    set GENERIC_CONTAINER_VOLUME=00debug_cluster/ratio1_0
+) else (
+    set ENV_FILE=.env_cluster
+    set CONFIG_FILE=.config_startup_cluster.json
+    set GENERIC_CONTAINER_VOLUME=00cluster/ratio1_0
+)
+
 REM Use command parameter to set if the containers will be repeered at start.
 REM The default is false.
 set PEER=false
+
+
+REM Generic names for containers and edge nodes
+set GENERIC_EDGE_NODE_ID=cr1en_
+set GENERIC_CONTAINER_ID=ratio1_0
+set GENERIC_WINDOW_TITLE=Cluster_Container
 
 REM Loop through all arguments
 for %%A in (%*) do (
@@ -25,13 +51,6 @@ if /i "%PEER%" neq "true" if /i "%PEER%" neq "false" (
     echo Invalid value for --peer. Expected "true" or "false".
     exit /b 1
 )
-
-
-REM Generic names for containers and edge nodes
-set GENERIC_EDGE_NODE_ID=cnen_
-set GENERIC_CONTAINER_ID=naeural_0
-set GENERIC_CONTAINER_VOLUME=00cluster/naeural_0
-set GENERIC_WINDOW_TITLE=Cluster_Container
 
 REM Watchtower service for automatic updates
 set WATCHTOWER_IMAGE=containrrr/watchtower
@@ -73,6 +92,7 @@ for /l %%i in (1,1,%NUM_CONTAINERS%) do (
 @REM     echo       EE_ID: ^${EE_ID_0%%i?You must set the EE_ID_0%%i environment variable^} >> docker-compose.yaml
     echo       EE_ID: !EDGE_NODE_ID! >> docker-compose.yaml
     echo       EE_SUPERVISOR: !CONTAINER_IS_SUPERVISOR[%%i]! >> docker-compose.yaml
+    echo       EE_CONFIG: !CONFIG_FILE! >> docker-compose.yaml
     echo     env_file: !ENV_FILE! >> docker-compose.yaml
     echo     volumes: >> docker-compose.yaml
     echo       - ./!CONTAINER_VOLUME!:/edge_node/_local_cache >> docker-compose.yaml
