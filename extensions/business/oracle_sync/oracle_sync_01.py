@@ -88,7 +88,6 @@ _CONFIG = {
   # Allow empty inputs in order to send pings from time to time
   'ALLOW_EMPTY_INPUTS': True,
   'PROCESS_DELAY': 0,
-  "WORKING_HOURS": {},
 
   'SEND_PERIOD': 15,  # seconds
   'SEND_INTERVAL': 5,  # seconds
