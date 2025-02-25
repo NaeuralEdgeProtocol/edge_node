@@ -616,7 +616,7 @@ class OracleSync01Plugin(NetworkProcessorPlugin):
         local_table = oracle_data[OracleSyncCt.LOCAL_TABLE]
 
         log_str = f"Received message from oracle {sender}: {stage = }"
-        if self.cfg_debug_sync_full:
+        if self.cfg_debug_sync:
           log_str += f", local_table=\n{local_table}"
         # endif debug_sync
         self.P(log_str)
@@ -674,8 +674,8 @@ class OracleSync01Plugin(NetworkProcessorPlugin):
       }
       """
       # should not have received any None values
+      self.dct_local_tables[self.node_addr] = self.local_table
       valid_local_tables = [x for x in self.dct_local_tables.values() if x is not None]
-      valid_local_tables.append(self.local_table)
       valid_local_tables_count = len(valid_local_tables)
 
       if valid_local_tables_count <= self.__count_half_of_valid_oracles():
