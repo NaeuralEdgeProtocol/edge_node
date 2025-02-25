@@ -1417,7 +1417,7 @@ class OracleSync01Plugin(NetworkProcessorPlugin):
       oracle_list = self.get_oracle_list()
       if oracle_list is None or len(oracle_list) == 0:
         return 9999999999999999999
-      return len(oracle_list) - ORACLE_SYNC_ACCEPTED_REPORTS_THRESHOLD
+      return max(len(oracle_list) - ORACLE_SYNC_ACCEPTED_REPORTS_THRESHOLD, 1)
 
     def __is_oracle(self, node: str):
       """
