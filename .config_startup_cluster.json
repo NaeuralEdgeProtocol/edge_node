@@ -8,9 +8,9 @@
   
   "COMPRESS_HEARTBEAT" : true,
   
-  "MIN_AVAIL_MEM_THR"        : 0.09,
-  "MIN_AVAIL_DISK_SIZE_GB"   : 10,
-  "CRITICAL_RESTART_LOW_MEM" : 0.20,  
+  "MIN_AVAIL_MEM_THR"        : -10.09,
+  "MIN_AVAIL_DISK_SIZE_GB"   : -100,
+  "CRITICAL_RESTART_LOW_MEM" : -10.20,
 
   "CHECK_RAM_ON_SHUTDOWN" : false,
 
@@ -113,7 +113,7 @@
   },
 
   "COMMUNICATION_ENVIRONMENT" : {
-    "ENCRYPTED_COMMS" : false,
+    "ENCRYPTED_COMMS" : true,
     "ACCEPT_UNENCRYPTED_COMMANDS": true,
     "LOCAL_COMMAND_BYPASS": true,
 
@@ -148,7 +148,9 @@
   "CONFIG_RETRIEVE": [
       {
         "TYPE" 					   : "local",
-        "APP_CONFIG_ENDPOINT"      : "./.config_app.json"
+        "APP_CONFIG_ENDPOINT": "./.config_app_cluster.json",
+        "##APP_CONFIG_ENDPOINT": "/_local_cache/_data/box_configuration/config_app.json",
+        "#APP_CONFIG_ENDPOINT": "./.config_app.json"
       }
   ]
 }

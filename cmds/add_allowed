@@ -8,6 +8,7 @@
 ### docker exec <container> add_allowed <node-address1> my-alias
 ###
 
+MAX_ALIAS_LENGTH=15
 FILE=/edge_node/_local_cache/authorized_addrs
 
 # Check if at least one argument is provided
@@ -18,6 +19,12 @@ fi
 
 address="$1"
 alias="$2"
+
+# Truncate alias if it's longer than MAX_ALIAS_LENGTH
+if [ -n "$alias" ] && [ ${#alias} -gt $MAX_ALIAS_LENGTH ]; then
+  echo "Warning: Alias '$alias' exceeds $MAX_ALIAS_LENGTH characters, truncating to '${alias:0:$MAX_ALIAS_LENGTH}'" >&2
+  alias="${alias:0:$MAX_ALIAS_LENGTH}"
+fi
 
 # Check if address already exists
 if grep -q "^$address\( \|$\)" "$FILE"; then

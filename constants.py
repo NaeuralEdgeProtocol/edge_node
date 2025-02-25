@@ -46,6 +46,9 @@ ADMIN_PIPELINE = {
       
       "EE_NGROK_AUTH_TOKEN",
       
+    ],
+    
+    "AUTH_NODE_ENV_KEYS" : [
       "EE_IPFS_RELAY",
       "EE_SWARM_KEY_CONTENT_BASE64"
     ],
