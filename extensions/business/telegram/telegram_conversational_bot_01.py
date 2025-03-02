@@ -6,7 +6,7 @@ from extensions.business.mixins.telegram_mixin import _TelegramChatbotMixin
 _CONFIG = {
   **BasePlugin.CONFIG,
   
-  "PROCESS_DELAY"           : 5,
+  "PROCESS_DELAY"           : 1,
   "ALLOW_EMPTY_INPUTS"      : True,
   
   "SEND_STATUS_EACH"        : 60,
@@ -24,6 +24,10 @@ _CONFIG = {
   "RESPONSE_ROUTE_HOSTED": None,
   "REQUEST_URL_API": None,
   "REQUEST_URL_HOSTED": None,
+  
+  "PROCESSING_HANDLER"       : None,
+  "PROCESSING_HANDLER_ARGS"  : [],
+    
 
   'VALIDATION_RULES' : {
     **BasePlugin.CONFIG['VALIDATION_RULES'],
@@ -57,6 +61,12 @@ class TelegramConversationalBot01Plugin(
       message_handler=self.bot_msg_handler,
       run_threaded=True,
     )
+    
+    self._create_tbot_loop_processing_handler(
+      str_base64_code=self.cfg_processing_handler,
+      lst_arguments=self.cfg_processing_handler_args,
+    )
+        
     self.bot_run()
     self.__failed = False
     return
@@ -214,4 +224,5 @@ class TelegramConversationalBot01Plugin(
       self.__last_status_check = self.time()
       if not self.__failed:
         self.bot_dump_stats()
+    self.maybe_process_tbot_loop()    
     return payload

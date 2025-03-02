@@ -26,7 +26,33 @@ class _TelegramChatbotMixin(object):
     self.__stats[user]['last_question'] = question
     return     
 
+
+  def _create_tbot_loop_processing_handler(self, str_base64_code, lst_arguments):
+    if str_base64_code is None:
+      self.P("No loop processing handler provided, skipping...", color='y')
+      self._processing_handler = None
+    else:
+      self.P(f"Preparing custom loop processing handler with arguments: {lst_arguments}...")    
+      self._tbot_loop_processing_handler, errors, warnings = self._get_method_from_custom_code(
+        str_b64code=str_base64_code,
+        self_var='plugin',
+        method_arguments=['plugin'] + lst_arguments,
+        
+        debug=True,
+      )
+    return  
   
+  def maybe_process_tbot_loop(self):
+    if getattr(self, "_tbot_loop_processing_handler", None) is not None:
+      result = self._tbot_loop_processing_handler(plugin=self)
+      if result is not None:
+        if isinstance(result, dict):
+          self.add_payload_by_fields(**result)
+        else:
+          self.add_payload_by_fields(result=result)
+      # endif result is not None
+    # endif _tbot_loop_processing_handler is not None
+    return
     
   def __reply_wrapper(self, question, user):
     self.__add_user_info(user=user, question=question)

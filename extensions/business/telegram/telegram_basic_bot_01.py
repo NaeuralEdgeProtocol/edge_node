@@ -4,16 +4,20 @@ from extensions.business.mixins.telegram_mixin import _TelegramChatbotMixin
 _CONFIG = {
   **BasePlugin.CONFIG,
   
-  "PROCESS_DELAY"           : 5,
+  "PROCESS_DELAY"           : 1,
   "ALLOW_EMPTY_INPUTS"      : True,
   
   "SEND_STATUS_EACH"        : 60,
   
   "TELEGRAM_BOT_NAME"       : None,
   "TELEGRAM_BOT_TOKEN"      : None,
+  
   "MESSAGE_HANDLER"         : None,
   "MESSAGE_HANDLER_ARGS"    : [],
   "MESSAGE_HANDLER_NAME"    : None,
+  
+  "PROCESSING_HANDLER"       : None,
+  "PROCESSING_HANDLER_ARGS"  : [],
   
 
   'VALIDATION_RULES' : {
@@ -59,6 +63,11 @@ class TelegramBasicBot01Plugin(
       lst_arguments=self.cfg_message_handler_args,
     )
     
+    self._create_tbot_loop_processing_handler(
+      str_base64_code=self.cfg_processing_handler,
+      lst_arguments=self.cfg_processing_handler_args,
+    )
+    
     if self.__custom_handler is not None:
       self.P("Building and running the Telegram bot...")  
       self.bot_build(
@@ -80,7 +89,6 @@ class TelegramBasicBot01Plugin(
   def bot_msg_handler(self, message, user, **kwargs):
     result = self.__custom_handler(plugin=self, message=message, user=user)
     return result
-  
 
   def process(self):
     payload = None
@@ -88,4 +96,5 @@ class TelegramBasicBot01Plugin(
       self.__last_status_check = self.time()
       if not self.__failed:
         self.bot_dump_stats()
+    self.maybe_process_tbot_loop()    
     return payload
