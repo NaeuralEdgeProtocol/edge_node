@@ -22,7 +22,7 @@
 
 ```python
 
-from naeural_client import Instance, Payload, Pipeline, Session
+from ratio1 import Instance, Payload, Pipeline, Session
 
 if __name__ == '__main__':
 

@@ -1,4 +1,4 @@
-from naeural_client import Session, Pipeline, Instance
+from ratio1 import Session, Pipeline, Instance
 from datetime import datetime
 import numpy as np
 

@@ -1,5 +1,5 @@
 kmonitor 
-naeural_client 
+ratio1 
 decentra-vision 
 python-telegram-bot
 protobuf==5.28.3

@@ -106,5 +106,5 @@ jobs:
           push: true
           tags: |
               ${{ env.IMAGE_TAG }}
-              naeural/edge_node:latest
-              naeural/edge_node:mainnet
+              ratio1/edge_node:latest
+              ratio1/edge_node:mainnet
