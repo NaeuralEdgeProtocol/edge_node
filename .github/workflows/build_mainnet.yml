@@ -52,7 +52,7 @@ jobs:
         id: create_image_tag
         run: |
           VERSION=${VERSION//\'/}
-          echo "IMAGE_TAG=naeural/edge_node:$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_TAG=ratio1/edge_node:$VERSION" >> $GITHUB_ENV
         env:
           VERSION: ${{ env.VERSION }}
 
