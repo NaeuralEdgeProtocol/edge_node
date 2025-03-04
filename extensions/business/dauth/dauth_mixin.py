@@ -82,7 +82,10 @@ class _DauthMixin(object):
     else:
       output.requester_type = "unknown"
       output.result = False
-      output.message += "Invalid sender version data."
+      output.message += "Invalid sender version data: {} {} {} vs this server: {} {} {}".format(
+        sender_app_version, sender_core_version, sender_sdk_version,
+        self.ee_ver, self.ee_core_ver, self.ee_sdk_ver
+      )
     
     if int_sender_app_version > 0 and int_sender_app_version < int_server_app_version:
       output.message += f" Sender app version {sender_app_version} is lower than server app version {self.ee_ver}."
