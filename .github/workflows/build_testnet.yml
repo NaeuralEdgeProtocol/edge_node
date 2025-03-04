@@ -79,8 +79,8 @@ jobs:
           push: true
           # tags: "naeural/edge_node:develop"
           tags: |
-                naeural/edge_node:develop
-                naeural/edge_node:testnet
+                ratio1/edge_node:develop
+                ratio1/edge_node:testnet
 
       - name: Build and push Amd64 DEVNET image
         uses: docker/build-push-action@v5
@@ -89,4 +89,4 @@ jobs:
           file: ./Dockerfile_devnet
           push: true
           tags: |
-                naeural/edge_node:devnet
+                ratio1/edge_node:devnet
