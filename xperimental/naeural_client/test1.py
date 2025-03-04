@@ -1,12 +1,12 @@
 """
-This is a simple example of how to use the naeural_client SDK.
+This is a simple example of how to use the ratio1 SDK.
 
 In this example, we connect to the network, listen for heartbeats from 
   Naeural Edge Protocol edge nodes and print the CPU of each node.
 """
 import json
 
-from naeural_client import Session, Payload
+from ratio1 import Session, Payload
 
 
 class MessageHandler:

@@ -1,5 +1,5 @@
 # local dependencies
-from naeural_client.io_formatter import BaseFormatter
+from ratio1.io_formatter import BaseFormatter
 
 
 class DummyFormatter(BaseFormatter):

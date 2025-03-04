@@ -366,14 +366,14 @@ if __name__ == '__main__':
   import os
 
   import naeural_core.constants as ct
-  from naeural_client._ver import __VER__ as sdk_ver
+  from ratio1._ver import __VER__ as sdk_ver
   from naeural_core.main.ver import __VER__ as core_ver
   from constants import ADMIN_PIPELINE
   from naeural_core.utils.plugins_base.bc_wrapper import BCWrapper
   
     
-  from naeural_client.bc import DefaultBlockEngine
-  from naeural_client import Logger
+  from ratio1.bc import DefaultBlockEngine
+  from ratio1 import Logger
   from ver import __VER__ as ee_ver
   
   l = Logger("DAUTH", base_folder=".", app_folder="_local_cache")

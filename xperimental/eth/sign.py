@@ -2,8 +2,8 @@
 import json
 
 
-from naeural_client import Logger, const
-from naeural_client.bc import DefaultBlockEngine
+from ratio1 import Logger, const
+from ratio1.bc import DefaultBlockEngine
 
 
 
